@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-20-investing-2">
+<meta name="build" content="2026-11-20-investing-3">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 14개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -58,7 +58,7 @@
   .ttl{font-size:.6em;font-weight:700;letter-spacing:.19em;color:var(--dim2);text-transform:uppercase}
   .clock{font-size:.88em;font-weight:700;font-variant-numeric:tabular-nums;color:#D3DAE2;letter-spacing:.01em}
   .clock .tz{font-size:.6em;color:var(--dim2);font-weight:700;margin-left:.34em;letter-spacing:.12em}
-  .sub{margin-top:.3em;display:flex;align-items:center;gap:.42em;min-width:0}
+  .sub{margin-top:.26em;display:flex;align-items:center;gap:.42em;min-width:0}
   .grad{font-size:1.30em;font-weight:800;letter-spacing:-.028em;line-height:1.16;color:#fff;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .live{flex:0 0 auto;font-size:.48em;font-weight:800;letter-spacing:.1em;color:#6EE7A8;
@@ -70,7 +70,7 @@
     padding:.42em .68em;border-radius:99px;border:1px solid var(--edge);background:#171D24}
   .btn:active{background:#232B33}
   .btn svg{width:.95em;height:.95em;display:block;stroke:#B7C0C9}
-  .bar{position:relative;height:2px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:.46em}
+  .bar{position:relative;height:2px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:.4em}
   .bar > i{position:absolute;inset:0;width:100%;border-radius:99px;
     background:linear-gradient(90deg,#39424D,#A7B0BB);transform-origin:left center;will-change:transform}
   .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.26em;
@@ -83,7 +83,7 @@
   .row{
     position:relative;flex:1 1 0;min-height:0;
     display:flex;flex-direction:column;justify-content:center;
-    padding:.16em .6em .2em .78em;overflow:hidden;transition:opacity .45s ease;
+    padding:.12em .6em .15em .74em;overflow:hidden;transition:opacity .45s ease;
   }
   .row + .row{border-top:1px solid var(--line)}
   .row.stale{opacity:.45}
@@ -94,20 +94,20 @@
   .row.open::before{background:var(--open);box-shadow:0 0 6px rgba(47,191,113,.25)}
 
   .top{display:flex;align-items:center;gap:.28em;min-width:0}
-  .nm{flex:1 1 auto;min-width:0;font-size:.78em;font-weight:700;color:#FFFFFF;letter-spacing:-.014em;
+  .nm{flex:1 1 auto;min-width:0;font-size:.77em;font-weight:700;color:#FFFFFF;letter-spacing:-.014em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .px{flex:0 0 auto;min-width:5.1em;text-align:right;font-size:1.12em;font-weight:800;color:#fff;
+  .px{flex:0 0 auto;min-width:4.95em;text-align:right;font-size:1.08em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
-  .pct{flex:0 0 auto;min-width:4em;margin-left:.1em;text-align:right;font-size:1.3em;font-weight:800;
+  .pct{flex:0 0 auto;min-width:3.85em;margin-left:.1em;text-align:right;font-size:1.24em;font-weight:800;
     font-variant-numeric:tabular-nums;letter-spacing:-.028em;line-height:1.05;color:var(--down)}
   .pct.up{color:var(--up)}
   .pct.flat{color:#A7AFB9}
 
   .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0;margin-top:.08em}
-  .ath{font-size:.575em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
+  .ath{font-size:.56em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.005em}
   .ath b{color:#B6BFC8;font-weight:700}
-  .dc{flex:0 0 auto;font-size:.575em;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dc{flex:0 0 auto;font-size:.56em;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
   .dc.up{color:var(--up)}
   .dc.down{color:var(--down)}
   .row.newhigh .ath b{color:#FFC663}
@@ -139,7 +139,7 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황 · 14</div>
+      <div class="ttl">주요 자산 현황 · <span id="cnt">14</span></div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub">
@@ -186,6 +186,8 @@
     {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  mkt:"us",   ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
     {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"sec",   name:"삼성전자 예상가",  yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"\u20a9", chgLabel:"전일"},
+    {id:"hynix", name:"SK하이닉스 예상가", yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"\u20a9", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  mkt:"cme",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  mkt:"cme",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -281,7 +283,11 @@
     }catch(e){}
     MK.coin = true;
   }
-  function isLive(a){ return !!MK[a.mkt]; }
+  var KP_SEEN = {}, KP_FRESH = 10*60*1000;   // 예상가가 최근 10분 안에 움직였으면 '실시간 변동 중'
+  function isLive(a){
+    if(a.src==="kp") return !!MK.kr || (Date.now() - (KP_SEEN[a.id]||0) < KP_FRESH);
+    return !!MK[a.mkt];
+  }
 
   function getText(url, ms){
     var ctl = new AbortController();
@@ -341,7 +347,7 @@
         if(!d || typeof d!=="object") throw new Error("bad payload");
         var n = 0, now = Date.now();
         ASSETS.forEach(function(a){
-          if(!a.yahoo) return;
+          if(!a.yahoo || a.src==="kp") return;      // 예상가는 KOSPILAB에서 받는다
           var node = d[a.yahoo];
           if(!node) return;
           var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
@@ -405,6 +411,41 @@
     return coinGecko().catch(okx).catch(upbit)
       .then(function(n){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms "+(srcTag.coin||"?")); return n; },
             function(e){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms fail"); throw e; });
+  }
+
+  /* ───────── KOSPILAB 해외 실시간 추정가 (삼성전자·SK하이닉스) ─────────
+     kospilab.com/api/prices 는 CORS 헤더가 없어 프록시 체인을 거쳐 읽는다. */
+  var KP_URL = "https://kospilab.com/api/prices";
+  function kospilab(){
+    var t0 = Date.now();
+    return kpGet().then(function(d){
+      if(!d || !d.stocks || !d.stocks.length) throw new Error("bad");
+      var n = 0;
+      ASSETS.forEach(function(a){
+        if(a.src!=="kp") return;
+        var rec = null;
+        for(var i=0;i<d.stocks.length;i++){
+          var m = d.stocks[i] && d.stocks[i].meta;
+          if(m && m.krxTicker === a.kp){ rec = d.stocks[i]; break; }
+        }
+        if(!rec || !rec.computed) return;
+        var px = Number(rec.computed.priceKrw);
+        if(!isFinite(px) || px<=0) return;
+        var pct = isFinite(rec.computed.vsClosePct) ? rec.computed.vsClosePct*100 : null;
+        var prev = state[a.id] || (KP_SEEN["prev-"+a.id] ? {px:KP_SEEN["prev-"+a.id]} : null);
+        if(prev && prev.px!=null && Math.abs(prev.px - px) > 0.5) KP_SEEN[a.id] = Date.now();
+        if(prev && prev.px!=null) KP_SEEN["prev-"+a.id] = prev.px;
+        state[a.id] = {px:px, chg:pct, t:Date.now()};
+        n++;
+      });
+      if(!n) throw new Error("no stock");
+      srcTag.kp = "KOSPILAB";
+      if(DBG) dg("kp:"+(Date.now()-t0)+"ms");
+      return n;
+    });
+  }
+  function kpGet(){
+    return histGet(KP_URL);     // jina → codetabs → allorigins → cors.lol → 직접
   }
 
   /* ───────── 3년 월별(약 36개월) 히스토리 → 자산명 옆 미니 스파크라인 ───────── */
@@ -681,27 +722,33 @@
   function refresh(){
     if(busy) return;
     busy = true;
-    var res = {idx:0, coin:0};
+    var res = {idx:0, coin:0, kp:0};
 
     Promise.all([
       getIndices().then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
-      getCrypto().then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; })
+      getCrypto().then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
+      kospilab().then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; })
     ]).then(function(){
       renderAll();
-      var okI = res.idx > 0, okC = res.coin > 0;
+      var okI = res.idx > 0, okC = res.coin > 0, okK = res.kp > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
+      if(okK) bits.push("KOSPILAB");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC){
+      if(okI && okC && okK){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
       }else if(okI || okC){
         live.className = "live"; live.textContent = "LIVE";
-        setStatus("warn", kstTime() + " 일부 지연" + (okI ? " · 코인" : " · 지수"));
+        var miss = [];
+        if(!okI) miss.push("지수");
+        if(!okK) miss.push("예상가");
+        if(!okC) miss.push("코인");
+        setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
       }else{
         live.className = "live off"; live.textContent = "OFF";
         setStatus("", "연결 실패 · 10초 후 재시도");
@@ -754,6 +801,7 @@
 
   /* ───────── 시작 ───────── */
   buildList();
+  $("#cnt").textContent = ASSETS.length;
   histRestore();
   restore();
   computeMarkets();
