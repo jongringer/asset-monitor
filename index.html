@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070b14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="자산 최고점">
+<meta name="format-detection" content="telephone=no">
+<title>주요 자산 현황 · 최고점 대비 변동률</title>
+<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·코스피·코스닥·금·비트코인·이더리움 9개 자산의 최고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
+<meta property="og:title" content="주요 자산 현황 · 최고점 대비 변동률">
+<meta property="og:description" content="9개 주요 자산의 최고점(ATH) 대비 변동률 실시간 모니터">
+<meta property="og:type" content="website">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --line:rgba(120,150,200,.13);
+    --dim:#8497b6;
+    --dim2:#6b7e9c;
+    --down:#3d8bfd;
+    --up:#ff4d5e;
+    --gold:#f5c451;
+    --ok:#25d07d;
+    --warn:#f0b429;
+    --bad:#ff5b6b;
+    --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%;background:#03060c;color:#eaf1ff;font-family:var(--font)}
+  body{display:flex;justify-content:center;align-items:stretch;overflow:hidden}
+
+  /* 9:16 세로 프레임 — 모바일은 화면 전체, 데스크톱은 중앙 세로 프레임 */
+  #app{
+    position:relative;width:100%;max-width:430px;height:100dvh;overflow:hidden;
+    display:flex;flex-direction:column;font-size:16px;
+    background:
+      radial-gradient(125% 55% at 50% -12%, #1a2e57 0%, rgba(10,17,32,0) 62%),
+      linear-gradient(180deg,#0a1220 0%, #070c16 58%, #060a12 100%);
+    padding:calc(env(safe-area-inset-top,0px) + .5em) .6em calc(env(safe-area-inset-bottom,0px) + .38em);
+    box-shadow:0 0 70px rgba(0,0,0,.8);
+  }
+  @media (min-aspect-ratio: 9/16) and (min-width:480px){
+    body{align-items:center;background:radial-gradient(85% 65% at 50% 40%,#0b1220 0%,#03060c 100%)}
+    #app{height:min(100dvh, calc(430px * 16 / 9));border-radius:20px;margin:auto;
+      border:1px solid rgba(120,150,200,.15)}
+  }
+
+  /* ── 헤더 ── */
+  header{flex:0 0 auto;padding:0 .18em}
+  .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
+  .ttl{font-size:.68em;font-weight:700;letter-spacing:.17em;color:var(--dim);text-transform:uppercase}
+  .clock{font-size:.9em;font-weight:800;font-variant-numeric:tabular-nums;color:#d5e4f9}
+  .clock .tz{font-size:.68em;color:var(--dim2);font-weight:700;margin-left:.3em;letter-spacing:.1em}
+  .sub{margin:.12em 0 .04em;display:flex;align-items:center;gap:.4em}
+  .sub .grad{
+    font-size:1.46em;font-weight:800;letter-spacing:-.024em;line-height:1.16;
+    background:linear-gradient(92deg,#ffffff 0%,#c9deff 50%,#7eb0ff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .live{flex:0 0 auto;font-size:.55em;font-weight:800;letter-spacing:.08em;color:#06110d;
+    background:var(--ok);border-radius:99px;padding:.24em .6em;line-height:1.4}
+  .live.off{background:#39465e;color:#a5b6ce}
+  .bar{position:relative;height:3px;border-radius:99px;background:rgba(120,150,200,.15);overflow:hidden;margin-top:.5em}
+  .bar > i{position:absolute;inset:0;width:100%;border-radius:99px;
+    background:linear-gradient(90deg,#2f6fe0,#63b3ff);transform-origin:left center;will-change:transform}
+  .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.24em;font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
+  .barmeta .btn{all:unset;cursor:pointer;color:#a8caff;font-size:1.02em;font-weight:800;letter-spacing:.05em;
+    padding:.34em .78em;border-radius:99px;border:1px solid rgba(110,160,240,.3);background:rgba(60,110,200,.14)}
+  .barmeta .btn:active{background:rgba(60,110,200,.34)}
+
+  /* ── 자산 리스트 ── */
+  main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.46em;gap:.24em}
+  .row{
+    position:relative;flex:1 1 0;min-height:0;
+    display:flex;flex-direction:column;justify-content:center;gap:.1em;
+    padding:.24em .6em .3em .7em;border-radius:.62em;
+    background:linear-gradient(100deg,rgba(26,41,70,.68) 0%,rgba(15,25,44,.5) 100%);
+    border:1px solid var(--line);overflow:hidden;transition:opacity .4s ease;
+  }
+  .row::before{content:"";position:absolute;left:0;top:.42em;bottom:.42em;width:3px;border-radius:99px;background:var(--down);opacity:.9}
+  .row.up::before{background:var(--up)}
+  .row.flat::before{background:#4a5b76}
+  .row.stale{opacity:.42}
+
+  .top{display:flex;align-items:baseline;gap:.45em;min-width:0}
+  .nm{flex:0 1 auto;font-size:.8em;font-weight:700;color:#c8d8ef;letter-spacing:-.015em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .px{margin-left:auto;flex:0 0 auto;font-size:1.24em;font-weight:800;color:#fff;
+    font-variant-numeric:tabular-nums;letter-spacing:-.018em;line-height:1.1}
+  .pct{flex:0 0 auto;min-width:3.5em;text-align:right;font-size:1.5em;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.05;color:var(--down)}
+  .pct.up{color:var(--up)}
+  .pct.flat{color:#9fb0c9}
+
+  .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0}
+  .ath{font-size:.63em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ath b{color:#9fb2cc;font-weight:800}
+  .dc{flex:0 0 auto;font-size:.63em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dc.up{color:#ff8593}
+  .dc.down{color:#76adff}
+  .row.newhigh .ath b{color:var(--gold)}
+
+  .gauge{position:absolute;left:.7em;right:.6em;bottom:.12em;height:2px;border-radius:99px;background:rgba(120,150,200,.09);overflow:hidden}
+  .gauge > i{display:block;height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,#2f6fe0,#5aa2ff);transition:width .45s ease}
+  .row.up .gauge > i{background:linear-gradient(90deg,#e0364a,#ff8593)}
+
+  /* ── 푸터 ── */
+  footer{flex:0 0 auto;padding:.46em .18em 0;display:flex;flex-direction:column;gap:.12em}
+  .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;font-size:.61em;color:var(--dim2);font-weight:700}
+  .frow .pin{display:inline-block;width:.58em;height:.58em;border-radius:99px;background:var(--bad);margin-right:.4em;vertical-align:.04em;box-shadow:0 0 0 .18em rgba(255,91,107,.13)}
+  .frow.ok .pin{background:var(--ok);box-shadow:0 0 0 .18em rgba(37,208,125,.13)}
+  .frow.warn .pin{background:var(--warn);box-shadow:0 0 0 .18em rgba(240,180,41,.13)}
+  .frow .src{font-variant-numeric:tabular-nums;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mkt{font-size:.585em;color:#4e607d;font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="hrow">
+      <div class="ttl">주요 자산 현황</div>
+      <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
+    </div>
+    <div class="sub"><span class="grad">최고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="barmeta">
+      <span id="cd">10초마다 자동 갱신</span>
+      <button class="btn" id="refresh" type="button">새로고침</button>
+    </div>
+  </header>
+
+  <main id="list"></main>
+
+  <footer>
+    <div class="frow" id="status">
+      <span><span class="pin"></span><span id="stxt">불러오는 중…</span></span>
+      <span class="src" id="src">—</span>
+    </div>
+    <div class="mkt"><b id="mktUS">미국 —</b><b id="mktKR">국내 —</b></div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ───────── 자산 정의 · 최고점 기준(고정값) ───────── */
+  var ASSETS = [
+    {id:"sp500", name:"S&P 500",   yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"ndx",   name:"나스닥 100", yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"dji",   name:"다우존스",   yahoo:"^DJI",  ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"rut",   name:"러셀 2000",  yahoo:"^RUT",  ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"kospi", name:"코스피",     yahoo:"^KS11", ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kosdaq",name:"코스닥",     yahoo:"^KQ11", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"gold",  name:"금 (COMEX)", yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"btc",   name:"비트코인",   yahoo:null,    ath:126198,   athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
+    {id:"eth",   name:"이더리움",   yahoo:null,    ath:4953.73,  athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"}
+  ];
+  var BY = {}, ORDER = [];
+  ASSETS.forEach(function(a){ BY[a.id]=a; ORDER.push(a.id); });
+
+  var YSYMS = ASSETS.filter(function(a){return a.yahoo;}).map(function(a){return a.yahoo;});
+  var CYCLE = 10000;       // 10초마다 자동 갱신
+  var STALE_MS = 120000;   // 2분 넘게 갱신 안 된 값은 흐리게
+
+  var state = {}, busy = false;
+  var nextAt = Date.now() + CYCLE;
+  var srcTag = {coin:null};
+
+  /* 주소 뒤에 ?debug=1 을 붙이면 각 데이터 경로의 시도 결과·소요시간을 하단에 표시 */
+  var DBG = /[?&]debug/.test(location.search);
+  var diag = [];
+  function dg(s){ diag.push(s); while(diag.length>7) diag.shift(); }
+
+  /* ───────── 유틸 ───────── */
+  function $(s){ return document.querySelector(s); }
+  function nf(v,d){ return (v==null||!isFinite(v)) ? "—" : Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+  function kstTime(d){
+    return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Seoul",hour12:false,
+      hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(d||new Date());
+  }
+  function tzParts(tz){
+    var o={};
+    new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,weekday:"short",hour:"2-digit",minute:"2-digit"})
+      .formatToParts(new Date()).forEach(function(p){ o[p.type]=p.value; });
+    return {wd:o.weekday, h:parseInt(o.hour,10)%24, m:parseInt(o.minute,10)};
+  }
+  function isUSOpen(){
+    var p = tzParts("America/New_York");
+    if(p.wd==="Sat"||p.wd==="Sun") return false;
+    var t=p.h*60+p.m; return t>=570 && t<960;    // 09:30–16:00 ET
+  }
+  function isKROpen(){
+    var p = tzParts("Asia/Seoul");
+    if(p.wd==="Sat"||p.wd==="Sun") return false;
+    var t=p.h*60+p.m; return t>=540 && t<930;    // 09:00–15:30 KST
+  }
+  function getText(url, ms){
+    var ctl = new AbortController();
+    var timer = setTimeout(function(){ ctl.abort(); }, ms);
+    return fetch(url, {signal:ctl.signal, cache:"no-store", mode:"cors", credentials:"omit"})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+      .then(function(t){ clearTimeout(timer); return t; }, function(e){ clearTimeout(timer); throw e; });
+  }
+  function jsonLoose(txt){        // 프록시가 앞뒤에 안내문을 붙여도 JSON만 뽑아낸다
+    if(!txt) throw new Error("empty");
+    var i = txt.indexOf("{"), j = txt.lastIndexOf("}");
+    if(i<0 || j<i) throw new Error("not json");
+    return JSON.parse(txt.slice(i,j+1));
+  }
+
+  /* ───────── 지수·금: Yahoo (브라우저 CORS 차단 → 프록시 폴백 체인) ───────── */
+  function yahooURL(){
+    return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
+      encodeURIComponent(YSYMS.join(",")) + "&range=1d&interval=1d&_=" + Date.now();
+  }
+  var ROUTES = [
+    function(u){ return ["https://r.jina.ai/", u]; },
+    function(u){ return ["https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u)]; },
+    function(u){ return ["https://api.allorigins.win/raw?url=" + encodeURIComponent(u)]; },
+    function(u){ return ["https://api.cors.lol/?url=" + encodeURIComponent(u)]; },
+    function(u){ return [u]; }
+  ];
+  function getIndices(){
+    var target = yahooURL(), i = 0;
+    function attempt(){
+      if(i >= ROUTES.length) return Promise.reject(new Error("all routes failed"));
+      var url = ROUTES[i++](target)[0];
+      var ms = (i === 1) ? 5500 : 3500;
+      var t0 = Date.now();
+      return getText(url, ms)
+        .then(jsonLoose)
+        .then(function(d){
+          if(!d || typeof d!=="object") throw new Error("bad payload");
+          var n = 0, now = Date.now();
+          ASSETS.forEach(function(a){
+            if(!a.yahoo) return;
+            var node = d[a.yahoo];
+            if(!node) return;
+            var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
+            if((px==null||!isFinite(px)) && isFinite(node.fulldayPrice)) px = node.fulldayPrice;
+            if(px==null||!isFinite(px)) return;
+            var chg = isFinite(node.fulldayChangePercent) ? node.fulldayChangePercent
+                    : ((isFinite(node.chartPreviousClose) && node.chartPreviousClose)
+                        ? (px-node.chartPreviousClose)/node.chartPreviousClose*100 : null);
+            state[a.id] = {px:px, chg:chg, t:now};
+            n++;
+          });
+          if(!n) throw new Error("no symbols");
+          if(DBG) dg("R"+(i)+":"+(Date.now()-t0)+"ms ok");
+          return n;
+        })
+        .catch(function(e){
+          if(DBG) dg("R"+(i)+":"+(Date.now()-t0)+"ms "+((e&&(e.name||e.message))||"err"));
+          return attempt();
+        });
+    }
+    return attempt();
+  }
+
+  /* ───────── 가상자산: CoinGecko → OKX → Upbit ───────── */
+  function setCoin(id, px, chg){ if(isFinite(px)) state[id] = {px:px, chg:chg, t:Date.now()}; }
+  function coinGecko(){
+    return getText("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true&_="+Date.now(), 5000)
+      .then(function(t){
+        var d = JSON.parse(t);
+        if(!d || !d.bitcoin || !d.ethereum) throw new Error("bad");
+        setCoin("btc", d.bitcoin.usd, d.bitcoin.usd_24h_change);
+        setCoin("eth", d.ethereum.usd, d.ethereum.usd_24h_change);
+        srcTag.coin = "CoinGecko"; return 2;
+      });
+  }
+  function okx(){
+    return Promise.all([["btc","BTC-USDT"],["eth","ETH-USDT"]].map(function(p){
+      return getText("https://www.okx.com/api/v5/market/ticker?instId="+p[1]+"&_="+Date.now(), 5000)
+        .then(function(t){
+          var d = JSON.parse(t), row = d && d.data && d.data[0];
+          if(!row) throw new Error("bad");
+          var last = parseFloat(row.last), open = parseFloat(row.open24h);
+          setCoin(p[0], last, (isFinite(open)&&open) ? (last-open)/open*100 : null);
+        });
+    })).then(function(){ srcTag.coin = "OKX"; return 2; });
+  }
+  function upbit(){
+    return getText("https://api.upbit.com/v1/ticker?markets=USDT-BTC,USDT-ETH&_="+Date.now(), 5000)
+      .then(function(t){
+        var d = JSON.parse(t);
+        if(!Array.isArray(d) || !d.length) throw new Error("bad");
+        d.forEach(function(r){
+          var id = (r.market.indexOf("BTC")>0) ? "btc" : "eth";
+          setCoin(id, r.trade_price, (r.signed_change_rate!=null ? r.signed_change_rate*100 : null));
+        });
+        srcTag.coin = "Upbit"; return 2;
+      });
+  }
+  function getCrypto(){
+    var t0 = Date.now();
+    return coinGecko().catch(okx).catch(upbit)
+      .then(function(n){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms "+(srcTag.coin||"?")); return n; },
+            function(e){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms fail"); throw e; });
+  }
+
+  /* ───────── 렌더 ───────── */
+  function buildList(){
+    $("#list").innerHTML = ORDER.map(function(id){
+      var a = BY[id];
+      return '<div class="row stale" id="row-'+a.id+'">'+
+        '<div class="top">'+
+          '<div class="nm">'+a.name+'</div>'+
+          '<div class="px">—</div>'+
+          '<div class="pct flat">—</div>'+
+        '</div>'+
+        '<div class="bot">'+
+          '<div class="ath">최고 '+nf(a.ath,a.dec)+' · '+a.athDate+'</div>'+
+          '<div class="dc"></div>'+
+        '</div>'+
+        '<div class="gauge"><i></i></div>'+
+      '</div>';
+    }).join("");
+  }
+
+  function renderRow(a){
+    var el = document.getElementById("row-"+a.id);
+    if(!el) return;
+    var s = state[a.id];
+    var pxEl = el.querySelector(".px"), pEl = el.querySelector(".pct"),
+        dcEl = el.querySelector(".dc"), athEl = el.querySelector(".ath");
+
+    if(!s || s.px==null){
+      el.classList.add("stale");
+      pxEl.textContent = "—"; pEl.textContent = "—"; pEl.className = "pct flat";
+      dcEl.textContent = "대기";
+      return;
+    }
+
+    var px = Number(s.px);
+    var isNew = px > a.ath;                       // 최고점 갱신 시 자동 반영
+    var ath = isNew ? px : a.ath;
+    var pct = (px - ath) / ath * 100;
+    var up = pct > 0.0001;
+
+    el.classList.toggle("stale", (Date.now() - (s.t||0)) > STALE_MS);
+    el.classList.toggle("up", up);
+    el.classList.toggle("flat", Math.abs(pct) <= 0.0001);
+    el.classList.toggle("newhigh", isNew);
+
+    pxEl.textContent = (a.cur||"") + nf(px, a.dec);
+
+    pEl.textContent = (pct>0?"+":"") + pct.toFixed(2) + "%";
+    pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
+
+    athEl.innerHTML = isNew
+      ? '신고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
+      : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
+
+    if(s.chg==null || !isFinite(s.chg)){
+      dcEl.textContent = a.chgLabel; dcEl.className = "dc";
+    }else{
+      var c = Number(s.chg);
+      dcEl.textContent = a.chgLabel + " " + (c>0?"+":"") + c.toFixed(2) + "%";
+      dcEl.className = "dc " + (c>0.001 ? "up" : (c<-0.001 ? "down" : ""));
+    }
+
+    el.querySelector(".gauge > i").style.width =
+      Math.min(100, Math.abs(pct)/40*100).toFixed(1) + "%";
+  }
+
+  function renderAll(){ ORDER.forEach(function(id){ renderRow(BY[id]); }); }
+
+  function setStatus(kind, txt, src){
+    $("#status").className = "frow " + (kind||"");
+    $("#stxt").textContent = txt;
+    if(src !== undefined) $("#src").textContent = src;
+  }
+
+  function renderMarket(){
+    var us = isUSOpen(), kr = isKROpen();
+    var u = $("#mktUS"), k = $("#mktKR");
+    u.textContent = "미국 " + (us?"장중 ●":"마감 ○");
+    k.textContent = "국내 " + (kr?"장중 ●":"마감 ○");
+    u.style.color = us ? "#5aa2ff" : "";
+    k.style.color = kr ? "#5aa2ff" : "";
+  }
+
+  /* ───────── 갱신 ───────── */
+  function cache(){
+    try{
+      var keep = {};
+      ORDER.forEach(function(id){ if(state[id] && state[id].px!=null) keep[id] = state[id]; });
+      localStorage.setItem("apm.v2", JSON.stringify({t:Date.now(), s:keep}));
+    }catch(e){}
+  }
+
+  function refresh(){
+    if(busy) return;
+    busy = true;
+    var res = {idx:0, coin:0};
+
+    Promise.all([
+      getIndices().then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
+      getCrypto().then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; })
+    ]).then(function(){
+      renderAll();
+      var okI = res.idx > 0, okC = res.coin > 0;
+      var bits = [];
+      if(okI) bits.push("Yahoo Finance");
+      if(okC) bits.push(srcTag.coin || "CoinGecko");
+      $("#src").textContent = bits.length ? bits.join(" · ") : "—";
+
+      var live = $("#live");
+      if(okI && okC){
+        live.className = "live"; live.textContent = "LIVE";
+        setStatus("ok", "마지막 업데이트 " + kstTime(), bits.join(" · "));
+      }else if(okI || okC){
+        live.className = "live"; live.textContent = "LIVE";
+        setStatus("warn", kstTime() + " 일부 지연" + (okI ? " · 코인" : " · 지수"), bits.join(" · "));
+      }else{
+        live.className = "live off"; live.textContent = "OFF";
+        setStatus("", "연결 실패 · 10초 후 재시도", "—");
+      }
+      if(DBG) $("#stxt").textContent += "  " + diag.join("  ");
+    }).catch(function(){
+      setStatus("", "표시 오류 · 10초 후 재시도", "—");
+    }).then(function(){
+      busy = false;
+      nextAt = Date.now() + CYCLE;
+      cache();
+    });
+  }
+
+  function restore(){
+    try{
+      var c = JSON.parse(localStorage.getItem("apm.v2")||"null");
+      if(!c || !c.s) return;
+      var any = false;
+      ORDER.forEach(function(id){ if(c.s[id] && BY[id]){ state[id] = c.s[id]; any = true; } });
+      if(any){ renderAll(); setStatus("warn", "저장된 값 표시 · 갱신 중", "cache"); }
+    }catch(e){}
+  }
+
+  /* ───────── 1초 카운트다운 ───────── */
+  var lastSec = -1;
+  function tick(){
+    var left = Math.max(0, nextAt - Date.now());
+    $("#prog").style.transform = "scaleX(" + (left/CYCLE).toFixed(3) + ")";
+    var sec = Math.ceil(left/1000);
+    if(sec !== lastSec){
+      lastSec = sec;
+      $("#clock").textContent = kstTime();
+      $("#cd").textContent = "10초마다 자동 갱신 · " + sec + "s";
+      renderMarket();
+    }
+    if(left <= 0 && !busy) refresh();
+  }
+  setInterval(tick, 100);
+
+  $("#refresh").addEventListener("click", function(){
+    nextAt = Date.now() + CYCLE;
+    if(!busy) refresh();
+  });
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible"){ nextAt = Date.now() + 200; tick(); }
+  });
+
+  /* ───────── 시작 ───────── */
+  buildList();
+  restore();
+  $("#clock").textContent = kstTime();
+  renderMarket();
+  refresh();
+  setInterval(function(){ if(!busy) renderAll(); }, 30000);
+
+  /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
+  function fit(){
+    var app = $("#app");
+    var s = Math.min(app.clientWidth/408, app.clientHeight/800);
+    s = Math.max(0.56, Math.min(1.28, s));
+    app.style.fontSize = (16*s).toFixed(2) + "px";
+  }
+  window.addEventListener("resize", fit);
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", fit);
+  fit();
+  setTimeout(fit, 300);
+})();
+</script>
+</body>
+</html>
