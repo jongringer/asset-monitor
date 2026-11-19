@@ -2,7 +2,7 @@
 
 9개 주요 자산의 **최고점(ATH) 대비 변동률**을 10초마다 갱신하는 9:16 세로형 모바일 웹앱입니다.
 
-🔗 **실시간 페이지**: https://jongringer.github.io/asset-peak-monitor/
+🔗 **실시간 페이지**: https://jongringer.github.io/asset-monitor/
 
 ## 대상 자산과 최고점 기준
 
