@@ -224,45 +224,64 @@
       encodeURIComponent(YSYMS.join(",")) + "&range=1d&interval=1d&_=" + Date.now();
   }
   var ROUTES = [
-    function(u){ return ["https://r.jina.ai/", u]; },
-    function(u){ return ["https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u)]; },
-    function(u){ return ["https://api.allorigins.win/raw?url=" + encodeURIComponent(u)]; },
-    function(u){ return ["https://api.cors.lol/?url=" + encodeURIComponent(u)]; },
-    function(u){ return [u]; }
+    {n:"jina",      f:function(u){ return "https://r.jina.ai/" + u; },            ms:6000},
+    {n:"codetabs",  f:function(u){ return "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u); }, ms:4000},
+    {n:"allorigins",f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, ms:4000},
+    {n:"cors.lol",  f:function(u){ return "https://api.cors.lol/?url=" + encodeURIComponent(u); }, ms:4000},
+    {n:"direct",    f:function(u){ return u; }, ms:4000}
   ];
-  function getIndices(){
-    var target = yahooURL(), i = 0;
-    function attempt(){
-      if(i >= ROUTES.length) return Promise.reject(new Error("all routes failed"));
-      var url = ROUTES[i++](target)[0];
-      var ms = (i === 1) ? 5500 : 3500;
-      var t0 = Date.now();
-      return getText(url, ms)
-        .then(jsonLoose)
-        .then(function(d){
-          if(!d || typeof d!=="object") throw new Error("bad payload");
-          var n = 0, now = Date.now();
-          ASSETS.forEach(function(a){
-            if(!a.yahoo) return;
-            var node = d[a.yahoo];
-            if(!node) return;
-            var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
-            if((px==null||!isFinite(px)) && isFinite(node.fulldayPrice)) px = node.fulldayPrice;
-            if(px==null||!isFinite(px)) return;
-            var chg = isFinite(node.fulldayChangePercent) ? node.fulldayChangePercent
-                    : ((isFinite(node.chartPreviousClose) && node.chartPreviousClose)
-                        ? (px-node.chartPreviousClose)/node.chartPreviousClose*100 : null);
-            state[a.id] = {px:px, chg:chg, t:now};
-            n++;
-          });
-          if(!n) throw new Error("no symbols");
-          if(DBG) dg("R"+(i)+":"+(Date.now()-t0)+"ms ok");
-          return n;
-        })
-        .catch(function(e){
-          if(DBG) dg("R"+(i)+":"+(Date.now()-t0)+"ms "+((e&&(e.name||e.message))||"err"));
-          return attempt();
+  // 두 개씩 동시에 시도하고 먼저 성공한 쪽을 쓴다 (성공한 조합을 다음에 우선 시도)
+  var GROUPS = [[0,3],[1,2],[4]];
+  var prefGroup = 0;
+
+  function oneRoute(ri, target){
+    var r = ROUTES[ri];
+    return getText(r.f(target), r.ms).then(jsonLoose).then(function(d){ return {d:d, gi:ri, name:r.n}; });
+  }
+  function firstOf(list, target){
+    return new Promise(function(resolve, reject){
+      var left = list.length, dead = 0;
+      if(!left) return reject(new Error("empty group"));
+      list.forEach(function(ri){
+        oneRoute(ri, target).then(resolve, function(e){
+          if(DBG) dg("x"+ROUTES[ri].n+":"+((e&&e.message)||e));
+          if(++dead === left) reject(e || new Error("group failed"));
         });
+      });
+    });
+  }
+  function getIndices(){
+    var target = yahooURL();
+    var gi = 0;
+    function attempt(){
+      if(gi >= GROUPS.length) return Promise.reject(new Error("all routes failed"));
+      var g = GROUPS[(prefGroup + gi) % GROUPS.length];
+      gi++;
+      return firstOf(g, target).then(function(hit){
+        var d = hit.d;
+        if(!d || typeof d!=="object") throw new Error("bad payload");
+        var n = 0, now = Date.now();
+        ASSETS.forEach(function(a){
+          if(!a.yahoo) return;
+          var node = d[a.yahoo];
+          if(!node) return;
+          var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
+          if((px==null||!isFinite(px)) && isFinite(node.fulldayPrice)) px = node.fulldayPrice;
+          if(px==null||!isFinite(px)) return;
+          var chg = isFinite(node.fulldayChangePercent) ? node.fulldayChangePercent
+                  : ((isFinite(node.chartPreviousClose) && node.chartPreviousClose)
+                      ? (px-node.chartPreviousClose)/node.chartPreviousClose*100 : null);
+          state[a.id] = {px:px, chg:chg, t:now};
+          n++;
+        });
+        if(!n) throw new Error("no symbols");
+        prefGroup = GROUPS.indexOf(g);
+        if(DBG) dg("idx:"+hit.name);
+        return n;
+      }).catch(function(e){
+        if(DBG) dg("idx fail:"+((e&&e.message)||e));
+        return attempt();
+      });
     }
     return attempt();
   }
