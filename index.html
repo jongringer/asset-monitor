@@ -9,10 +9,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 3년 고점">
 <meta name="format-detection" content="telephone=no">
-<title>주요 자산 현황 · 3년 내 고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 3년 내 고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
-<meta property="og:title" content="주요 자산 현황 · 3년 내 고점 대비 변동률">
-<meta property="og:description" content="13개 주요 자산의 3년 내 고점 대비 변동률 실시간 모니터">
+<title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
+<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 3년내 최고점 대비 변동률과 고점 대비 추이 미니 그래프를 10초마다 실시간으로 보여줍니다.">
+<meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
+<meta property="og:description" content="13개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -106,6 +106,11 @@
   .dc.down{color:#76adff}
   .row.newhigh .ath b{color:var(--gold)}
 
+  /* ── 자산명 옆 고점 대비 추이 미니 그래프(3년 주간) ── */
+  .spk{flex:0 0 auto;width:56px;height:20px;display:block;align-self:center;
+    margin:0 0 0 .22em;overflow:visible;pointer-events:none}
+  .spk svg{display:block;width:100%;height:100%}
+
   .gauge{position:absolute;left:.6em;right:.52em;bottom:.09em;height:2px;border-radius:99px;background:rgba(120,150,200,.09);overflow:hidden}
   .gauge > i{display:block;height:100%;width:0%;border-radius:99px;
     background:linear-gradient(90deg,#2f6fe0,#5aa2ff);transition:width .45s ease}
@@ -130,7 +135,7 @@
       <div class="ttl">주요 자산 현황 · 13</div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
-    <div class="sub"><span class="grad">3년 내 고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
+    <div class="sub"><span class="grad">3년내 최고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
     <div class="bar"><i id="prog"></i></div>
     <div class="barmeta">
       <span id="cd">10초마다 자동 갱신</span>
@@ -154,7 +159,7 @@
 (function(){
   "use strict";
 
-  /* ───────── 자산 정의 · 3년 내(2024~2026) 고점 기준(고정값) ───────── */
+  /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ───────── */
   var ASSETS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -166,8 +171,8 @@
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"btc",   name:"비트코인",         yahoo:null,    ath:126198,   athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
-    {id:"eth",   name:"이더리움",         yahoo:null,    ath:4953.73,  athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"btc",   name:"비트코인",         yahoo:null,    histSym:"BTC-USD", ath:126198, athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
+    {id:"eth",   name:"이더리움",         yahoo:null,    histSym:"ETH-USD", ath:4953.73, athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
     {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"}
   ];
   var BY = {}, ORDER = [];
@@ -333,6 +338,187 @@
             function(e){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms fail"); throw e; });
   }
 
+  /* ───────── 3년 주간 히스토리 → 자산명 옆 미니 스파크라인 ───────── */
+  var SPK_W = 56, SPK_H = 20, SPK_PADY = 2.4;
+  var HIST_KEY = "apm.hist.v3", HIST_TTL = 6*3600*1000;
+  var HIST = {}, histAt = 0, SPKC = {};
+
+  function histSym(a){ return a.histSym || a.yahoo; }
+
+  // 13개 심볼을 한 요청으로 (11개 지수·원자재·환율 + BTC-USD·ETH-USD)
+  function histURL(){
+    var syms = [];
+    ASSETS.forEach(function(a){ var s = histSym(a); if(s) syms.push(s); });
+    return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
+      encodeURIComponent(syms.join(",")) + "&range=3y&interval=1wk&_=" + Date.now();
+  }
+
+  // 히스토리는 프록시를 한 번에 하나씩만(부하 최소화) 시도
+  var HROUTES = [
+    {n:"jina",       f:function(u){ return "https://r.jina.ai/" + u; }, ms:9000},
+    {n:"codetabs",   f:function(u){ return "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u); }, ms:7000},
+    {n:"allorigins", f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, ms:7000},
+    {n:"cors.lol",   f:function(u){ return "https://api.cors.lol/?url=" + encodeURIComponent(u); }, ms:7000},
+    {n:"direct",     f:function(u){ return u; }, ms:6000}
+  ];
+  function histGet(u){
+    var i = 0;
+    function next(){
+      if(i >= HROUTES.length) return Promise.reject(new Error("all hist routes failed"));
+      var r = HROUTES[i++];
+      return getText(r.f(u), r.ms).then(jsonLoose).catch(function(e){
+        if(DBG) dg("h:" + r.n + " x");
+        return next();
+      });
+    }
+    return next();
+  }
+
+  // 종가 → ((종가 - 3년내 최고점) / 최고점) * 100
+  function histSeries(a, closes){
+    var v = [];
+    for(var i=0;i<closes.length;i++){
+      var c = closes[i];
+      if(c==null || !isFinite(c) || c<=0) continue;
+      v.push(Math.round((c - a.ath) / a.ath * 10000) / 100);
+    }
+    return v.length >= 2 ? v : null;
+  }
+  function histApply(d){
+    var n = 0;
+    ASSETS.forEach(function(a){
+      var node = d && d[histSym(a)];
+      if(!node) return;
+      var v = histSeries(a, node.close || node.c || []);
+      if(v){ HIST[a.id] = v; n++; }
+    });
+    return n;
+  }
+  function histSave(){
+    try{ localStorage.setItem(HIST_KEY, JSON.stringify({t:histAt, d:HIST})); }catch(e){}
+  }
+  function histRestore(){
+    try{
+      var c = JSON.parse(localStorage.getItem(HIST_KEY) || "null");
+      if(!c || !c.d) return;
+      ORDER.forEach(function(id){ if(c.d[id] && c.d[id].length>1) HIST[id] = c.d[id]; });
+      histAt = c.t || 0;
+    }catch(e){}
+  }
+
+  function loadHist(){
+    if(histAt && (Date.now() - histAt) < HIST_TTL && Object.keys(HIST).length) return;
+    histGet(histURL()).then(function(d){
+      var n = histApply(d);
+      if(!n) throw new Error("no symbols");
+      histAt = Date.now(); histSave(); redrawSparks();
+      if(DBG) dg("hist " + n);
+    }).catch(function(){
+      if(DBG) dg("hist fail");
+      loadHistOne();      // 폴백: 심볼별 chart (연속 2회 실패하면 중단)
+    });
+  }
+  function loadHistOne(){
+    var list = ASSETS.filter(function(a){ return !HIST[a.id]; });
+    var i = 0, bad = 0;
+    function step(){
+      if(i >= list.length || bad >= 2) return;
+      var a = list[i++];
+      var u = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(histSym(a)) +
+        "?range=3y&interval=1wk&_=" + Date.now();
+      histGet(u).then(function(d){
+        var r = d && d.chart && d.chart.result && d.chart.result[0];
+        var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
+        var v = histSeries(a, (q && q.close) || []);
+        if(!v) throw new Error("no series");
+        HIST[a.id] = v; bad = 0; histAt = Date.now(); redrawSparks();
+      }).catch(function(){ bad++; }).then(function(){
+        if(i >= list.length || bad >= 2){ histAt = Date.now(); histSave(); }
+        else setTimeout(step, 250);
+      });
+    }
+    step();
+  }
+
+  function sparkDomain(v){
+    var mn = 0, mx = 0;
+    for(var i=0;i<v.length;i++){ if(v[i] < mn) mn = v[i]; if(v[i] > mx) mx = v[i]; }
+    var hi = Math.max(0, mx), lo = Math.min(0, mn), span = hi - lo;
+    if(span < 8){ lo = hi - 8; span = 8; }        // 변동이 작아도 노이즈가 증폭되지 않게
+    var padT = span*0.12, padB = span*0.07;
+    return {top:hi+padT, total:span+padT+padB};
+  }
+
+  function pctOf(a, px){
+    if(px==null || !isFinite(px)) return null;
+    return (Number(px) - a.ath) / a.ath * 100;
+  }
+  function redrawSparks(){ ORDER.forEach(function(id){ drawSpark(BY[id], pctOf(BY[id], state[id] && state[id].px)); }); }
+
+  // 미니 그래프: 상단 0% 점선 · 하락 곡선(블루/시안) · 0% 돌파 시 레드 · 끝점 도트
+  function drawSpark(a, live){
+    var box = document.getElementById("spk-" + a.id);
+    if(!box) return;
+    var v = HIST[a.id];
+    if(!v || v.length < 2){
+      var c0 = SPKC[a.id];
+      if(!c0 || !c0.empty){
+        box.innerHTML = "";          // 히스토리가 없으면 빈 자리로 둔다(수치 표시는 그대로)
+        SPKC[a.id] = {empty:true};
+      }
+      return;
+    }
+    var c = SPKC[a.id];
+    if(!c || c.arr !== v || c.empty){
+      var dm = sparkDomain(v), inner = SPK_H - 2*SPK_PADY;
+      var yf = function(val){
+        var yy = SPK_PADY + (dm.top - val)/dm.total*inner;
+        return Math.max(0.7, Math.min(SPK_H-0.7, yy));
+      };
+      var n = v.length, step = (SPK_W - 3.1)/n, pts = [], i, x;
+      for(i=0;i<n;i++){ x = 0.9 + i*step; pts.push(x.toFixed(2) + "," + yf(v[i]).toFixed(2)); }
+      var y0 = yf(0), gid = "sk" + a.id;
+      var s0 = Math.max(0, y0-0.6)/SPK_H, s1 = Math.min(SPK_H, y0+0.6)/SPK_H;
+      box.innerHTML =
+        '<svg viewBox="0 0 ' + SPK_W + ' ' + SPK_H + '" preserveAspectRatio="none" aria-hidden="true">' +
+          '<defs>' +
+            '<linearGradient id="' + gid + 'l" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="' + SPK_H + '">' +
+              '<stop offset="0" stop-color="#ff5b6b"/>' +
+              '<stop offset="' + s0.toFixed(3) + '" stop-color="#ff5b6b"/>' +
+              '<stop offset="' + s1.toFixed(3) + '" stop-color="#9fe4ff"/>' +
+              '<stop offset="1" stop-color="#3d8bfd"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="' + gid + 'f" gradientUnits="userSpaceOnUse" x1="0" y1="' + y0.toFixed(2) + '" x2="0" y2="' + SPK_H + '">' +
+              '<stop offset="0" stop-color="#4f9bff" stop-opacity=".26"/>' +
+              '<stop offset="1" stop-color="#4f9bff" stop-opacity=".01"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<line x1="0.9" y1="' + y0.toFixed(2) + '" x2="' + (SPK_W-1.0) + '" y2="' + y0.toFixed(2) +
+            '" stroke="rgba(150,185,230,.30)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="2 2.4"/>' +
+          '<path class="ar" d="" fill="url(#' + gid + 'f)"/>' +
+          '<path class="ln" d="" fill="none" stroke="url(#' + gid + 'l)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>' +
+          '<circle class="dg" cx="0" cy="0" r="2.7" fill="#9fe4ff" opacity=".22"/>' +
+          '<circle class="dt" cx="0" cy="0" r="1.45" fill="#9fe4ff"/>' +
+        '</svg>';
+      c = SPKC[a.id] = {
+        arr:v, n:n, step:step, y0:y0, yf:yf,
+        pre:"M" + pts.join(" L"),
+        preA:"M0.90," + y0.toFixed(2) + " L" + pts.join(" L"),
+        ln:box.querySelector(".ln"), ar:box.querySelector(".ar"),
+        dt:box.querySelector(".dt"), dg:box.querySelector(".dg")
+      };
+    }
+    // 10초마다 갱신되는 현재가로 마지막 점만 이어 그리기
+    var lx = (0.9 + c.n*c.step).toFixed(2);
+    var lv = (live==null || !isFinite(live)) ? v[v.length-1] : live;
+    var ly = Math.max(0.7, Math.min(SPK_H-0.7, c.yf(lv))).toFixed(2);
+    if(c.ln) c.ln.setAttribute("d", c.pre + " L" + lx + "," + ly);
+    if(c.ar) c.ar.setAttribute("d", c.preA + " L" + lx + "," + ly + " L" + lx + "," + c.y0.toFixed(2) + " Z");
+    var col = (lv >= 0) ? "#ff5b6b" : "#9fe4ff";
+    if(c.dt){ c.dt.setAttribute("cx", lx); c.dt.setAttribute("cy", ly); c.dt.setAttribute("fill", col); }
+    if(c.dg){ c.dg.setAttribute("cx", lx); c.dg.setAttribute("cy", ly); c.dg.setAttribute("fill", col); }
+  }
+
   /* ───────── 렌더 ───────── */
   function buildList(){
     $("#list").innerHTML = ORDER.map(function(id){
@@ -340,6 +526,7 @@
       return '<div class="row stale" id="row-'+a.id+'">'+
         '<div class="top">'+
           '<div class="nm">'+a.name+'</div>'+
+          '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
           '<div class="px">—</div>'+
           '<div class="pct flat">—</div>'+
         '</div>'+
@@ -363,13 +550,13 @@
       el.classList.add("stale");
       pxEl.textContent = "—"; pEl.textContent = "—"; pEl.className = "pct flat";
       dcEl.textContent = "대기";
+      try{ drawSpark(a, null); }catch(e){}
       return;
     }
 
     var px = Number(s.px);
-    var isNew = px > a.ath;                       // 3년 내 고점 갱신 시 자동 반영
-    var ath = isNew ? px : a.ath;
-    var pct = (px - ath) / ath * 100;
+    var isNew = px > a.ath;                       // 3년내 최고점 갱신 시 자동 반영
+    var pct = (px - a.ath) / a.ath * 100;         // 미니 그래프의 0% 기준과 동일
     var up = pct > 0.0001;
 
     el.classList.toggle("stale", (Date.now() - (s.t||0)) > STALE_MS);
@@ -383,7 +570,7 @@
     pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
 
     athEl.innerHTML = isNew
-      ? '3년 내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
+      ? '3년내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
       : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
 
     if(s.chg==null || !isFinite(s.chg)){
@@ -396,6 +583,8 @@
 
     el.querySelector(".gauge > i").style.width =
       Math.min(100, Math.abs(pct)/40*100).toFixed(1) + "%";
+
+    try{ drawSpark(a, pct); }catch(e){}
   }
 
   function renderAll(){ ORDER.forEach(function(id){ renderRow(BY[id]); }); }
@@ -497,10 +686,12 @@
 
   /* ───────── 시작 ───────── */
   buildList();
+  histRestore();
   restore();
   $("#clock").textContent = kstTime();
   renderMarket();
   refresh();
+  setTimeout(loadHist, 600);       // 3년 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
   setInterval(function(){ if(!busy) renderAll(); }, 30000);
 
   /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
