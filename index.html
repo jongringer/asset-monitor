@@ -19,19 +19,22 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root{
-    --line:rgba(120,150,200,.13);
-    --dim:#8497b6;
-    --dim2:#6b7e9c;
-    --down:#3d8bfd;
-    --up:#ff4d5e;
-    --gold:#f5c451;
-    --ok:#25d07d;
-    --warn:#f0b429;
-    --bad:#ff5b6b;
+    --line:rgba(255,255,255,.075);
+    --card:#14171F;
+    --dim:#98A0AE;
+    --dim2:#6E7686;
+    --ice:#8ED0F0;
+    --hot:#FF6E7C;
+    --down:var(--ice);
+    --up:var(--hot);
+    --gold:#EFC05A;
+    --ok:#2FD08E;
+    --warn:#F0B429;
+    --bad:#FF5B6B;
     --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",Roboto,"Helvetica Neue",Arial,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;height:100%;background:#03060c;color:#eaf1ff;font-family:var(--font)}
+  html,body{margin:0;padding:0;height:100%;background:#08090C;color:#EDF0F5;font-family:var(--font)}
   body{display:flex;justify-content:center;align-items:stretch;overflow:hidden}
 
   /* 9:16 세로 프레임 — 모바일은 화면 전체, 데스크톱은 중앙 세로 프레임 */
@@ -39,39 +42,39 @@
     position:relative;width:100%;max-width:430px;height:100dvh;overflow:hidden;
     display:flex;flex-direction:column;font-size:16px;
     background:
-      radial-gradient(125% 55% at 50% -12%, #1a2e57 0%, rgba(10,17,32,0) 62%),
-      linear-gradient(180deg,#0a1220 0%, #070c16 58%, #060a12 100%);
+      radial-gradient(125% 52% at 50% -14%, #1E222C 0%, rgba(11,13,17,0) 62%),
+      linear-gradient(180deg,#101318 0%, #0B0D11 58%, #08090C 100%);
     padding:calc(env(safe-area-inset-top,0px) + .42em) .55em calc(env(safe-area-inset-bottom,0px) + .34em);
-    box-shadow:0 0 70px rgba(0,0,0,.8);
+    box-shadow:0 0 70px rgba(0,0,0,.85);
   }
   @media (min-aspect-ratio: 9/16) and (min-width:480px){
-    body{align-items:center;background:radial-gradient(85% 65% at 50% 40%,#0b1220 0%,#03060c 100%)}
+    body{align-items:center;background:radial-gradient(85% 65% at 50% 40%,#111419 0%,#050608 100%)}
     #app{height:min(100dvh, calc(430px * 16 / 9));border-radius:20px;margin:auto;
-      border:1px solid rgba(120,150,200,.15)}
+      border:1px solid rgba(255,255,255,.07)}
   }
 
   /* ── 헤더 ── */
   header{flex:0 0 auto;padding:0 .18em}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
-  .ttl{font-size:.64em;font-weight:700;letter-spacing:.17em;color:var(--dim);text-transform:uppercase}
-  .clock{font-size:.84em;font-weight:800;font-variant-numeric:tabular-nums;color:#d5e4f9}
+  .ttl{font-size:.64em;font-weight:700;letter-spacing:.17em;color:var(--dim2);text-transform:uppercase}
+  .clock{font-size:.84em;font-weight:800;font-variant-numeric:tabular-nums;color:#E4E8EF}
   .clock .tz{font-size:.68em;color:var(--dim2);font-weight:700;margin-left:.3em;letter-spacing:.1em}
   .sub{margin:.1em 0 .02em;display:flex;align-items:center;gap:.4em}
   .sub .grad{
     font-size:1.34em;font-weight:800;letter-spacing:-.024em;line-height:1.14;
-    background:linear-gradient(92deg,#ffffff 0%,#c9deff 50%,#7eb0ff 100%);
+    background:linear-gradient(92deg,#FFFFFF 0%,#DFE4EC 52%,#9AA4B8 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .live{flex:0 0 auto;font-size:.52em;font-weight:800;letter-spacing:.08em;color:#06110d;
     background:var(--ok);border-radius:99px;padding:.22em .58em;line-height:1.4}
-  .live.off{background:#39465e;color:#a5b6ce}
-  .bar{position:relative;height:3px;border-radius:99px;background:rgba(120,150,200,.15);overflow:hidden;margin-top:.38em}
+  .live.off{background:#3A4150;color:#A6ADBA}
+  .bar{position:relative;height:3px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:.38em}
   .bar > i{position:absolute;inset:0;width:100%;border-radius:99px;
-    background:linear-gradient(90deg,#2f6fe0,#63b3ff);transform-origin:left center;will-change:transform}
+    background:linear-gradient(90deg,#59606E,#D6DCE6);transform-origin:left center;will-change:transform}
   .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.2em;font-size:.57em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
-  .barmeta .btn{all:unset;cursor:pointer;color:#a8caff;font-size:1.02em;font-weight:800;letter-spacing:.05em;
-    padding:.3em .74em;border-radius:99px;border:1px solid rgba(110,160,240,.3);background:rgba(60,110,200,.14)}
-  .barmeta .btn:active{background:rgba(60,110,200,.34)}
+  .barmeta .btn{all:unset;cursor:pointer;color:#E2E7EF;font-size:1.02em;font-weight:800;letter-spacing:.05em;
+    padding:.3em .74em;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.055)}
+  .barmeta .btn:active{background:rgba(255,255,255,.14)}
 
   /* ── 자산 리스트 (13개) ── */
   main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.36em;gap:.16em}
@@ -79,31 +82,30 @@
     position:relative;flex:1 1 0;min-height:0;
     display:flex;flex-direction:column;justify-content:center;gap:.06em;
     padding:.14em .52em .2em .6em;border-radius:.5em;
-    background:linear-gradient(100deg,rgba(26,41,70,.68) 0%,rgba(15,25,44,.5) 100%);
+    background:linear-gradient(100deg,#191D25 0%,#12151B 100%);
     border:1px solid var(--line);overflow:hidden;transition:opacity .4s ease;
   }
-  .row::before{content:"";position:absolute;left:0;top:.32em;bottom:.32em;width:3px;border-radius:99px;background:var(--down);opacity:.9}
-  .row.up::before{background:var(--up)}
-  .row.flat::before{background:#4a5b76}
+  .row::before{content:"";position:absolute;left:0;top:.32em;bottom:.32em;width:3px;border-radius:99px;
+    background:var(--acc,#56A8F0);opacity:.95}
   .row.stale{opacity:.42}
 
   .top{display:flex;align-items:baseline;gap:.4em;min-width:0}
-  .nm{flex:0 1 auto;font-size:.76em;font-weight:700;color:#c8d8ef;letter-spacing:-.02em;
+  .nm{flex:0 1 auto;font-size:.76em;font-weight:700;color:#C6CCD8;letter-spacing:-.02em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .px{margin-left:auto;flex:0 0 auto;font-size:1.16em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.018em;line-height:1.08}
   .pct{flex:0 0 auto;min-width:3.35em;margin-left:.08em;text-align:right;font-size:1.38em;font-weight:800;
     font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.02;color:var(--down)}
   .pct.up{color:var(--up)}
-  .pct.flat{color:#9fb0c9}
+  .pct.flat{color:#A6AEBC}
 
   .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0}
   .ath{font-size:.58em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ath b{color:#9fb2cc;font-weight:800}
+  .ath b{color:#9AA4B4;font-weight:800}
   .dc{flex:0 0 auto;font-size:.58em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;white-space:nowrap}
-  .dc.up{color:#ff8593}
-  .dc.down{color:#76adff}
+  .dc.up{color:#FF98A2}
+  .dc.down{color:#8FBED6}
   .row.newhigh .ath b{color:var(--gold)}
 
   /* ── 자산명 옆 고점 대비 추이 미니 그래프(3년 주간) ── */
@@ -111,10 +113,9 @@
     margin:0 0 0 .22em;overflow:visible;pointer-events:none}
   .spk svg{display:block;width:100%;height:100%}
 
-  .gauge{position:absolute;left:.6em;right:.52em;bottom:.09em;height:2px;border-radius:99px;background:rgba(120,150,200,.09);overflow:hidden}
-  .gauge > i{display:block;height:100%;width:0%;border-radius:99px;
-    background:linear-gradient(90deg,#2f6fe0,#5aa2ff);transition:width .45s ease}
-  .row.up .gauge > i{background:linear-gradient(90deg,#e0364a,#ff8593)}
+  .gauge{position:absolute;left:.6em;right:.52em;bottom:.09em;height:2px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+  .gauge > i{display:block;height:100%;width:0%;border-radius:99px;opacity:.85;
+    background:linear-gradient(90deg,var(--acc,#56A8F0),var(--acc2,#9FD0FF));transition:width .45s ease}
 
   /* ── 푸터 ── */
   footer{flex:0 0 auto;padding:.4em .18em 0;display:flex;flex-direction:column;gap:.14em}
@@ -124,7 +125,7 @@
   .frow.ok .pin{background:var(--ok);box-shadow:0 0 0 .18em rgba(37,208,125,.13)}
   .frow.warn .pin{background:var(--warn);box-shadow:0 0 0 .18em rgba(240,180,41,.13)}
   .frow .src{font-variant-numeric:tabular-nums;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mkt{font-size:.57em;color:#54677f;font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
+  .mkt{font-size:.57em;color:#5A6070;font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -161,22 +162,33 @@
 
   /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ───────── */
   var ASSETS = [
-    {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
-    {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"dji",   name:"다우존스",         yahoo:"^DJI",  ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"kospi", name:"코스피",           yahoo:"^KS11", ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
-    {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"btc",   name:"비트코인",         yahoo:null,    histSym:"BTC-USD", ath:126198, athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
-    {id:"eth",   name:"이더리움",         yahoo:null,    histSym:"ETH-USD", ath:4953.73, athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
-    {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"}
+    {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", grp:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  grp:"us",   ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"dji",   name:"다우존스",         yahoo:"^DJI",  grp:"us",   ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  grp:"us",   ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  grp:"semi", ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kospi", name:"코스피",           yahoo:"^KS11", grp:"kr",   ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", grp:"kr",   ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  grp:"semi", ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  grp:"cmdt", ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  grp:"cmdt", ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"btc",   name:"비트코인",         yahoo:null,    grp:"coin", histSym:"BTC-USD", ath:126198, athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
+    {id:"eth",   name:"이더리움",         yahoo:null,    grp:"coin", histSym:"ETH-USD", ath:4953.73, athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", grp:"fx",   ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"}
   ];
   var BY = {}, ORDER = [];
   ASSETS.forEach(function(a){ BY[a.id]=a; ORDER.push(a.id); });
+
+  /* 자산군 포인트 컬러 (c: 기본, l: 밝은 톤) */
+  var GRP = {
+    us:   {c:"#56A8F0", l:"#A8D6FF"},   // 미국 지수 — 스카이블루
+    semi: {c:"#A78BFA", l:"#D6C8FF"},   // 반도체 — 바이올렛
+    kr:   {c:"#37D39B", l:"#9BF0D2"},   // 국내 지수 — 에메랄드
+    cmdt: {c:"#EFC05A", l:"#FFE1A3"},   // 원자재 — 골드
+    coin: {c:"#FF8A5C", l:"#FFC1A3"},   // 가상자산 — 오렌지
+    fx:   {c:"#4FD1C5", l:"#A9EFE8"}    // 환율 — 티얼
+  };
+  function grpOf(a){ return GRP[a.grp] || GRP.us; }
 
   var YSYMS = ASSETS.filter(function(a){return a.yahoo;}).map(function(a){return a.yahoo;});
   var CYCLE = 10000;       // 10초마다 자동 갱신
@@ -476,6 +488,7 @@
         return Math.max(0.7, Math.min(SPK_H-0.7, yy));
       };
       var n = v.length, step = (SPK_W - 3.1)/n, pts = [], i, x;
+      var gc = grpOf(a).c, gl = grpOf(a).l;
       for(i=0;i<n;i++){ x = 0.9 + i*step; pts.push(x.toFixed(2) + "," + yf(v[i]).toFixed(2)); }
       var y0 = yf(0), gid = "sk" + a.id;
       var s0 = Math.max(0, y0-0.6)/SPK_H, s1 = Math.min(SPK_H, y0+0.6)/SPK_H;
@@ -483,18 +496,18 @@
         '<svg viewBox="0 0 ' + SPK_W + ' ' + SPK_H + '" preserveAspectRatio="none" aria-hidden="true">' +
           '<defs>' +
             '<linearGradient id="' + gid + 'l" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="' + SPK_H + '">' +
-              '<stop offset="0" stop-color="#ff5b6b"/>' +
-              '<stop offset="' + s0.toFixed(3) + '" stop-color="#ff5b6b"/>' +
-              '<stop offset="' + s1.toFixed(3) + '" stop-color="#9fe4ff"/>' +
-              '<stop offset="1" stop-color="#3d8bfd"/>' +
+              '<stop offset="0" stop-color="#FF4D5E"/>' +
+              '<stop offset="' + s0.toFixed(3) + '" stop-color="#FF4D5E"/>' +
+              '<stop offset="' + s1.toFixed(3) + '" stop-color="' + gl + '"/>' +
+              '<stop offset="1" stop-color="' + gc + '"/>' +
             '</linearGradient>' +
             '<linearGradient id="' + gid + 'f" gradientUnits="userSpaceOnUse" x1="0" y1="' + y0.toFixed(2) + '" x2="0" y2="' + SPK_H + '">' +
-              '<stop offset="0" stop-color="#4f9bff" stop-opacity=".26"/>' +
-              '<stop offset="1" stop-color="#4f9bff" stop-opacity=".01"/>' +
+              '<stop offset="0" stop-color="' + gc + '" stop-opacity=".26"/>' +
+              '<stop offset="1" stop-color="' + gc + '" stop-opacity=".01"/>' +
             '</linearGradient>' +
           '</defs>' +
           '<line x1="0.9" y1="' + y0.toFixed(2) + '" x2="' + (SPK_W-1.0) + '" y2="' + y0.toFixed(2) +
-            '" stroke="rgba(150,185,230,.30)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="2 2.4"/>' +
+            '" stroke="rgba(255,255,255,.22)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="2 2.4"/>' +
           '<path class="ar" d="" fill="url(#' + gid + 'f)"/>' +
           '<path class="ln" d="" fill="none" stroke="url(#' + gid + 'l)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>' +
           '<circle class="dg" cx="0" cy="0" r="2.7" fill="#9fe4ff" opacity=".22"/>' +
@@ -514,7 +527,7 @@
     var ly = Math.max(0.7, Math.min(SPK_H-0.7, c.yf(lv))).toFixed(2);
     if(c.ln) c.ln.setAttribute("d", c.pre + " L" + lx + "," + ly);
     if(c.ar) c.ar.setAttribute("d", c.preA + " L" + lx + "," + ly + " L" + lx + "," + c.y0.toFixed(2) + " Z");
-    var col = (lv >= 0) ? "#ff5b6b" : "#9fe4ff";
+    var col = (lv >= 0) ? "#FF4D5E" : grpOf(a).l;
     if(c.dt){ c.dt.setAttribute("cx", lx); c.dt.setAttribute("cy", ly); c.dt.setAttribute("fill", col); }
     if(c.dg){ c.dg.setAttribute("cx", lx); c.dg.setAttribute("cy", ly); c.dg.setAttribute("fill", col); }
   }
@@ -522,8 +535,8 @@
   /* ───────── 렌더 ───────── */
   function buildList(){
     $("#list").innerHTML = ORDER.map(function(id){
-      var a = BY[id];
-      return '<div class="row stale" id="row-'+a.id+'">'+
+      var a = BY[id], g = grpOf(a);
+      return '<div class="row stale" id="row-'+a.id+'" style="--acc:'+g.c+';--acc2:'+g.l+'">'+
         '<div class="top">'+
           '<div class="nm">'+a.name+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
