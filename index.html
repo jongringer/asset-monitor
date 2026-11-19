@@ -10,9 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="자산 3년 고점">
 <meta name="format-detection" content="telephone=no">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 3년내 최고점 대비 변동률과 고점 대비 추이 미니 그래프를 10초마다 실시간으로 보여줍니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 14개 자산의 3년내 최고점 대비 변동률과 고점 대비 추이 미니 그래프를 10초마다 실시간으로 보여줍니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="13개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="14개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -76,7 +76,7 @@
     padding:.3em .74em;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.055)}
   .barmeta .btn:active{background:rgba(255,255,255,.14)}
 
-  /* ── 자산 리스트 (13개) ── */
+  /* ── 자산 리스트 (14개) ── */
   main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.36em;gap:.16em}
   .row{
     position:relative;flex:1 1 0;min-height:0;
@@ -133,7 +133,7 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황 · 13</div>
+      <div class="ttl">주요 자산 현황 · 14</div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub"><span class="grad">3년내 최고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
@@ -163,6 +163,7 @@
   /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ───────── */
   var ASSETS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", grp:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"es",    name:"US500 선물",      yahoo:"ES=F",  grp:"us",   ath:7897.50,  athDate:"26.10.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  grp:"us",   ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"dji",   name:"다우존스",         yahoo:"^DJI",  grp:"us",   ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  grp:"us",   ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -357,7 +358,7 @@
 
   function histSym(a){ return a.histSym || a.yahoo; }
 
-  // 13개 심볼을 한 요청으로 (11개 지수·원자재·환율 + BTC-USD·ETH-USD)
+  // 14개 심볼을 한 요청으로 (12개 지수·선물·원자재·환율 + BTC-USD·ETH-USD)
   function histURL(){
     var syms = [];
     ASSETS.forEach(function(a){ var s = histSym(a); if(s) syms.push(s); });
