@@ -7,12 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="자산 최고점">
+<meta name="apple-mobile-web-app-title" content="자산 3년 고점">
 <meta name="format-detection" content="telephone=no">
-<title>주요 자산 현황 · 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 최고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
-<meta property="og:title" content="주요 자산 현황 · 최고점 대비 변동률">
-<meta property="og:description" content="13개 주요 자산의 최고점(ATH) 대비 변동률 실시간 모니터">
+<title>주요 자산 현황 · 3년 내 고점 대비 변동률</title>
+<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 3년 내 고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
+<meta property="og:title" content="주요 자산 현황 · 3년 내 고점 대비 변동률">
+<meta property="og:description" content="13개 주요 자산의 3년 내 고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -130,7 +130,7 @@
       <div class="ttl">주요 자산 현황 · 13</div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
-    <div class="sub"><span class="grad">최고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
+    <div class="sub"><span class="grad">3년 내 고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
     <div class="bar"><i id="prog"></i></div>
     <div class="barmeta">
       <span id="cd">10초마다 자동 갱신</span>
@@ -154,7 +154,7 @@
 (function(){
   "use strict";
 
-  /* ───────── 자산 정의 · 최고점 기준(고정값) ───────── */
+  /* ───────── 자산 정의 · 3년 내(2024~2026) 고점 기준(고정값) ───────── */
   var ASSETS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -165,7 +165,7 @@
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
-    {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  ath:147.27,   athDate:"08.07.11 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"btc",   name:"비트코인",         yahoo:null,    ath:126198,   athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
     {id:"eth",   name:"이더리움",         yahoo:null,    ath:4953.73,  athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
     {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"}
@@ -367,7 +367,7 @@
     }
 
     var px = Number(s.px);
-    var isNew = px > a.ath;                       // 최고점 갱신 시 자동 반영
+    var isNew = px > a.ath;                       // 3년 내 고점 갱신 시 자동 반영
     var ath = isNew ? px : a.ath;
     var pct = (px - ath) / ath * 100;
     var up = pct > 0.0001;
@@ -383,7 +383,7 @@
     pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
 
     athEl.innerHTML = isNew
-      ? '신고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
+      ? '3년 내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
       : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
 
     if(s.chg==null || !isFinite(s.chg)){
