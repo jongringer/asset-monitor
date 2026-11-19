@@ -10,9 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="자산 최고점">
 <meta name="format-detection" content="telephone=no">
 <title>주요 자산 현황 · 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·코스피·코스닥·금·비트코인·이더리움 9개 자산의 최고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
+<meta name="description" content="S&amp;P500·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 13개 자산의 최고점 대비 변동률을 10초마다 실시간으로 보여줍니다.">
 <meta property="og:title" content="주요 자산 현황 · 최고점 대비 변동률">
-<meta property="og:description" content="9개 주요 자산의 최고점(ATH) 대비 변동률 실시간 모니터">
+<meta property="og:description" content="13개 주요 자산의 최고점(ATH) 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -41,7 +41,7 @@
     background:
       radial-gradient(125% 55% at 50% -12%, #1a2e57 0%, rgba(10,17,32,0) 62%),
       linear-gradient(180deg,#0a1220 0%, #070c16 58%, #060a12 100%);
-    padding:calc(env(safe-area-inset-top,0px) + .5em) .6em calc(env(safe-area-inset-bottom,0px) + .38em);
+    padding:calc(env(safe-area-inset-top,0px) + .42em) .55em calc(env(safe-area-inset-bottom,0px) + .34em);
     box-shadow:0 0 70px rgba(0,0,0,.8);
   }
   @media (min-aspect-ratio: 9/16) and (min-width:480px){
@@ -53,73 +53,73 @@
   /* ── 헤더 ── */
   header{flex:0 0 auto;padding:0 .18em}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
-  .ttl{font-size:.68em;font-weight:700;letter-spacing:.17em;color:var(--dim);text-transform:uppercase}
-  .clock{font-size:.9em;font-weight:800;font-variant-numeric:tabular-nums;color:#d5e4f9}
+  .ttl{font-size:.64em;font-weight:700;letter-spacing:.17em;color:var(--dim);text-transform:uppercase}
+  .clock{font-size:.84em;font-weight:800;font-variant-numeric:tabular-nums;color:#d5e4f9}
   .clock .tz{font-size:.68em;color:var(--dim2);font-weight:700;margin-left:.3em;letter-spacing:.1em}
-  .sub{margin:.12em 0 .04em;display:flex;align-items:center;gap:.4em}
+  .sub{margin:.1em 0 .02em;display:flex;align-items:center;gap:.4em}
   .sub .grad{
-    font-size:1.46em;font-weight:800;letter-spacing:-.024em;line-height:1.16;
+    font-size:1.34em;font-weight:800;letter-spacing:-.024em;line-height:1.14;
     background:linear-gradient(92deg,#ffffff 0%,#c9deff 50%,#7eb0ff 100%);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .live{flex:0 0 auto;font-size:.55em;font-weight:800;letter-spacing:.08em;color:#06110d;
-    background:var(--ok);border-radius:99px;padding:.24em .6em;line-height:1.4}
+  .live{flex:0 0 auto;font-size:.52em;font-weight:800;letter-spacing:.08em;color:#06110d;
+    background:var(--ok);border-radius:99px;padding:.22em .58em;line-height:1.4}
   .live.off{background:#39465e;color:#a5b6ce}
-  .bar{position:relative;height:3px;border-radius:99px;background:rgba(120,150,200,.15);overflow:hidden;margin-top:.5em}
+  .bar{position:relative;height:3px;border-radius:99px;background:rgba(120,150,200,.15);overflow:hidden;margin-top:.38em}
   .bar > i{position:absolute;inset:0;width:100%;border-radius:99px;
     background:linear-gradient(90deg,#2f6fe0,#63b3ff);transform-origin:left center;will-change:transform}
-  .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.24em;font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
+  .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.2em;font-size:.57em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .btn{all:unset;cursor:pointer;color:#a8caff;font-size:1.02em;font-weight:800;letter-spacing:.05em;
-    padding:.34em .78em;border-radius:99px;border:1px solid rgba(110,160,240,.3);background:rgba(60,110,200,.14)}
+    padding:.3em .74em;border-radius:99px;border:1px solid rgba(110,160,240,.3);background:rgba(60,110,200,.14)}
   .barmeta .btn:active{background:rgba(60,110,200,.34)}
 
-  /* ── 자산 리스트 ── */
-  main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.46em;gap:.24em}
+  /* ── 자산 리스트 (13개) ── */
+  main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.36em;gap:.16em}
   .row{
     position:relative;flex:1 1 0;min-height:0;
-    display:flex;flex-direction:column;justify-content:center;gap:.1em;
-    padding:.24em .6em .3em .7em;border-radius:.62em;
+    display:flex;flex-direction:column;justify-content:center;gap:.06em;
+    padding:.14em .52em .2em .6em;border-radius:.5em;
     background:linear-gradient(100deg,rgba(26,41,70,.68) 0%,rgba(15,25,44,.5) 100%);
     border:1px solid var(--line);overflow:hidden;transition:opacity .4s ease;
   }
-  .row::before{content:"";position:absolute;left:0;top:.42em;bottom:.42em;width:3px;border-radius:99px;background:var(--down);opacity:.9}
+  .row::before{content:"";position:absolute;left:0;top:.32em;bottom:.32em;width:3px;border-radius:99px;background:var(--down);opacity:.9}
   .row.up::before{background:var(--up)}
   .row.flat::before{background:#4a5b76}
   .row.stale{opacity:.42}
 
-  .top{display:flex;align-items:baseline;gap:.5em;min-width:0}
-  .nm{flex:0 1 auto;font-size:.8em;font-weight:700;color:#c8d8ef;letter-spacing:-.015em;
+  .top{display:flex;align-items:baseline;gap:.4em;min-width:0}
+  .nm{flex:0 1 auto;font-size:.76em;font-weight:700;color:#c8d8ef;letter-spacing:-.02em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .px{margin-left:auto;flex:0 0 auto;font-size:1.24em;font-weight:800;color:#fff;
-    font-variant-numeric:tabular-nums;letter-spacing:-.018em;line-height:1.1}
-  .pct{flex:0 0 auto;min-width:3.5em;margin-left:.1em;text-align:right;font-size:1.5em;font-weight:800;
-    font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.05;color:var(--down)}
+  .px{margin-left:auto;flex:0 0 auto;font-size:1.16em;font-weight:800;color:#fff;
+    font-variant-numeric:tabular-nums;letter-spacing:-.018em;line-height:1.08}
+  .pct{flex:0 0 auto;min-width:3.35em;margin-left:.08em;text-align:right;font-size:1.38em;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.02;color:var(--down)}
   .pct.up{color:var(--up)}
   .pct.flat{color:#9fb0c9}
 
   .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0}
-  .ath{font-size:.63em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;
+  .ath{font-size:.58em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ath b{color:#9fb2cc;font-weight:800}
-  .dc{flex:0 0 auto;font-size:.63em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dc{flex:0 0 auto;font-size:.58em;font-weight:700;color:var(--dim2);font-variant-numeric:tabular-nums;white-space:nowrap}
   .dc.up{color:#ff8593}
   .dc.down{color:#76adff}
   .row.newhigh .ath b{color:var(--gold)}
 
-  .gauge{position:absolute;left:.7em;right:.6em;bottom:.12em;height:2px;border-radius:99px;background:rgba(120,150,200,.09);overflow:hidden}
+  .gauge{position:absolute;left:.6em;right:.52em;bottom:.09em;height:2px;border-radius:99px;background:rgba(120,150,200,.09);overflow:hidden}
   .gauge > i{display:block;height:100%;width:0%;border-radius:99px;
     background:linear-gradient(90deg,#2f6fe0,#5aa2ff);transition:width .45s ease}
   .row.up .gauge > i{background:linear-gradient(90deg,#e0364a,#ff8593)}
 
   /* ── 푸터 ── */
-  footer{flex:0 0 auto;padding:.5em .18em 0;display:flex;flex-direction:column;gap:.16em}
-  .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;font-size:.65em;color:var(--dim2);font-weight:700}
+  footer{flex:0 0 auto;padding:.4em .18em 0;display:flex;flex-direction:column;gap:.14em}
+  .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;font-size:.6em;color:var(--dim2);font-weight:700}
   .frow > span{min-width:0}
   .frow .pin{display:inline-block;width:.58em;height:.58em;border-radius:99px;background:var(--bad);margin-right:.4em;vertical-align:.04em;box-shadow:0 0 0 .18em rgba(255,91,107,.13)}
   .frow.ok .pin{background:var(--ok);box-shadow:0 0 0 .18em rgba(37,208,125,.13)}
   .frow.warn .pin{background:var(--warn);box-shadow:0 0 0 .18em rgba(240,180,41,.13)}
   .frow .src{font-variant-numeric:tabular-nums;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mkt{font-size:.62em;color:#54677f;font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
+  .mkt{font-size:.57em;color:#54677f;font-weight:700;letter-spacing:.02em;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -127,7 +127,7 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황</div>
+      <div class="ttl">주요 자산 현황 · 13</div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub"><span class="grad">최고점 대비 변동률</span><span class="live" id="live">LIVE</span></div>
@@ -156,15 +156,19 @@
 
   /* ───────── 자산 정의 · 최고점 기준(고정값) ───────── */
   var ASSETS = [
-    {id:"sp500", name:"S&P 500",   yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
-    {id:"ndx",   name:"나스닥 100", yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"dji",   name:"다우존스",   yahoo:"^DJI",  ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"rut",   name:"러셀 2000",  yahoo:"^RUT",  ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
-    {id:"kospi", name:"코스피",     yahoo:"^KS11", ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"kosdaq",name:"코스닥",     yahoo:"^KQ11", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"gold",  name:"금 (COMEX)", yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
-    {id:"btc",   name:"비트코인",   yahoo:null,    ath:126198,   athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
-    {id:"eth",   name:"이더리움",   yahoo:null,    ath:4953.73,  athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"}
+    {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"dji",   name:"다우존스",         yahoo:"^DJI",  ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kospi", name:"코스피",           yahoo:"^KS11", ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
+    {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  ath:147.27,   athDate:"08.07.11 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"btc",   name:"비트코인",         yahoo:null,    ath:126198,   athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
+    {id:"eth",   name:"이더리움",         yahoo:null,    ath:4953.73,  athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", ath:1962.00,  athDate:"97.12.23 종가", dec:2, cur:"",  chgLabel:"전일"}
   ];
   var BY = {}, ORDER = [];
   ASSETS.forEach(function(a){ BY[a.id]=a; ORDER.push(a.id); });
@@ -219,7 +223,7 @@
     return JSON.parse(txt.slice(i,j+1));
   }
 
-  /* ───────── 지수·금: Yahoo (브라우저 CORS 차단 → 프록시 폴백 체인) ───────── */
+  /* ───────── 지수·금·원유·환율: Yahoo (브라우저 CORS 차단 → 프록시 폴백 체인) ───────── */
   function yahooURL(){
     return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
       encodeURIComponent(YSYMS.join(",")) + "&range=1d&interval=1d&_=" + Date.now();
@@ -277,7 +281,7 @@
         });
         if(!n) throw new Error("no symbols");
         prefGroup = GROUPS.indexOf(g);
-        if(DBG) dg("idx:"+hit.name);
+        if(DBG) dg("idx:"+hit.name+" n="+n);
         return n;
       }).catch(function(e){
         if(DBG) dg("idx fail:"+((e&&e.message)||e));
