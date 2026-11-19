@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-20-investing-4">
+<meta name="build" content="2026-11-20-investing-5">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 14개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -711,6 +711,15 @@
   }
 
   /* ───────── 갱신 ───────── */
+  function race(p, ms){
+    return new Promise(function(resolve, reject){
+      var done = false;
+      var t = setTimeout(function(){ if(!done){ done = true; reject(new Error("timeout")); } }, ms);
+      p.then(function(v){ if(!done){ done = true; clearTimeout(t); resolve(v); } },
+             function(e){ if(!done){ done = true; clearTimeout(t); reject(e); } });
+    });
+  }
+
   function cache(){
     try{
       var keep = {};
@@ -719,15 +728,16 @@
     }catch(e){}
   }
 
+  var busyAt = 0;
   function refresh(){
-    if(busy) return;
-    busy = true;
+    if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
+    busy = true; busyAt = Date.now();
     var res = {idx:0, coin:0, kp:0};
 
     Promise.all([
-      getIndices().then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
-      getCrypto().then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
-      kospilab().then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; })
+      race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
+      race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
+      race(kospilab(), 20000).then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; })
     ]).then(function(){
       renderAll();
       var okI = res.idx > 0, okC = res.coin > 0, okK = res.kp > 0;
