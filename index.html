@@ -90,9 +90,9 @@
   .row.stale{opacity:.42}
 
   .top{display:flex;align-items:baseline;gap:.4em;min-width:0}
-  .nm{flex:0 1 auto;font-size:.76em;font-weight:700;color:#C6CCD8;letter-spacing:-.02em;
+  .nm{flex:1 1 auto;min-width:0;font-size:.76em;font-weight:700;color:#C6CCD8;letter-spacing:-.02em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .px{margin-left:auto;flex:0 0 auto;font-size:1.16em;font-weight:800;color:#fff;
+  .px{flex:0 0 auto;min-width:5.45em;text-align:right;font-size:1.16em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.018em;line-height:1.08}
   .pct{flex:0 0 auto;min-width:3.35em;margin-left:.08em;text-align:right;font-size:1.38em;font-weight:800;
     font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.02;color:var(--down)}
@@ -420,7 +420,8 @@
   }
 
   function loadHist(){
-    if(histAt && (Date.now() - histAt) < HIST_TTL && Object.keys(HIST).length) return;
+    var miss = ASSETS.some(function(a){ return !HIST[a.id]; });
+    if(!miss && histAt && (Date.now() - histAt) < HIST_TTL) return;
     histGet(histURL()).then(function(d){
       var n = histApply(d);
       if(!n) throw new Error("no symbols");
@@ -503,14 +504,14 @@
               '<stop offset="1" stop-color="' + gc + '"/>' +
             '</linearGradient>' +
             '<linearGradient id="' + gid + 'f" gradientUnits="userSpaceOnUse" x1="0" y1="' + y0.toFixed(2) + '" x2="0" y2="' + SPK_H + '">' +
-              '<stop offset="0" stop-color="' + gc + '" stop-opacity=".26"/>' +
-              '<stop offset="1" stop-color="' + gc + '" stop-opacity=".01"/>' +
+              '<stop offset="0" stop-color="' + gc + '" stop-opacity=".30"/>' +
+              '<stop offset="1" stop-color="' + gc + '" stop-opacity=".015"/>' +
             '</linearGradient>' +
           '</defs>' +
           '<line x1="0.9" y1="' + y0.toFixed(2) + '" x2="' + (SPK_W-1.0) + '" y2="' + y0.toFixed(2) +
             '" stroke="rgba(255,255,255,.22)" stroke-width="0.9" stroke-linecap="round" stroke-dasharray="2 2.4"/>' +
           '<path class="ar" d="" fill="url(#' + gid + 'f)"/>' +
-          '<path class="ln" d="" fill="none" stroke="url(#' + gid + 'l)" stroke-width="1.15" stroke-linejoin="round" stroke-linecap="round"/>' +
+          '<path class="ln" d="" fill="none" stroke="url(#' + gid + 'l)" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round"/>' +
           '<circle class="dg" cx="0" cy="0" r="2.7" fill="#9fe4ff" opacity=".22"/>' +
           '<circle class="dt" cx="0" cy="0" r="1.45" fill="#9fe4ff"/>' +
         '</svg>';
