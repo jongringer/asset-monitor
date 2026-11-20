@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-20-investing-6">
+<meta name="build" content="2026-11-20-investing-7">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·삼성전자·SK하이닉스 예상가·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 16개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 16개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
 <meta property="og:description" content="16개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
@@ -186,8 +186,8 @@
     {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  mkt:"us",   ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
     {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   src:"naver", nv:"KOSPI",  ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   src:"naver", nv:"KOSDAQ", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"", chgLabel:"전일"},
-    {id:"sec",   name:"삼성전자 예상가",  yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
-    {id:"hynix", name:"SK하이닉스 예상가", yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
+    {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
+    {id:"hynix", name:"SK하이닉스 예상가", liveName:"SK하이닉스",  dual:true, yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  mkt:"cme",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  mkt:"cme",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -212,6 +212,8 @@
 
   /* 주소 뒤에 ?debug=1 을 붙이면 각 데이터 경로의 시도 결과·소요시간을 하단에 표시 */
   var DBG = /[?&]debug/.test(location.search);
+  /* ?krmode=open|closed — 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
+  var FORCE_KR = (function(){ var m = /[?&]krmode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
   var diag = [];
   function dg(s){ diag.push(s); while(diag.length>7) diag.shift(); }
 
@@ -284,13 +286,28 @@
       MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.fx = fxOpen();
       // 네이버가 장중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
       if(KR_NV && (Date.now() - KR_NV.at) < 120000 && KR_NV.status==="OPEN") MK.kr = true;
+      if(STK_AT && (Date.now() - STK_AT) < 120000 && STK_STATUS==="OPEN") MK.kr = true;
+      if(FORCE_KR) MK.kr = (FORCE_KR === "open");
     }catch(e){}
     MK.coin = true;
   }
-  var KP_SEEN = {}, KP_FRESH = 10*60*1000;   // 예상가가 최근 10분 안에 움직였으면 '실시간 변동 중'
+  var KP_OK_AT = 0, KP_FRESH = 60000;    // KOSPILAB 응답이 60초 안에 왔으면 '추정가 갱신 중' (연속 실패할 때만 빨강)
+  function krLiveNow(){
+    if(FORCE_KR) return FORCE_KR === "open";
+    return !!MK.kr;
+  }
   function isLive(a){
-    if(a.src==="kp") return !!MK.kr || (Date.now() - (KP_SEEN[a.id]||0) < KP_FRESH);
+    if(a.dual) return krLiveNow() ? true : (KP_OK_AT > 0 && (Date.now() - KP_OK_AT) < KP_FRESH);
     return !!MK[a.mkt];
+  }
+  /* 삼성전자·SK하이닉스: 장중이면 네이버 현재가(STK), 마감 후면 KOSPILAB 예상가(state) */
+  function rowName(a){
+    if(a.dual) return krLiveNow() ? a.liveName : a.name;
+    return a.name;
+  }
+  function priceOf(a){
+    if(a.dual) return (krLiveNow() ? STK[a.id] : state[a.id]) || null;
+    return state[a.id] || null;
   }
 
   function getText(url, ms){
@@ -446,6 +463,50 @@
     return attempt();
   }
 
+  /* ───────── 삼성전자·SK하이닉스: 정규장 장중에는 네이버 증권 실시간 현재가 ─────────
+     같은 polling API의 종목 응답에서 closePrice(현재가)·fluctuationsRatio(전일 종가 대비)·marketStatus를 읽는다.
+     코스피·코스닥과 같은 프록시 체인을 쓰되, 분당 호출 제한이 있는 jina는 뒤로 민다. */
+  var STK_URL = "https://polling.finance.naver.com/api/realtime/domestic/stock/005930,000660";
+  var STK = {}, STK_AT = 0, STK_STATUS = "";
+  var STK_GROUPS = [[0,2],[3,1],[4]];    // allorigins+codetabs → cors.lol+jina → 직접
+  var stkPref = 0;
+  function getStocks(){
+    var t0 = Date.now();
+    var target = STK_URL + "?_=" + Date.now();
+    var gi = 0;
+    function attempt(){
+      if(gi >= STK_GROUPS.length) return Promise.reject(new Error("all stk routes failed"));
+      var g = STK_GROUPS[(stkPref + gi) % STK_GROUPS.length];
+      gi++;
+      return nvFirst(g, target).then(function(d){
+        var arr = d && d.datas;
+        if(!Array.isArray(arr) || !arr.length) throw new Error("bad payload");
+        var n = 0, now = Date.now();
+        arr.forEach(function(row){
+          if(!row) return;
+          var code = String(row.itemCode || "");
+          var id = (code==="005930") ? "sec" : (code==="000660" ? "hynix" : null);
+          if(!id) return;
+          var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
+          if(px==null || px<=0) return;
+          var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
+          STK[id] = {px:px, chg:chg, t:now};
+          if(row.marketStatus) STK_STATUS = String(row.marketStatus);
+          n++;
+        });
+        if(!n) throw new Error("no stock symbols");
+        STK_AT = now;
+        stkPref = STK_GROUPS.indexOf(g);
+        if(DBG) dg("stk:" + (Date.now()-t0) + "ms n=" + n + " " + STK_STATUS);
+        return n;
+      }).catch(function(e){
+        if(DBG) dg("stk fail:" + ((e&&e.message)||e));
+        return attempt();
+      });
+    }
+    return attempt();
+  }
+
   /* ───────── 가상자산: CoinGecko → OKX → Upbit ───────── */
   function setCoin(id, px, chg){ if(isFinite(px)) state[id] = {px:px, chg:chg, t:Date.now()}; }
   function coinGecko(){
@@ -507,13 +568,11 @@
         var px = Number(rec.computed.priceKrw);
         if(!isFinite(px) || px<=0) return;
         var pct = isFinite(rec.computed.vsClosePct) ? rec.computed.vsClosePct*100 : null;
-        var prev = state[a.id] || (KP_SEEN["prev-"+a.id] ? {px:KP_SEEN["prev-"+a.id]} : null);
-        if(prev && prev.px!=null && Math.abs(prev.px - px) > 0.5) KP_SEEN[a.id] = Date.now();
-        if(prev && prev.px!=null) KP_SEEN["prev-"+a.id] = prev.px;
         state[a.id] = {px:px, chg:pct, t:Date.now()};
         n++;
       });
       if(!n) throw new Error("no stock");
+      KP_OK_AT = Date.now();
       srcTag.kp = "KOSPILAB";
       if(DBG) dg("kp:"+(Date.now()-t0)+"ms");
       return n;
@@ -709,7 +768,7 @@
       var a = BY[id];
       return '<div class="row stale" id="row-'+a.id+'">'+
         '<div class="top">'+
-          '<div class="nm">'+a.name+'</div>'+
+          '<div class="nm">'+rowName(a)+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
           '<div class="px">—</div>'+
           '<div class="pct flat">—</div>'+
@@ -725,9 +784,14 @@
   function renderRow(a){
     var el = document.getElementById("row-"+a.id);
     if(!el) return;
-    var s = state[a.id];
+    var s = priceOf(a);
     var pxEl = el.querySelector(".px"), pEl = el.querySelector(".pct"),
-        dcEl = el.querySelector(".dc"), athEl = el.querySelector(".ath");
+        dcEl = el.querySelector(".dc"), athEl = el.querySelector(".ath"),
+        nmEl = el.querySelector(".nm");
+
+    // 장중/마감에 따라 행 이름 자동 전환: 삼성전자 ↔ 삼성전자 예상가
+    var nm = rowName(a);
+    if(nmEl && nmEl.textContent !== nm) nmEl.textContent = nm;
 
     // 좌측 상태 색: 장중(초록) / 장마감(빨강)
     el.classList.toggle("open", isLive(a));
@@ -799,7 +863,9 @@
     try{
       var keep = {};
       ORDER.forEach(function(id){ if(state[id] && state[id].px!=null) keep[id] = state[id]; });
-      localStorage.setItem("apm.v2", JSON.stringify({t:Date.now(), s:keep}));
+      var ks = {};
+      ORDER.forEach(function(id){ if(STK[id] && STK[id].px!=null) ks[id] = STK[id]; });
+      localStorage.setItem("apm.v2", JSON.stringify({t:Date.now(), s:keep, k:ks}));
     }catch(e){}
   }
 
@@ -807,34 +873,42 @@
   function refresh(){
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
-    var res = {idx:0, coin:0, kp:0, kr:0};
+    var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0};
 
-    Promise.all([
+    var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
       race(getKorea(), 13000).then(function(n){ res.kr = n; }).catch(function(){ res.kr = 0; }),
-      race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
-      race(kospilab(), 20000).then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; })
-    ]).then(function(){
+      race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; })
+    ];
+    if(krNow){
+      tasks.push(race(getStocks(), 13000).then(function(n){ res.stk = n; }).catch(function(){ res.stk = 0; }));
+    }else{
+      tasks.push(race(kospilab(), 20000).then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; }));
+    }
+
+    Promise.all(tasks).then(function(){
       renderAll();
-      var okI = res.idx > 0, okC = res.coin > 0, okK = res.kp > 0, okR = res.kr > 0;
+      var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0;
+      var okStock = (krNow ? res.stk : res.kp) > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
       if(okR) bits.push(srcTag.kr || "네이버 증권");
-      if(okK) bits.push("KOSPILAB");
+      if(!krNow && res.kp > 0) bits.push("KOSPILAB");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC && okK && okR){
+      if(okI && okC && okR && okStock){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
-      }else if(okI || okC || okR){
+      }else if(okI || okC || okR || okStock){
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
         if(!okR) miss.push("국내지수");
-        if(!okK) miss.push("예상가");
+        if(!okStock) miss.push(krNow ? "국내현재가" : "예상가");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
       }else{
@@ -857,6 +931,7 @@
       if(!c || !c.s) return;
       var any = false;
       ORDER.forEach(function(id){ if(c.s[id] && BY[id]){ state[id] = c.s[id]; any = true; } });
+      if(c.k) ORDER.forEach(function(id){ if(c.k[id] && BY[id]) STK[id] = c.k[id]; });
       if(any){ renderAll(); setStatus("warn", "저장된 값 표시 · 갱신 중"); }
     }catch(e){}
   }
@@ -888,11 +963,11 @@
   });
 
   /* ───────── 시작 ───────── */
+  computeMarkets();
   buildList();
   $("#cnt").textContent = ASSETS.length;
   histRestore();
   restore();
-  computeMarkets();
   $("#clock").textContent = kstTime();
   renderMarket();
   refresh();
