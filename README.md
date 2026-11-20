@@ -108,7 +108,7 @@
 
 ## 데이터 소스 (브라우저에서 직접 호출)
 
-- **닛케이 225·CSI 300**: 네이버 해외지수 `https://polling.finance.naver.com/api/realtime/worldstock/index/.N225,.CSI300`(7초 갱신, `closePrice`·`fluctuationsRatio`·`marketStatus`·`localTradedAt`). 東京·上海 모두 15분 지연 시세이지만 장중에 값과 전일 대비가 실제로 움직인다. Yahoo `^N225`는 체결 시각이 같게 오면서도 장 초반에 직전 종가·0.00%로 돌아가고, `000300.SS`는 히스토리가 1봉뿐이라 네이버를 메인으로 삼고 Yahoo는 네이버 응답이 3분 이상 끊길 때만 보조로 쓴다. 이 API도 CORS 헤더가 없고 `Origin`을 실으면 403이므로 코스피와 같은 프록시 체인을 거친다.
+- **닛케이 225·CSI 300**: 1순위 **동방재부(Eastmoney)** `https://push2delay.eastmoney.com/api/qt/ulist.np/get?secids=1.000300,100.N225` — 한 요청으로 두 지수를 받고, `f124` 타임스탬프가 현재 시각과 같은 **지연 없는 장중 시세**다(`f2` 현재가·`f3` 전일 대비 %). CORS 헤더가 없어 `r.jina.ai`를 앞세운 프록시 체인을 거치고, 6.5초 안에 응답이 없으면 같은 회차에 네이버로 넘어간다. 2순위 **네이버 해외지수** `https://polling.finance.naver.com/api/realtime/worldstock/index/.N225,.CSI300`(7초 갱신·15분 지연, `closePrice`·`fluctuationsRatio`·`marketStatus`). Yahoo `^N225`는 장 초반 직전 종가·0.00%로 돌아가고 `000300.SS`는 히스토리가 1봉이라 장중에는 쓰지 않고, 두 소스가 모두 끊긴 때만 보조로 쓴다. 네이버 API는 `Origin`을 실으면 403이라 코스피와 같은 프록시 체인을 거친다.
 - **코스피·코스닥**: 네이버 증권 실시간 `https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI,KOSDAQ`(7초 갱신, `closePrice`·`fluctuationsRatio`·`marketStatus`). Yahoo `^KS11`·`^KQ11`은 한국장 장중에 당일 봉을 만들지 않아 마지막 데이터가 **직전 거래일 종가**에 머물고 등락률도 그날 것이 되므로, 장중에는 이 소스만 쓴다(Yahoo 값은 장 마감·개장 전에만 보조로 사용). 이 API도 CORS 헤더가 없고 `Origin`을 실으면 403이 나서 `allorigins`·`jina`를 동시에 먼저 시도하고 codetabs·cors.lol·직접 호출로 이어지는 프록시 체인을 거치며, 매회 `?_=` 캐시버스터를 붙인다.
 - **지수·금·원유·환율·SK하이닉스 ADR**: Yahoo Finance `v8/finance/spark` — 브라우저에서는 CORS가 막혀 있어
   `r.jina.ai` → `codetabs` → `allorigins` → `cors.lol` → 직접 호출 순서로 폴백합니다.

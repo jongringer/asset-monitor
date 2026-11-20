@@ -583,14 +583,37 @@
     return attempt();
   }
 
-  /* ───────── 닛케이 225 · CSI 300: 네이버 해외지수 실시간 시세 ─────────
-     Yahoo ^N225·000300.SS는 장중에 직전 종가에 멈추거나(0.00%) 히스토리 봉을 1개만 주는 경우가 있어,
-     네이버 해외지수 polling(7초 갱신·15분 지연)의 closePrice·fluctuationsRatio·marketStatus를 쓴다.
-     코스피·코스닥과 같은 프록시 체인을 거치고(Origin을 실으면 403), 매회 캐시버스터를 붙인다. */
+  /* ───────── 닛케이 225 · CSI 300: 실시간 해외지수 ─────────
+     1순위 동방재부(Eastmoney) `push2delay` — f124 타임스탬프가 현재 시각과 일치하는 실제 장중 시세(지연 없음).
+     CORS 헤더가 없어 jina 등 프록시를 거치고, 한 요청으로 두 지수를 같이 받는다.
+     2순위 네이버 해외지수 polling — 15분 지연이지만 marketStatus·localTradedAt를 주고 안정적이다.
+     Yahoo ^N225·000300.SS는 장중에 직전 종가·0.00%로 되돌아가서 장중에는 쓰지 않는다(응답이 끊길 때만 보조). */
+  var EM_ASIA_URL = "https://push2delay.eastmoney.com/api/qt/ulist.np/get?fltt=2&secids=1.000300,100.N225&fields=f2,f3,f4,f12,f14,f124";
+  function emAsia(){
+    return histGet(EM_ASIA_URL).then(function(d){
+      var arr = d && d.data && d.data.diff;
+      if(!Array.isArray(arr) || !arr.length) throw new Error("bad em payload");
+      var n = 0, now = Date.now();
+      arr.forEach(function(row){
+        if(!row) return;
+        var code = String(row.f12 || "").toUpperCase();
+        var id = (code==="N225") ? "n225" : (code==="000300" ? "csi300" : null);
+        if(!id) return;
+        var px = Number(row.f2), chg = Number(row.f3);
+        if(!isFinite(px) || px<=0) return;
+        state[id] = {px:px, chg:(isFinite(chg) ? chg : null), t:now};
+        n++;
+      });
+      if(!n) throw new Error("no em symbols");
+      srcTag.asia = "Eastmoney";
+      return n;
+    });
+  }
+
   var ASIA_URL = "https://polling.finance.naver.com/api/realtime/worldstock/index/.N225,.CSI300";
   var ASIA_GROUPS = [[0,1],[2,3],[4]];
   var JP_NV = null, CN_NV = null, asiaPref = 0;
-  function getAsia(){
+  function nvAsia(){
     var t0 = Date.now();
     var target = ASIA_URL + "?_=" + Date.now();
     var gi = 0;
@@ -617,6 +640,7 @@
         });
         if(!n) throw new Error("no asia symbols");
         asiaPref = ASIA_GROUPS.indexOf(g);
+        srcTag.asia = "네이버 해외지수";
         if(DBG) dg("asia:" + (Date.now()-t0) + "ms n=" + n);
         return n;
       }).catch(function(e){
@@ -625,6 +649,13 @@
       });
     }
     return attempt();
+  }
+  function getAsia(){
+    // 동방재부가 6.5초 안에 응답해야 하고, 실패하면 같은 회차에 네이버로 넘어간다
+    return race(emAsia(), 6500).catch(function(){
+      if(DBG) dg("asia em fail → naver");
+      return nvAsia();
+    });
   }
 
   /* ───────── 삼성전자·SK하이닉스: 정규장 장중에는 네이버 증권 실시간 현재가 ─────────
@@ -1076,8 +1107,8 @@
       var okStock = (krNow ? res.stk : res.kp) > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
-      if(okR && okA) bits.push("네이버 증권·해외지수");
-      else { if(okR) bits.push(srcTag.kr || "네이버 증권"); if(okA) bits.push("네이버 해외지수"); }
+      if(okA) bits.push(srcTag.asia || "해외지수");
+      if(okR) bits.push(srcTag.kr || "네이버 증권");
       if(!krNow && res.kp > 0) bits.push("KOSPILAB");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
