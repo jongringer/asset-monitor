@@ -84,9 +84,10 @@
 
 ## 데이터 소스 (브라우저에서 직접 호출)
 
+- **코스피·코스닥**: 네이버 증권 실시간 `https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI,KOSDAQ`(7초 갱신, `closePrice`·`fluctuationsRatio`·`marketStatus`). Yahoo `^KS11`·`^KQ11`은 한국장 장중에 당일 봉을 만들지 않아 마지막 데이터가 **직전 거래일 종가**에 머물고 등락률도 그날 것이 되므로, 장중에는 이 소스만 쓴다(Yahoo 값은 장 마감·개장 전에만 보조로 사용). 이 API도 CORS 헤더가 없고 `Origin`을 실으면 403이 나서 `allorigins`·`jina`를 동시에 먼저 시도하고 codetabs·cors.lol·직접 호출로 이어지는 프록시 체인을 거치며, 매회 `?_=` 캐시버스터를 붙인다.
 - **지수·금·원유·환율·SK하이닉스 ADR**: Yahoo Finance `v8/finance/spark` — 브라우저에서는 CORS가 막혀 있어
   `r.jina.ai` → `codetabs` → `allorigins` → `cors.lol` → 직접 호출 순서로 폴백합니다.
-  심볼 12개를 한 번의 요청으로 묶어 받습니다.
+  심볼 10개(코스피·코스닥 제외)를 한 번의 요청으로 묶어 받습니다.
 - **가상자산**: CoinGecko → OKX → Upbit 순 폴백.
 - **삼성전자·SK하이닉스 예상가**: `https://kospilab.com/api/prices` 한 번으로 두 종목의 해외 실시간 추정가(`computed.priceKrw`)와 전일 종가 대비 변동률(`computed.vsClosePct`)을 받습니다. 이 API는 CORS 헤더가 없어 같은 프록시 체인(`r.jina.ai` → codetabs → allorigins → cors.lol → 직접)을 거칩니다. `r.jina.ai`는 분당 20회 제한이 있어 10초 주기 조회(분당 6회)로 맞춰 두었습니다.
 - **3년 히스토리(미니 그래프용)**: 같은 `v8/finance/spark`에 `range=3y&interval=1mo` — 16개 심볼(비트코인 `BTC-USD`, 이더리움 `ETH-USD`, 삼성전자 `005930.KS`, SK하이닉스 `000660.KS` 포함)을 **한 요청**으로 받고, 프록시는 한 번에 하나씩만 시도합니다. 실패하면 심볼별 `v8/finance/chart`로 천천히 보충합니다.
