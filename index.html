@@ -9,11 +9,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-20-investing-5">
+<meta name="build" content="2026-11-20-investing-6">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 14개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·삼성전자·SK하이닉스 예상가·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 16개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="14개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="16개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -77,7 +77,7 @@
     font-size:.54em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (14개) ── */
+  /* ── 자산 리스트 (16개) ── */
   main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.48em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;overflow:hidden}
   .row{
@@ -139,7 +139,7 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황 · <span id="cnt">14</span></div>
+      <div class="ttl">주요 자산 현황 · <span id="cnt">16</span></div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub">
@@ -184,8 +184,8 @@
     {id:"dji",   name:"다우존스",         yahoo:"^DJI",  mkt:"us",   ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  mkt:"us",   ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  mkt:"us",   ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"",  chgLabel:"전일"},
-    {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   src:"naver", nv:"KOSPI",  ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"", chgLabel:"전일"},
+    {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   src:"naver", nv:"KOSDAQ", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"", chgLabel:"전일"},
     {id:"sec",   name:"삼성전자 예상가",  yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"hynix", name:"SK하이닉스 예상가", yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -200,7 +200,9 @@
 
   var UP = "#EF5A5C", DOWN = "#2E7CE0";     // 한국식 상승(빨강) / 하락(파랑)
 
-  var YSYMS = ASSETS.filter(function(a){return a.yahoo;}).map(function(a){return a.yahoo;});
+  /* Yahoo는 지수·선물·환율용이지만 한국 지수는 장중 당일 봉을 주지 않아(직전 거래일 종가에 멈춤)
+     코스피·코스닥은 네이버 증권 실시간(polling) 시세를 따로 받는다. */
+  var YSYMS = ASSETS.filter(function(a){return a.yahoo && a.src!=="naver";}).map(function(a){return a.yahoo;});
   var CYCLE = 10000;       // 10초마다 자동 갱신
   var STALE_MS = 120000;   // 2분 넘게 갱신 안 된 값은 흐리게
 
@@ -280,6 +282,8 @@
   function computeMarkets(){
     try{
       MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.fx = fxOpen();
+      // 네이버가 장중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
+      if(KR_NV && (Date.now() - KR_NV.at) < 120000 && KR_NV.status==="OPEN") MK.kr = true;
     }catch(e){}
     MK.coin = true;
   }
@@ -347,7 +351,8 @@
         if(!d || typeof d!=="object") throw new Error("bad payload");
         var n = 0, now = Date.now();
         ASSETS.forEach(function(a){
-          if(!a.yahoo || a.src==="kp") return;      // 예상가는 KOSPILAB에서 받는다
+          if(!a.yahoo || a.src==="kp") return;            // 예상가는 KOSPILAB에서 받는다
+          if(a.src==="naver" && krOpen()) return;           // 장중 코스피·코스닥은 네이버 값만 쓴다(Yahoo는 직전 종가)
           var node = d[a.yahoo];
           if(!node) return;
           var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
@@ -365,6 +370,76 @@
         return n;
       }).catch(function(e){
         if(DBG) dg("idx fail:"+((e&&e.message)||e));
+        return attempt();
+      });
+    }
+    return attempt();
+  }
+
+  /* ───────── 코스피·코스닥: 네이버 증권 실시간 시세 ─────────
+     Yahoo ^KS11·^KQ11은 장중에 오늘 봉을 만들지 않아 직전 거래일 종가/등락률이 그대로 남는다.
+     네이버 polling API(7초 갱신)는 closePrice·compareToPreviousClosePrice·fluctuationsRatio·marketStatus를 준다.
+     CORS 헤더가 없고 Origin을 실으면 403이라 프록시를 거쳐 읽고, 프록시 캐시를 피해 매회 캐시버스터를 붙인다. */
+  var NV_URL = "https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI,KOSDAQ";
+  var NV_GROUPS = [[0,1],[2,3],[4]];
+  var NV_ROUTES = [
+    {n:"allorigins", f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, ms:6500},
+    {n:"jina",       f:function(u){ return "https://r.jina.ai/" + u; },                                    ms:6500},
+    {n:"codetabs",   f:function(u){ return "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u); }, ms:6500},
+    {n:"cors.lol",   f:function(u){ return "https://api.cors.lol/?url=" + encodeURIComponent(u); },        ms:5000},
+    {n:"direct",     f:function(u){ return u; },                                                          ms:4000}
+  ];
+  var KR_NV = null;    // 마지막 네이버 장 상태
+  function nvNum(s){
+    var v = parseFloat(String(s==null ? "" : s).replace(/,/g,""));
+    return isFinite(v) ? v : null;
+  }
+  function nvFirst(list, target){
+    return new Promise(function(resolve, reject){
+      var left = list.length, dead = 0;
+      if(!left) return reject(new Error("empty group"));
+      list.forEach(function(ri){
+        var r = NV_ROUTES[ri];
+        getText(r.f(target), r.ms).then(jsonLoose).then(resolve, function(e){
+          if(DBG) dg("nv" + r.n + ":" + ((e&&e.message)||e));
+          if(++dead === left) reject(e || new Error("nv group failed"));
+        });
+      });
+    });
+  }
+  function getKorea(){
+    var t0 = Date.now();
+    var target = NV_URL + "?_=" + Date.now();
+    var gi = 0, prefG = 0;
+    function attempt(){
+      if(gi >= NV_GROUPS.length) return Promise.reject(new Error("all nv routes failed"));
+      var g = NV_GROUPS[(prefG + gi) % NV_GROUPS.length];
+      gi++;
+      return nvFirst(g, target).then(function(d){
+        var arr = d && d.datas;
+        if(!Array.isArray(arr) || !arr.length) throw new Error("bad payload");
+        var n = 0, now = Date.now();
+        arr.forEach(function(row){
+          if(!row) return;
+          var code = String(row.itemCode || "").toUpperCase();
+          var id = (code==="KOSPI") ? "kospi" : (code==="KOSDAQ" ? "kosdaq" : null);
+          if(!id) return;
+          var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
+          if(px==null || px<=0) return;
+          var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
+          state[id] = {px:px, chg:chg, t:now};
+          if(id==="kospi"){
+            KR_NV = {status:String(row.marketStatus||""), at:now, tradedAt:row.localTradedAt||null};
+          }
+          n++;
+        });
+        if(!n) throw new Error("no kr symbols");
+        prefG = NV_GROUPS.indexOf(g);
+        srcTag.kr = "네이버 증권";
+        if(DBG) dg("kr:" + (Date.now()-t0) + "ms n=" + n);
+        return n;
+      }).catch(function(e){
+        if(DBG) dg("kr fail:" + ((e&&e.message)||e));
         return attempt();
       });
     }
@@ -732,30 +807,33 @@
   function refresh(){
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
-    var res = {idx:0, coin:0, kp:0};
+    var res = {idx:0, coin:0, kp:0, kr:0};
 
     Promise.all([
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
+      race(getKorea(), 13000).then(function(n){ res.kr = n; }).catch(function(){ res.kr = 0; }),
       race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
       race(kospilab(), 20000).then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; })
     ]).then(function(){
       renderAll();
-      var okI = res.idx > 0, okC = res.coin > 0, okK = res.kp > 0;
+      var okI = res.idx > 0, okC = res.coin > 0, okK = res.kp > 0, okR = res.kr > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
+      if(okR) bits.push(srcTag.kr || "네이버 증권");
       if(okK) bits.push("KOSPILAB");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC && okK){
+      if(okI && okC && okK && okR){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
-      }else if(okI || okC){
+      }else if(okI || okC || okR){
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
+        if(!okR) miss.push("국내지수");
         if(!okK) miss.push("예상가");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
