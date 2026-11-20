@@ -9,11 +9,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-20-investing-7">
+<meta name="build" content="2026-11-20-investing-8">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·코스피·코스닥·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 16개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·비트코인·이더리움·원달러 환율 18개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="16개 주요 자산의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="18개 주요 자산(미국·한국·일본·중국)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -77,7 +77,7 @@
     font-size:.54em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (16개) ── */
+  /* ── 자산 리스트 (18개) ── */
   main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.48em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;overflow:hidden}
   .row{
@@ -118,16 +118,26 @@
   .spk svg{display:block;width:58px;height:21px}
 
   /* ── 푸터 ── */
-  footer{flex:0 0 auto;padding:.46em .4em 0;display:flex;flex-direction:column;gap:.3em}
-  .mrow{display:flex;gap:.36em}
-  .mkt{flex:1 1 0;display:flex;align-items:center;gap:.42em;min-width:0;
-    padding:.42em .6em;border-radius:.5em;border:1px solid var(--edge);background:#161C22;
-    font-size:.58em;font-weight:700;color:#B9C1CA;letter-spacing:.01em}
-  .mkt i{flex:0 0 auto;width:.68em;height:.68em;border-radius:99px;background:var(--closed);
-    box-shadow:0 0 0 .22em rgba(229,72,77,.14)}
-  .mkt.open i{background:var(--open);box-shadow:0 0 0 .22em rgba(47,191,113,.16)}
-  .mkt .flag{flex:0 0 auto;width:1.56em;height:1.04em;display:block;border-radius:.13em;overflow:hidden;
+  footer{flex:0 0 auto;padding:.44em .4em 0;display:flex;flex-direction:column;gap:.28em}
+  .mrow{display:flex;gap:.28em}
+  .mkt{flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:.3em;min-width:0;
+    padding:.4em .3em;border-radius:.5em;border:1px solid var(--edge);background:#161C22;
+    font-size:.54em;font-weight:700;color:#B9C1CA;letter-spacing:.01em;white-space:nowrap}
+  .mkt i{flex:0 0 auto;width:.66em;height:.66em;border-radius:99px;background:var(--closed);
+    box-shadow:0 0 0 .2em rgba(229,72,77,.14)}
+  /* 장중 = 초록 동그라미 1초 주기 점멸 / 장마감 = 빨강 고정 */
+  .mkt.open i{background:var(--open);box-shadow:0 0 0 .2em rgba(47,191,113,.16);
+    animation:mktBlink 1s ease-in-out infinite}
+  @keyframes mktBlink{
+    0%,100%{opacity:1;box-shadow:0 0 0 .2em rgba(47,191,113,.20),0 0 6px rgba(47,191,113,.75)}
+    50%{opacity:.26;box-shadow:0 0 0 .06em rgba(47,191,113,.05),0 0 1px rgba(47,191,113,.2)}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .mkt.open i{animation:none;box-shadow:0 0 0 .2em rgba(47,191,113,.2),0 0 5px rgba(47,191,113,.6)}
+  }
+  .mkt .flag{flex:0 0 auto;width:1.32em;height:.9em;display:block;border-radius:.11em;overflow:hidden;
     box-shadow:0 0 0 .5px rgba(255,255,255,.22);opacity:.96}
+  .mkt b{font-weight:800;color:#C9D1DA;letter-spacing:0}
   .mkt .st{font-weight:800;color:var(--closed);white-space:nowrap}
   .mkt.open .st{color:#4ED493}
   .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;
@@ -204,6 +214,26 @@
           </g>
         </svg>
         <b>한국</b><span class="st">—</span></div>
+      <div class="mkt" id="mktJP">
+        <i></i>
+        <svg class="flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false">
+          <rect width="30" height="20" fill="#F7F7F8"/>
+          <circle cx="15" cy="10" r="6" fill="#BC002D"/>
+        </svg>
+        <b>일본</b><span class="st">—</span></div>
+      <div class="mkt" id="mktCN">
+        <i></i>
+        <svg class="flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false">
+          <rect width="30" height="20" fill="#DE2910"/>
+          <g fill="#FFDE00">
+            <path d="M0,-1 L0.2245,-0.309 0.9511,-0.309 0.3633,0.118 0.5878,0.809 0,0.382 -0.5878,0.809 -0.3633,0.118 -0.9511,-0.309 -0.2245,-0.309Z" transform="translate(5.6,5.7) scale(3.05)"/>
+            <path d="M0,-1 L0.2245,-0.309 0.9511,-0.309 0.3633,0.118 0.5878,0.809 0,0.382 -0.5878,0.809 -0.3633,0.118 -0.9511,-0.309 -0.2245,-0.309Z" transform="translate(10.9,2.5) scale(1.05)"/>
+            <path d="M0,-1 L0.2245,-0.309 0.9511,-0.309 0.3633,0.118 0.5878,0.809 0,0.382 -0.5878,0.809 -0.3633,0.118 -0.9511,-0.309 -0.2245,-0.309Z" transform="translate(12.9,4.6) scale(1.05)"/>
+            <path d="M0,-1 L0.2245,-0.309 0.9511,-0.309 0.3633,0.118 0.5878,0.809 0,0.382 -0.5878,0.809 -0.3633,0.118 -0.9511,-0.309 -0.2245,-0.309Z" transform="translate(12.9,7.3) scale(1.05)"/>
+            <path d="M0,-1 L0.2245,-0.309 0.9511,-0.309 0.3633,0.118 0.5878,0.809 0,0.382 -0.5878,0.809 -0.3633,0.118 -0.9511,-0.309 -0.2245,-0.309Z" transform="translate(10.9,9.3) scale(1.05)"/>
+          </g>
+        </svg>
+        <b>중국</b><span class="st">—</span></div>
     </div>
     <div class="frow">
       <span id="stxt">불러오는 중…</span>
@@ -218,7 +248,8 @@
   "use strict";
 
   /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ─────────
-     mkt: us = 미국 정규장 · cme = 미국 선물(글롭엑스) · kr = 한국 정규장 · fx = 외환 · coin = 24/7 */
+     mkt: us = 미국 정규장 · cme = 미국 선물(글롭엑스) · jp = 일본(TSE) · cn = 중국(상해) · kr = 한국 정규장 · fx = 외환 · coin = 24/7
+     src: nvw = 네이버 해외지수 실시간(.N225·.CSI300), Yahoo는 보조 */
   var ASSETS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", mkt:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"es",    name:"US500 선물",      yahoo:"ES=F",  mkt:"cme",  ath:7897.50,  athDate:"26.10.05 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -226,6 +257,8 @@
     {id:"dji",   name:"다우존스",         yahoo:"^DJI",  mkt:"us",   ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  mkt:"us",   ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  mkt:"us",   ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
+    {id:"n225",  name:"닛케이 225",       yahoo:"^N225", mkt:"jp", src:"nvw", nvw:".N225",   ath:72831.73, athDate:"26.06.22 장중", dec:2, cur:"", chgLabel:"전일"},
+    {id:"csi300",name:"CSI 300",          yahoo:"000300.SS", mkt:"cn", src:"nvw", nvw:".CSI300", ath:5064.27, athDate:"26.06.23 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   src:"naver", nv:"KOSPI",  ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   src:"naver", nv:"KOSDAQ", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"", chgLabel:"전일"},
     {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
@@ -277,7 +310,9 @@
 
   /* ───────── 거래시간 · 휴장일 판정 ─────────
      미국 정규장 09:30~16:00 ET (조기마감일 13:00 ET) · 미국 선물 글롭엑스 일요일 18:00~금요일 17:00 ET,
-     매일 17:00~18:00 ET 점검 휴장 · 한국 정규장 09:00~15:30 KST · 외환 일요일 17:00~금요일 17:00 ET · 가상자산 24/7 */
+     매일 17:00~18:00 ET 점검 휴장 · 한국 정규장 09:00~15:30 KST
+     일본 TSE 09:00~11:30 · 12:30~15:30 KST(점심 휴장) · 중국 상해 10:30~12:30 · 14:00~16:00 KST(점심 휴장)
+     · 외환 일요일 17:00~금요일 17:00 ET · 가상자산 24/7 */
   var NY = "America/New_York", KSTZ = "Asia/Seoul";
   var US_HOL = {  // NYSE·나스닥 휴장일 (2026~2027)
     "2026-01-01":1,"2026-01-19":1,"2026-02-16":1,"2026-04-03":1,"2026-05-25":1,"2026-06-19":1,
@@ -291,6 +326,28 @@
     "2026-05-05":1,"2026-05-25":1,"2026-06-03":1,"2026-07-17":1,"2026-08-17":1,"2026-09-24":1,
     "2026-09-25":1,"2026-10-05":1,"2026-10-09":1,"2026-12-25":1,"2026-12-31":1,
     "2027-01-01":1
+  };
+  var JP_HOL = {  // 도쿄증권거래소(TSE) 휴장일 — 1/1~1/3·12/31은 연말연시 휴장, 공휴일이 일요일이면 다음 평일 대체휴장
+    "2026-01-01":1,"2026-01-02":1,"2026-01-03":1,"2026-01-12":1,"2026-02-11":1,"2026-02-23":1,
+    "2026-03-20":1,"2026-04-29":1,"2026-05-04":1,"2026-05-05":1,"2026-05-06":1,
+    "2026-07-20":1,"2026-08-11":1,"2026-09-21":1,"2026-09-22":1,"2026-09-23":1,
+    "2026-10-12":1,"2026-11-03":1,"2026-11-23":1,"2026-12-31":1,
+    "2027-01-01":1,"2027-01-02":1,"2027-01-03":1,"2027-01-11":1,"2027-02-11":1,"2027-02-23":1,
+    "2027-03-22":1,"2027-04-29":1,"2027-05-03":1,"2027-05-04":1,"2027-05-05":1,
+    "2027-07-19":1,"2027-08-11":1,"2027-09-20":1,"2027-09-23":1,
+    "2027-10-11":1,"2027-11-03":1,"2027-11-23":1,"2027-12-31":1
+  };
+  var CN_HOL = {  // 상해·심천증권거래소 휴장일 (국무원 공휴일 배정 기준, 2027년은 잠정)
+    "2026-01-01":1,"2026-01-02":1,
+    "2026-02-16":1,"2026-02-17":1,"2026-02-18":1,"2026-02-19":1,"2026-02-20":1,
+    "2026-04-06":1,"2026-05-01":1,"2026-05-04":1,"2026-05-05":1,"2026-06-19":1,
+    "2026-09-25":1,
+    "2026-10-01":1,"2026-10-02":1,"2026-10-05":1,"2026-10-06":1,"2026-10-07":1,
+    "2027-01-01":1,
+    "2027-02-05":1,"2027-02-08":1,"2027-02-09":1,"2027-02-10":1,"2027-02-11":1,
+    "2027-04-05":1,"2027-05-03":1,"2027-05-04":1,"2027-05-05":1,"2027-06-09":1,
+    "2027-09-15":1,
+    "2027-10-01":1,"2027-10-04":1,"2027-10-05":1,"2027-10-06":1,"2027-10-07":1
   };
 
   function usOpen(){
@@ -313,6 +370,20 @@
     if(KR_HOL[p.ymd]) return false;
     return p.t>=540 && p.t<930;                 // 09:00~15:30 KST
   }
+  /* 일본 TSE: 09:00~11:30, 12:30~15:30 KST (= JST) — 점심 11:30~12:30 휴장 */
+  function jpOpen(){
+    var p = tzNow(KSTZ);
+    if(p.wd==="Sat"||p.wd==="Sun") return false;
+    if(JP_HOL[p.ymd]) return false;
+    return (p.t>=540 && p.t<690) || (p.t>=750 && p.t<930);
+  }
+  /* 중국 상해: 10:30~12:30, 14:00~16:00 KST (현지 09:30~11:30·13:00~15:00) — 점심 휴장 */
+  function cnOpen(){
+    var p = tzNow(KSTZ);
+    if(p.wd==="Sat"||p.wd==="Sun") return false;
+    if(CN_HOL[p.ymd]) return false;
+    return (p.t>=630 && p.t<750) || (p.t>=840 && p.t<960);
+  }
   function fxOpen(){
     var p = tzNow(NY);
     if(p.wd==="Sat") return false;
@@ -320,15 +391,17 @@
     if(p.wd==="Fri") return p.t<1020;
     return true;
   }
-  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, fx:fxOpen, coin:function(){ return true; }};
+  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, jp:jpOpen, cn:cnOpen, fx:fxOpen, coin:function(){ return true; }};
 
-  var MK = {us:false, cme:false, kr:false, fx:false, coin:true};
+  var MK = {us:false, cme:false, kr:false, jp:false, cn:false, fx:false, coin:true};
   function computeMarkets(){
     try{
-      MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.fx = fxOpen();
+      MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.jp = jpOpen(); MK.cn = cnOpen(); MK.fx = fxOpen();
       // 네이버가 장중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
       if(KR_NV && (Date.now() - KR_NV.at) < 120000 && KR_NV.status==="OPEN") MK.kr = true;
       if(STK_AT && (Date.now() - STK_AT) < 120000 && STK_STATUS==="OPEN") MK.kr = true;
+      if(JP_NV && (Date.now() - JP_NV.at) < 180000 && JP_NV.status==="OPEN") MK.jp = true;
+      if(CN_NV && (Date.now() - CN_NV.at) < 180000 && CN_NV.status==="OPEN") MK.cn = true;
       if(FORCE_KR) MK.kr = (FORCE_KR === "open");
     }catch(e){}
     MK.coin = true;
@@ -412,6 +485,11 @@
         ASSETS.forEach(function(a){
           if(!a.yahoo || a.src==="kp") return;            // 예상가는 KOSPILAB에서 받는다
           if(a.src==="naver" && krOpen()) return;           // 장중 코스피·코스닥은 네이버 값만 쓴다(Yahoo는 직전 종가)
+          // 닛케이·CSI300은 네이버 해외지수가 최신이면 Yahoo 값을 덮어쓰지 않는다(15분 지연값으로 되돌아가는 것 방지)
+          if(a.src==="nvw"){
+            var cur = state[a.id];
+            if(cur && cur.px!=null && (now - cur.t) < 180000) return;
+          }
           var node = d[a.yahoo];
           if(!node) return;
           var px = (node.close && node.close.length) ? node.close[node.close.length-1] : null;
@@ -499,6 +577,50 @@
         return n;
       }).catch(function(e){
         if(DBG) dg("kr fail:" + ((e&&e.message)||e));
+        return attempt();
+      });
+    }
+    return attempt();
+  }
+
+  /* ───────── 닛케이 225 · CSI 300: 네이버 해외지수 실시간 시세 ─────────
+     Yahoo ^N225·000300.SS는 장중에 직전 종가에 멈추거나(0.00%) 히스토리 봉을 1개만 주는 경우가 있어,
+     네이버 해외지수 polling(7초 갱신·15분 지연)의 closePrice·fluctuationsRatio·marketStatus를 쓴다.
+     코스피·코스닥과 같은 프록시 체인을 거치고(Origin을 실으면 403), 매회 캐시버스터를 붙인다. */
+  var ASIA_URL = "https://polling.finance.naver.com/api/realtime/worldstock/index/.N225,.CSI300";
+  var ASIA_GROUPS = [[0,1],[2,3],[4]];
+  var JP_NV = null, CN_NV = null, asiaPref = 0;
+  function getAsia(){
+    var t0 = Date.now();
+    var target = ASIA_URL + "?_=" + Date.now();
+    var gi = 0;
+    function attempt(){
+      if(gi >= ASIA_GROUPS.length) return Promise.reject(new Error("all asia routes failed"));
+      var g = ASIA_GROUPS[(asiaPref + gi) % ASIA_GROUPS.length];
+      gi++;
+      return nvFirst(g, target).then(function(d){
+        var arr = d && d.datas;
+        if(!Array.isArray(arr) || !arr.length) throw new Error("bad payload");
+        var n = 0, now = Date.now();
+        arr.forEach(function(row){
+          if(!row) return;
+          var code = String(row.reutersCode || "").toUpperCase();
+          var id = (code===".N225") ? "n225" : (code===".CSI300" ? "csi300" : null);
+          if(!id) return;
+          var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
+          if(px==null || px<=0) return;
+          var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
+          state[id] = {px:px, chg:chg, t:now};
+          var mt = {status:String(row.marketStatus||""), at:now, tradedAt:row.localTradedAt||null};
+          if(id==="n225") JP_NV = mt; else CN_NV = mt;
+          n++;
+        });
+        if(!n) throw new Error("no asia symbols");
+        asiaPref = ASIA_GROUPS.indexOf(g);
+        if(DBG) dg("asia:" + (Date.now()-t0) + "ms n=" + n);
+        return n;
+      }).catch(function(e){
+        if(DBG) dg("asia fail:" + ((e&&e.message)||e));
         return attempt();
       });
     }
@@ -629,9 +751,9 @@
   var HIST_KEY = "apm.hist.v4", HIST_TTL = 6*3600*1000;
   var HIST = {}, histAt = 0, SPKC = {};
 
-  function histSym(a){ return a.histSym || a.yahoo; }
+  function histSym(a){ if(a.id==="csi300") return null; return a.histSym || a.yahoo; }   // CSI300은 아래 동방재부 월봉으로 채운다
 
-  // 14개 심볼을 한 요청으로 (12개 지수·선물·원자재·환율 + BTC-USD·ETH-USD), 3년 월별
+  // 14개 심볼을 한 요청으로 (지수·선물·원자재·환율 + BTC-USD·ETH-USD), 3년 월별
   function histURL(){
     var syms = [];
     ASSETS.forEach(function(a){ var s = histSym(a); if(s) syms.push(s); });
@@ -695,7 +817,7 @@
   }
 
   function loadHist(){
-    var miss = ASSETS.some(function(a){ return !HIST[a.id]; });
+    var miss = ASSETS.some(function(a){ return histSym(a) && !HIST[a.id]; });
     if(!miss && histAt && (Date.now() - histAt) < HIST_TTL) return;
     histGet(histURL()).then(function(d){
       var n = histApply(d);
@@ -707,8 +829,24 @@
       loadHistOne();      // 폴백: 심볼별 chart (연속 2회 실패하면 중단)
     });
   }
+  /* CSI 300: Yahoo `000300.SS`는 range=3y·interval=1mo에도 봉을 1개만 준다.
+     동방재부(Eastmoney) 월봉(klt=103) 40개월을 받아 3년(36개월)만 쓴다. */
+  var EM_CSI_URL = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
+    "&fields1=f1,f2,f3&fields2=f51,f53&klt=103&fqt=1&end=20500101&lmt=40";
+  function loadHistCSI(){
+    histGet(EM_CSI_URL).then(function(d){
+      var k = d && d.data && d.data.klines;
+      if(!Array.isArray(k) || !k.length) throw new Error("no klines");
+      var closes = k.map(function(s){ return parseFloat(String(s).split(",")[1]); }).slice(-37);
+      var v = histSeries(BY.csi300, closes);
+      if(!v) throw new Error("no series");
+      HIST.csi300 = v; histAt = Date.now(); histSave();
+      drawSpark(BY.csi300, pctOf(BY.csi300, state.csi300 && state.csi300.px));
+      if(DBG) dg("hist em " + v.length);
+    }).catch(function(){ if(DBG) dg("hist em fail"); });
+  }
   function loadHistOne(){
-    var list = ASSETS.filter(function(a){ return !HIST[a.id]; });
+    var list = ASSETS.filter(function(a){ return histSym(a) && !HIST[a.id]; });
     var i = 0, bad = 0;
     function step(){
       if(i >= list.length || bad >= 2) return;
@@ -880,7 +1018,7 @@
     $("#stxt").textContent = txt;
   }
 
-  /* 푸터: 미국·한국 시장 상태 — 장중이면 초록 동그라미, 마감이면 빨강 동그라미 */
+  /* 푸터: 미국·한국·일본·중국 시장 상태 — 장중이면 초록 동그라미 1초 점멸, 마감이면 빨강 고정 */
   function renderMarket(){
     function one(el, live, label){
       el.classList.toggle("open", live);
@@ -889,6 +1027,8 @@
     }
     one($("#mktUS"), MK.us, "미국 시장");
     one($("#mktKR"), MK.kr, "한국 시장");
+    one($("#mktJP"), MK.jp, "일본 시장");
+    one($("#mktCN"), MK.cn, "중국 시장");
   }
 
   /* ───────── 갱신 ───────── */
@@ -916,11 +1056,12 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0};
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0};
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
       race(getKorea(), 13000).then(function(n){ res.kr = n; }).catch(function(){ res.kr = 0; }),
+      race(getAsia(), 13000).then(function(n){ res.asia = n; }).catch(function(){ res.asia = 0; }),
       race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; })
     ];
     if(krNow){
@@ -931,25 +1072,27 @@
 
     Promise.all(tasks).then(function(){
       renderAll();
-      var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0;
+      var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0, okA = res.asia > 0;
       var okStock = (krNow ? res.stk : res.kp) > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
-      if(okR) bits.push(srcTag.kr || "네이버 증권");
+      if(okR && okA) bits.push("네이버 증권·해외지수");
+      else { if(okR) bits.push(srcTag.kr || "네이버 증권"); if(okA) bits.push("네이버 해외지수"); }
       if(!krNow && res.kp > 0) bits.push("KOSPILAB");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC && okR && okStock){
+      if(okI && okC && okR && okA && okStock){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
-      }else if(okI || okC || okR || okStock){
+      }else if(okI || okC || okR || okA || okStock){
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
         if(!okR) miss.push("한국지수");
+        if(!okA) miss.push("닛케이·CSI");
         if(!okStock) miss.push(krNow ? "한국현재가" : "예상가");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
@@ -1014,6 +1157,7 @@
   renderMarket();
   refresh();
   setTimeout(loadHist, 600);       // 3년 월별 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
+  setTimeout(loadHistCSI, 1200);   // CSI 300 월봉은 동방재부에서 따로
   setInterval(function(){ if(!busy) renderAll(); }, 30000);
 
   /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
