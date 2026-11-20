@@ -126,6 +126,8 @@
   .mkt i{flex:0 0 auto;width:.68em;height:.68em;border-radius:99px;background:var(--closed);
     box-shadow:0 0 0 .22em rgba(229,72,77,.14)}
   .mkt.open i{background:var(--open);box-shadow:0 0 0 .22em rgba(47,191,113,.16)}
+  .mkt .flag{flex:0 0 auto;width:1.56em;height:1.04em;display:block;border-radius:.13em;overflow:hidden;
+    box-shadow:0 0 0 .5px rgba(255,255,255,.22);opacity:.96}
   .mkt .st{font-weight:800;color:var(--closed);white-space:nowrap}
   .mkt.open .st{color:#4ED493}
   .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;
@@ -160,8 +162,48 @@
 
   <footer>
     <div class="mrow">
-      <div class="mkt" id="mktUS"><i></i><b>미국</b><span class="st">—</span></div>
-      <div class="mkt" id="mktKR"><i></i><b>국내</b><span class="st">—</span></div>
+      <div class="mkt" id="mktUS">
+        <i></i>
+        <svg class="flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false">
+          <rect width="30" height="20" fill="#F4F6F8"/>
+          <g fill="#B22234">
+            <rect y="0" width="30" height="1.538"/><rect y="3.077" width="30" height="1.538"/>
+            <rect y="6.154" width="30" height="1.538"/><rect y="9.231" width="30" height="1.538"/>
+            <rect y="12.308" width="30" height="1.538"/><rect y="15.385" width="30" height="1.538"/>
+            <rect y="18.462" width="30" height="1.538"/>
+          </g>
+          <rect width="12.6" height="10.77" fill="#3C3B6E"/>
+          <g fill="#FFFFFF">
+            <circle cx="1.4" cy="1.2" r=".42"/><circle cx="3.6" cy="1.2" r=".42"/><circle cx="5.8" cy="1.2" r=".42"/><circle cx="8" cy="1.2" r=".42"/><circle cx="10.2" cy="1.2" r=".42"/>
+            <circle cx="2.5" cy="3.2" r=".42"/><circle cx="4.7" cy="3.2" r=".42"/><circle cx="6.9" cy="3.2" r=".42"/><circle cx="9.1" cy="3.2" r=".42"/>
+            <circle cx="1.4" cy="5.2" r=".42"/><circle cx="3.6" cy="5.2" r=".42"/><circle cx="5.8" cy="5.2" r=".42"/><circle cx="8" cy="5.2" r=".42"/><circle cx="10.2" cy="5.2" r=".42"/>
+            <circle cx="2.5" cy="7.2" r=".42"/><circle cx="4.7" cy="7.2" r=".42"/><circle cx="6.9" cy="7.2" r=".42"/><circle cx="9.1" cy="7.2" r=".42"/>
+            <circle cx="1.4" cy="9.2" r=".42"/><circle cx="3.6" cy="9.2" r=".42"/><circle cx="5.8" cy="9.2" r=".42"/><circle cx="8" cy="9.2" r=".42"/><circle cx="10.2" cy="9.2" r=".42"/>
+          </g>
+        </svg>
+        <b>미국</b><span class="st">—</span></div>
+      <div class="mkt" id="mktKR">
+        <i></i>
+        <svg class="flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false">
+          <rect width="30" height="20" fill="#F7F7F8"/>
+          <circle cx="15" cy="10" r="5" fill="#0047A0"/>
+          <path d="M10,10 A5,5 0 0 1 20,10 A2.5,2.5 0 0 1 15,10 A2.5,2.5 0 0 0 10,10 Z" fill="#CD2E3A"/>
+          <g fill="#0B0B0C">
+            <rect x="4.1" y="3.5" width="4.2" height=".72" transform="rotate(-56 6.2 4.1)"/>
+            <rect x="3.3" y="5.2" width="4.2" height=".72" transform="rotate(-56 5.4 5.8)"/>
+            <rect x="2.5" y="6.9" width="4.2" height=".72" transform="rotate(-56 4.6 7.5)"/>
+            <rect x="21.7" y="12.3" width="4.2" height=".72" transform="rotate(-56 23.8 12.9)"/>
+            <rect x="20.9" y="14" width="4.2" height=".72" transform="rotate(-56 23 14.6)"/>
+            <rect x="20.1" y="15.7" width="4.2" height=".72" transform="rotate(-56 22.2 16.3)"/>
+            <rect x="21.7" y="3.5" width="4.2" height=".72" transform="rotate(56 23.8 4.1)"/>
+            <rect x="20.9" y="5.2" width="4.2" height=".72" transform="rotate(56 23 5.8)"/>
+            <rect x="20.1" y="6.9" width="4.2" height=".72" transform="rotate(56 22.2 7.5)"/>
+            <rect x="4.1" y="12.3" width="4.2" height=".72" transform="rotate(56 6.2 12.9)"/>
+            <rect x="3.3" y="14" width="4.2" height=".72" transform="rotate(56 5.4 14.6)"/>
+            <rect x="2.5" y="15.7" width="4.2" height=".72" transform="rotate(56 4.6 16.3)"/>
+          </g>
+        </svg>
+        <b>한국</b><span class="st">—</span></div>
     </div>
     <div class="frow">
       <span id="stxt">불러오는 중…</span>
@@ -838,7 +880,7 @@
     $("#stxt").textContent = txt;
   }
 
-  /* 푸터: 미국·국내 시장 상태 — 장중이면 초록 동그라미, 마감이면 빨강 동그라미 */
+  /* 푸터: 미국·한국 시장 상태 — 장중이면 초록 동그라미, 마감이면 빨강 동그라미 */
   function renderMarket(){
     function one(el, live, label){
       el.classList.toggle("open", live);
@@ -846,7 +888,7 @@
       el.setAttribute("aria-label", label + (live ? " 장중" : " 마감"));
     }
     one($("#mktUS"), MK.us, "미국 시장");
-    one($("#mktKR"), MK.kr, "국내 시장");
+    one($("#mktKR"), MK.kr, "한국 시장");
   }
 
   /* ───────── 갱신 ───────── */
@@ -907,8 +949,8 @@
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
-        if(!okR) miss.push("국내지수");
-        if(!okStock) miss.push(krNow ? "국내현재가" : "예상가");
+        if(!okR) miss.push("한국지수");
+        if(!okStock) miss.push(krNow ? "한국현재가" : "예상가");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
       }else{
