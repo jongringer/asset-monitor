@@ -384,8 +384,8 @@
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   src:"naver", nv:"KOSDAQ", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"", chgLabel:"전일"},
     /* 코스피200 야간선물: 3년내 최고점은 최근월물 연속 일별 고가 최대 1,535.00 (2026-06-18 장중, investing.com 8987 일별 기준) */
     {id:"k200",  name:"코스피200 야간선물", mkt:"night", ath:1535.00, athDate:"26.06.18 장중", dec:2, cur:"", chgLabel:"전일"},
-    {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
-    {id:"hynix", name:"SK하이닉스 예상가", liveName:"SK하이닉스",  dual:true, yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
+    {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    preName:"삼성전자 프리",   aftName:"삼성전자 애프터",  dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
+    {id:"hynix", name:"SK하이닉스 예상가", liveName:"SK하이닉스",  preName:"SK하이닉스 프리", aftName:"SK하이닉스 애프터", dual:true, yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  mkt:"cme",  ath:5595.46,  athDate:"26.01 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  mkt:"cme",  ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -454,7 +454,8 @@
   /* 주소 뒤에 ?debug=1 을 붙이면 각 데이터 경로의 시도 결과·소요시간을 하단에 표시 */
   var DBG = /[?&]debug/.test(location.search);
   /* ?krmode=open|closed — 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
-  var FORCE_KR = (function(){ var m = /[?&]krmode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
+  /* ?krmode=pre|open|after|closed — 한국장 단계를 시간과 무관하게 미리 보는 검증용 스위치 */
+  var FORCE_KR = (function(){ var m = /[?&]krmode=(pre|open|after|closed)/.exec(location.search); return m ? m[1] : null; })();
   /* ?samode=open|closed — 사우디 타다울 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
   var FORCE_SA = (function(){ var m = /[?&]samode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
   /* ?nightmode=open|closed — 코스피200 야간선물 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
@@ -608,7 +609,7 @@
       if(CN_NV && (Date.now() - CN_NV.at) < 180000 && CN_NV.status==="OPEN") MK.cn = true;
       // 야간선물 시세 API가 세션 진행 중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
       if(NK && (Date.now() - NK.at) < 180000 && NK.open) MK.night = true;
-      if(FORCE_KR) MK.kr = (FORCE_KR === "open");
+      if(FORCE_KR) MK.kr = (FORCE_KR === "open" || FORCE_KR === "pre" || FORCE_KR === "after");
       if(FORCE_SA) MK.sa = (FORCE_SA === "open");
       if(FORCE_NK) MK.night = (FORCE_NK === "open");
     }catch(e){}
@@ -616,21 +617,61 @@
     MK.xyz = true;
   }
   var KP_OK_AT = 0, KP_FRESH = 60000;    // KOSPILAB 응답이 60초 안에 왔으면 '추정가 갱신 중' (연속 실패할 때만 빨강)
-  function krLiveNow(){
-    if(FORCE_KR) return FORCE_KR === "open";
-    return !!MK.kr;
+
+  /* ── 한국장 4단계: 프리마켓(NXT) → 정규장 → 애프터마켓(NXT) → 코스피랩 예상가 ──
+     평일 KRX 개장일 기준(KST): 08:00~08:50 프리 · 08:50~15:30 정규 · 15:30~20:00 애프터 · 그 외 · 주말/휴장은 마감 */
+  function krPhaseNow(){
+    if(FORCE_KR) return FORCE_KR;
+    var p = tzNow(KSTZ);
+    if(p.wd === "Sat" || p.wd === "Sun") return "closed";
+    if(KR_HOL[p.ymd]) return "closed";
+    if(p.t >= 480 && p.t < 530) return "pre";      // 08:00~08:50
+    if(p.t >= 530 && p.t < 930) return "open";     // 08:50~15:30
+    if(p.t >= 930 && p.t < 1200) return "after";   // 15:30~20:00
+    return "closed";                                // 20:00~익일 08:00
+  }
+  /* 프리/애프터 시진일 때만 해당 넥스트레이드(NXT) 호가를 돌려준다 */
+  function overFor(a){
+    var o = STK_OVER[a.id];
+    if(!o || !(o.px > 0)) return null;
+    var ph = krPhaseNow();
+    var want = (ph === "pre") ? "PRE_MARKET" : (ph === "after" ? "AFTER_MARKET" : null);
+    if(!want || o.type !== want) return null;
+    return o;
+  }
+  function krLiveNow(){                      // 삼성전자·SK하이닉스가 실시간 시세로 움직이는 시간인가
+    return krPhaseNow() !== "closed";
   }
   function isLive(a){
-    if(a.dual) return krLiveNow() ? true : (KP_OK_AT > 0 && (Date.now() - KP_OK_AT) < KP_FRESH);
+    if(a.dual){
+      if(krLiveNow()) return true;           // 프리·정규·애프터는 모두 장중(초록)
+      return KP_OK_AT > 0 && (Date.now() - KP_OK_AT) < KP_FRESH;
+    }
     return !!MK[a.mkt];
   }
-  /* 삼성전자·SK하이닉스: 장중이면 네이버 현재가(STK), 마감 후면 KOSPILAB 예상가(state) */
+  /* 삼성전자·SK하이닉스: 단계별 이름 */
   function rowName(a){
-    if(a.dual) return krLiveNow() ? a.liveName : a.name;
+    if(a.dual){
+      var ph = krPhaseNow();
+      if(ph === "pre") return a.preName;
+      if(ph === "after") return a.aftName;
+      if(ph === "open") return a.liveName;
+      return a.name;
+    }
     return a.name;
   }
   function priceOf(a){
-    if(a.dual) return (krLiveNow() ? STK[a.id] : state[a.id]) || null;
+    if(a.dual){
+      var ph = krPhaseNow();
+      if(ph === "pre" || ph === "after"){
+        var o = overFor(a);
+        if(o) return {px:o.px, chg:o.chg, t:o.t};        // 1순위: NXT 프리/애프터 시세
+        if(STK[a.id] && STK[a.id].px > 0) return STK[a.id];   // 2순위: 정규장 마지막 시세
+        return state[a.id] || null;                          // 3순위: 직전 추정가
+      }
+      if(ph === "open") return STK[a.id] || state[a.id] || null;
+      return state[a.id] || null;                            // 마감 후 = KOSPILAB 예상가
+    }
     return state[a.id] || null;
   }
 
@@ -886,7 +927,7 @@
      같은 polling API의 종목 응답에서 closePrice(현재가)·fluctuationsRatio(전일 종가 대비)·marketStatus를 읽는다.
      코스피·코스닥과 같은 프록시 체인을 쓰되, 분당 호출 제한이 있는 jina는 뒤로 민다. */
   var STK_URL = "https://polling.finance.naver.com/api/realtime/domestic/stock/005930,000660";
-  var STK = {}, STK_AT = 0, STK_STATUS = "";
+  var STK = {}, STK_OVER = {}, STK_AT = 0, STK_STATUS = "";
   var STK_GROUPS = [[0,2],[3,1],[4]];    // allorigins+codetabs → cors.lol+jina → 직접
   var stkPref = 0;
   function getStocks(){
@@ -910,6 +951,16 @@
           if(px==null || px<=0) return;
           var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
           STK[id] = {px:px, chg:chg, t:now};
+          /* 넥스트레이드(NXT) 프리/애프터마켓: overMarketPriceInfo.overPrice + fluctuationsRatio */
+          var om = row.overMarketPriceInfo;
+          if(om && om.overPrice!=null){
+            var opx = nvNum(om.overPrice);
+            if(opx!=null && opx>0){
+              STK_OVER[id] = {type:String(om.tradingSessionType||""), px:opx,
+                              chg:nvNum(om.fluctuationsRatio), t:now,
+                              status:String(om.overMarketStatus||""), at:om.localTradedAt||null};
+            }
+          }
           if(row.marketStatus) STK_STATUS = String(row.marketStatus);
           n++;
         });
@@ -2106,6 +2157,8 @@
       if(okA) bits.push(srcTag.asia || "해외지수");
       if(okR) bits.push(srcTag.kr || "네이버 증권");
       if(!krNow && res.kp > 0) bits.push("KOSPILAB");
+      if(res.stk > 0 && krPhaseNow() === "pre") bits.push("NXT 프리");
+      if(res.stk > 0 && krPhaseNow() === "after") bits.push("NXT 애프터");
       if(res.sa > 0) bits.push(srcTag.sa || "investing.com");
       if(res.k200 > 0) bits.push(srcTag.k200 || "PreKOSPI");
       if(okX) bits.push(srcTag.xyz || "Hyperliquid");
