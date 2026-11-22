@@ -972,12 +972,26 @@
 
   function histSym(a){ if(a.id==="csi300"||a.id==="tasi"||a.id==="k200") return null; return a.histSym || a.yahoo; }   // CSI300은 동방재부, TASI·코스피200 야간선물은 investing.com 월봉으로 채운다
 
-  // 14개 심볼을 한 요청으로 (지수·선물·원자재·환율 + BTC-USD·ETH-USD), 3년 월별
-  function histURL(){
-    var syms = [];
-    ASSETS.forEach(function(a){
-      [histSym(a), a.fxSym].forEach(function(s){ if(s && syms.indexOf(s)<0) syms.push(s); });
+  // Yahoo spark는 한 요청에 심볼을 **최대 20개**까지만 받는다(초과하면 400 Bad Request).
+  // 28종이 된 지금은 21개라 20개씩 나눠 부르되, 환율 환산 쌍(SK하이닉스·KRW=X)은 같은 배치에 넣는다.
+  function histBatches(){
+    var seen = {}, batches = [], cur = [];
+    function push(s){ if(!s || seen[s]) return; seen[s] = 1; cur.push(s); }
+    var list = ASSETS.filter(function(a){ return a.fxSym; })
+      .concat(ASSETS.filter(function(a){ return !a.fxSym; }));   // 쌍을 가진 행을 먼저
+    list.forEach(function(a){
+      var s = histSym(a);
+      if(!s) return;
+      if(a.fxSym && !seen[s]){
+        if(cur.length >= 19){ batches.push(cur); cur = []; }   // 쌍이 갈라지지 않게 한 칸 먹여 둔다
+        push(s); push(a.fxSym);
+      }else push(s);
+      if(cur.length >= 20){ batches.push(cur); cur = []; }
     });
+    if(cur.length) batches.push(cur);
+    return batches;
+  }
+  function histURL(syms){
     return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
       encodeURIComponent(syms.join(",")) + "&range=3y&interval=1mo&_=" + Date.now();
   }
@@ -1058,15 +1072,21 @@
   function loadHist(){
     var miss = ASSETS.some(function(a){ return histSym(a) && !HIST[a.id]; });
     if(!miss && histAt && (Date.now() - histAt) < HIST_TTL) return;
-    histGet(histURL()).then(function(d){
-      var n = histApply(d);
-      if(!n) throw new Error("no symbols");
-      histAt = Date.now(); histSave(); redrawSparks();
-      if(DBG) dg("hist " + n);
-    }).catch(function(){
-      if(DBG) dg("hist fail");
-      loadHistOne();      // 폴백: 심볼별 chart (연속 2회 실패하면 중단)
-    });
+    var batches = histBatches(), bi = 0, n = 0;
+    function done(){
+      if(n){ histAt = Date.now(); histSave(); redrawSparks(); if(DBG) dg("hist " + n); }
+      else { if(DBG) dg("hist fail"); loadHistOne(); return; }
+      var rest = ASSETS.some(function(a){ return histSym(a) && !a.fxSym && !HIST[a.id]; });
+      if(rest) loadHistOne();      // 못 받은 심볼은 하나씩 chart로 보충
+    }
+    function step(){
+      if(bi >= batches.length) return done();
+      var u = histURL(batches[bi++]);
+      histGet(u).then(function(d){ n += histApply(d); }, function(){
+        if(DBG) dg("hist b" + bi + " fail");
+      }).then(step);
+    }
+    step();
   }
   /* CSI 300: Yahoo `000300.SS`는 range=3y·interval=1mo에도 봉을 1개만 준다.
      동방재부(Eastmoney) 월봉(klt=103) 40개월을 받아 3년(36개월)만 쓴다. */
