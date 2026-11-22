@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-xyz28-1">
+<meta name="build" content="2026-11-23-zoompan-1">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -140,6 +140,9 @@
 
   /* ── 행 드래그 순서 변경 (모바일 롱프레스 · PC 마우스) ── */
   #list{touch-action:pan-y pinch-zoom}            /* 평소엔 세로 스크롤·핀치 확대 허용, 드래그가 붙은 뒤에만 preventDefault */
+  /* 핀치로 확대(줌인)한 동안에는 스와이프 삭제·순서 변경을 끄고 상하좌우 자유 패닝만 */
+  body.zoomed #list,body.zoomed .row{touch-action:pan-x pan-y pinch-zoom}
+  body.zoomed #list{overscroll-behavior:auto}     /* 목록 끝에서도 확대 화면 패닝이 이어지게 */
   .row{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   @media (hover:hover){ .row{cursor:grab} }
   .row.ghost{transition:transform .17s cubic-bezier(.2,.7,.25,1),opacity .45s ease;will-change:transform}
@@ -1572,6 +1575,15 @@
   var ORD_KEY = "assetMonitor.order.v1";    // BASE_ORDER는 applyAssets()가 채운다
   var closeSwipeOpen = function(){};       // wireDrag가 실제 구현을 넣는다
   var HOLD_MS = 250, SLOP = 8;             // 터치 롱프레스 시간 / 손짓 허용 오차(px)
+  /* 확대(핀치 줌인) 판별: 1.03배를 넘으면 '확대 중'으로 본다. 확대 중에는 스와이프 삭제·순서 변경을 끈다. */
+  var ZOOM_MIN = 1.03;
+  function isZoomed(){
+    if(window.__amZoom != null) return !!window.__amZoom;      // 실측 검증용 강제 플래그(없으면 실제 배율)
+    var vv = window.visualViewport;
+    if(vv && typeof vv.scale === "number" && vv.scale > 0) return vv.scale > ZOOM_MIN;
+    var de = document.documentElement;
+    return !!de.clientWidth && (de.clientWidth / window.innerWidth) > ZOOM_MIN;
+  }
   var drag = null, settleT = 0, settleEl = null, settleTo = 0;
   var lp = {el:null, t:0, y0:0, x0:0};     // 롱프레스 대기 상태
 
@@ -1813,6 +1825,7 @@
   }
 
   function dragPick(e){
+    if(isZoomed()) return null;                     // 확대 중엔 스와이프·드래그 대상이 없다
     var t = e.target;
     if(!t || !t.closest) return null;
     var el = t.closest(".row");
@@ -1978,6 +1991,7 @@
 
     /* ── 터치: 롱프레스로 드래그, 가로 우세면 스와이프 ── */
     L.addEventListener("touchstart", function(e){
+      if(syncZoom()){ zoomAbort(); return; }      // 확대 중: 제스처 시작 금지(자유 패닝)
       if(e.touches.length !== 1) return;
       var el = dragPick(e);
       if(!el) return;
@@ -1988,7 +2002,7 @@
       lp.t = setTimeout(function(){
         lp.t = 0;
         var el2 = lp.el;
-        if(!el2) return;
+        if(!el2 || syncZoom()) return;             // 확대 중이면 롱프레스로 붙지 않는다
         if(swNow){ swNow = null; }                 // 롱프레스가 붙으면 스와이프는 포기
         closeSwipeOpen();
         var d = dragStart("touch", el2, lp.x0, lp.y0);
@@ -1998,12 +2012,19 @@
     }, {passive:true});
 
     L.addEventListener("touchmove", function(e){
+      if(syncZoom()){ zoomAbort(); return; }      // 확대 중: preventDefault 없이 브라우저가 사방으로 패닝
       if(drag && drag.active){
         e.preventDefault();                        // 드래그가 붙은 뒤에만 스크롤을 막는다
         if(e.touches[0]) dragMove(drag, e.touches[0].clientY);
         return;
       }
-      if(e.touches.length > 1){ swCancel(); return; }   // 두 손가락(핀치)은 건드리지 않는다
+      if(e.touches.length > 1){                    // 두 손가락(핀치) → 진행 중 제스처를 즉시 취소
+        if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
+        lp.el = null;
+        swCancel();
+        if(drag){ clearDrag(drag.rows); drag = null; }
+        return;
+      }
       if(!e.touches[0]) return;
       var t1 = e.touches[0];
       if(swMove(t1.clientX, t1.clientY)){ e.preventDefault(); return; }
@@ -2032,6 +2053,7 @@
     /* ── 마우스: 가로 우세면 스와이프, 세로/기타 8px 이동이면 드래그 ── */
     L.addEventListener("mousedown", function(e){
       if(e.button !== 0) return;
+      if(syncZoom()){ zoomAbort(); return; }        // 확대 중: 마우스 스와이프·드래그 금지
       var el = dragPick(e);
       if(!el) return;
       swBegin(el, e.clientX, e.clientY);
@@ -2041,6 +2063,7 @@
       if(e.cancelable) e.preventDefault();          // 텍스트 선택 방지
     });
     document.addEventListener("mousemove", function(e){
+      if(syncZoom()){ zoomAbort(); return; }
       if(swNow && swNow.active){
         e.preventDefault();
         swMove(e.clientX, e.clientY);
@@ -2096,6 +2119,39 @@
       ORDER = [];
       rebuild();
     });
+
+    /* ── 핀치 확대 상태 동기화: 확대 중이면 스와이프·롱프레스·드래그를 모두 취소하고
+       #list·.row 의 touch-action 을 pan-x pan-y 로 풀어 상하좌우 자유 패닝을 보장한다.
+       1.0x 로 돌아오면 원래 touch-action(pan-y pinch-zoom)으로 복귀. ── */
+    var zoomNow = false;
+    function zoomAbort(){
+      if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
+      lp.el = null;
+      if(swNow){
+        if(swNow.active && swNow.el){ swNow.el.classList.remove("swiping"); swSet(swNow.el, 0); }
+        swNow = null;
+      }
+      if(swOpen) swClose();
+      if(drag){ clearDrag(drag.rows); drag = null; }
+    }
+    function syncZoom(){
+      var z = isZoomed();
+      if(z !== zoomNow){
+        zoomNow = z;
+        document.body.classList.toggle("zoomed", z);
+        var LM = document.getElementById("list");
+        if(LM) LM.classList.toggle("zoomed", z);
+        if(z) zoomAbort();
+      }
+      return zoomNow;
+    }
+    syncZoom();
+    window.addEventListener("resize", syncZoom);
+    window.addEventListener("orientationchange", syncZoom);
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize", syncZoom);
+      window.visualViewport.addEventListener("scroll", syncZoom);
+    }
 
     closeSwipeOpen = swClose;      // 다른 곳(모달·삭제 후 재구축)에서도 닫을 수 있게
   })();
