@@ -67,6 +67,34 @@
         }else if(t === "scrolldown"){
           var L = d.getElementById("list");
           L.scrollTop = L.scrollHeight;
+        }else if(t === "row"){
+          var rr = d.getElementById("row-" + rowId);
+          if(rr) rr.scrollIntoView({block:"center"});
+        }else if(t === "addxyz"){
+          var sym = q.get("sym") || "xyz:TSLA";
+          d.getElementById("addbtn").click();
+          setTimeout(function(){
+            d.querySelectorAll("#tabs button")[1].click();
+            setTimeout(function(){
+              var btn = d.querySelector('#lstHL button[data-hl="' + sym + '"]');
+              if(btn) btn.click();
+              setTimeout(function(){
+                d.getElementById("ovx").click();
+                var L2 = d.getElementById("list"); L2.scrollTop = L2.scrollHeight;
+              }, 2200);
+            }, 900);
+          }, 300);
+        }else if(t === "addyahoo"){
+          d.getElementById("addbtn").click();
+          setTimeout(function(){
+            d.querySelectorAll("#tabs button")[2].click();
+            d.getElementById("yq").value = q.get("sym") || "TSLA";
+            d.getElementById("yname").value = q.get("name") || "";
+            d.getElementById("yadd").click();
+            setTimeout(function(){
+              var L3 = d.getElementById("list"); L3.scrollTop = L3.scrollHeight;
+            }, 4000);
+          }, 300);
         }
       }catch(e){ document.title = "ERR " + e.message; }
     }, 2600);
