@@ -84,6 +84,9 @@
               }, 2200);
             }, 900);
           }, 300);
+        }else if(t === "reset"){
+          var rb = d.getElementById("ordreset");
+          if(rb) rb.click();
         }else if(t === "addyahoo"){
           d.getElementById("addbtn").click();
           setTimeout(function(){
