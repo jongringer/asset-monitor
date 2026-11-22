@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>probe k200</title>
+<style>body{background:#111;color:#eee;font:12px/1.5 monospace;padding:8px;white-space:pre-wrap}#o{white-space:pre-wrap}</style>
+</head><body><div id="o">start</div>
+<script>
+var out=[];
+function log(s){ out.push(s); document.getElementById("o").textContent=out.join("\n"); }
+
+function getText(url, ms, headers){
+  var ctl=new AbortController(); var t=setTimeout(function(){ctl.abort();}, ms);
+  var opt={signal:ctl.signal, cache:"no-store", mode:"cors", credentials:"omit"};
+  if(headers) opt.headers=headers;
+  return fetch(url,opt).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+    .then(function(t){ clearTimeout(t); return t; }, function(e){ clearTimeout(t); throw e; });
+}
+function jsonLoose(txt){
+  if(!txt) throw new Error("empty");
+  var i=txt.indexOf("{"), j=txt.lastIndexOf("}");
+  if(i<0||j<i) throw new Error("not json");
+  return JSON.parse(txt.slice(i,j+1));
+}
+
+/* 1) investing.com 월봉 (KOSPI200 선물 8987) */
+function inv(){
+  var now=new Date();
+  var from=new Date(now.getFullYear(), now.getMonth()-37, 1);
+  function d(x){ var m=x.getMonth()+1, dd=x.getDate(); return x.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(dd<10?"0":"")+dd; }
+  var u="https://api.investing.com/api/financialdata/historical/8987?start-date="+d(from)+"&end-date="+d(now)+"&time-frame=Monthly&add-missing-rows=false&_="+Date.now();
+  return getText(u, 12000, {"domain-id":"www","accept":"application/json"}).then(function(t){
+    var j=jsonLoose(t); var rows=j.data||[];
+    log("INV ok rows="+rows.length);
+    if(!rows.length) return;
+    var closes=[], maxes=[];
+    rows.forEach(function(r){ var c=parseFloat(String(r.last_closeRaw||r.last_close).replace(/,/g,"")); var h=parseFloat(String(r.last_maxRaw||r.last_max).replace(/,/g,"")); if(isFinite(c)) closes.push([r.rowDate,c]); if(isFinite(h)) maxes.push([r.rowDate,h]); });
+    var top=maxes.slice().sort(function(a,b){return b[1]-a[1];})[0];
+    log("INV nCloses="+closes.length+" newest="+JSON.stringify(closes[0])+" oldest="+JSON.stringify(closes[closes.length-1]));
+    log("INV maxHigh="+JSON.stringify(top));
+    log("INV closes(last6)="+JSON.stringify(closes.slice(0,6)));
+  }).catch(function(e){ log("INV fail: "+(e&&e.message||e)); });
+}
+
+/* 2) prekospi JSON API 경로별 */
+var T="https://www.prekospi.com/api/home";
+var routes=[
+  ["allorigins","https://api.allorigins.win/raw?url="+encodeURIComponent(T)],
+  ["codetabs","https://api.codetabs.com/v1/proxy/?quest="+encodeURIComponent(T)],
+  ["cors.lol","https://api.cors.lol/?url="+encodeURIComponent(T)],
+  ["jina","https://r.jina.ai/"+T],
+  ["direct",T]
+];
+function pre(){
+  routes.forEach(function(r){
+    var u=r[1]+(r[1].indexOf("?")<0?"?":"&")+"_="+Date.now();
+    getText(u, 20000).then(function(t){
+      var j=jsonLoose(t); var f=j.futures||{};
+      log("PRE "+r[0]+" ok price="+f.price+" prev="+f.prevClose+" diffPct="+(f.diffPct!=null?Number(f.diffPct).toFixed(3):"?")+" isOpen="+(f.session&&f.session.isOpen)+" ts="+f.ts);
+    }).catch(function(e){ log("PRE "+r[0]+" fail: "+(e&&e.message||e)); });
+  });
+}
+
+log("clock "+new Date().toISOString());
+inv(); pre();
+</script></body></html>
