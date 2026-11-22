@@ -1,0 +1,134 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>zoompan selftest</title>
+<style>body{background:#111;color:#ddd;font:12px/1.5 monospace;margin:0}pre{margin:0;padding:8px}iframe{position:absolute;left:-9999px;width:390px;height:844px;border:0}</style>
+<pre id="out">running…</pre>
+<iframe id="fr" src="index.html"></iframe>
+<script>
+(async function(){
+  var out = document.getElementById('out');
+  var lines = [];
+  function log(k, v){ lines.push(k + ': ' + JSON.stringify(v)); out.textContent = lines.join('\n'); }
+
+  // 사용자의 실제 저장값(localStorage)을 건드리지 않도록 스냅샷 → 마지막에 복원
+  var snap = [];
+  for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); snap.push([k, localStorage.getItem(k)]); }
+  function restore(){
+    try{ localStorage.clear(); snap.forEach(function(p){ localStorage.setItem(p[0], p[1]); }); }catch(e){}
+  }
+
+  var fr = document.getElementById('fr');
+  var W, D;
+  var wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+  await new Promise(function(r){ fr.addEventListener('load', r, {once:true}); });
+  W = fr.contentWindow; D = fr.contentDocument;
+  await wait(600);
+
+  var listOf = function(){ return $rows().map(function(r){ return r.getAttribute('data-id'); }); };
+  var $rows = function(){ return Array.prototype.slice.call(D.querySelectorAll('#list .row')); };
+  function touch(target, type, pts, changed){
+    var mk = function(p, i){ return new W.Touch({identifier:(p[2]!=null?p[2]:i), target:target, clientX:p[0], clientY:p[1], pageX:p[0], pageY:p[1], screenX:p[0], screenY:p[1], radiusX:5, radiusY:5, force:1}); };
+    var touches = pts.map(mk);
+    var chg = (changed || pts).map(mk);
+    var ev = new W.TouchEvent(type, {bubbles:true, cancelable:true, composed:true, touches:touches, targetTouches:touches, changedTouches:chg});
+    target.dispatchEvent(ev);
+    return ev;
+  }
+  function rowRect(i){ var r = $rows()[i]; var b = r.getBoundingClientRect(); return {x: Math.round(b.left + 60), y: Math.round(b.top + b.height/2), el: r}; }
+
+  var base0 = listOf();
+
+  // ── 1) 정상 배율: 4px 넘게 움직이면 450ms 전에 롱프레스 취소(순서 유지) ──
+  (function(){
+    var p = rowRect(1);
+    touch(p.el, 'touchstart', [[p.x, p.y]]);
+    touch(p.el, 'touchmove', [[p.x, p.y + 6]]);
+    var ev = touch(p.el, 'touchmove', [[p.x, p.y + 10]]);
+  })();
+  await wait(700);
+  log('T1 6px_move_cancels_hold (순서 그대로 이어야)', {changed: JSON.stringify(listOf()) !== JSON.stringify(base0), dragging: !!D.querySelector('.row.dragging')});
+
+  // ── 2) 확대(__amZoom) 상태: 롱프레스·드래그해도 순서 안 바뀜 + preventDefault 없음 ──
+  W.__amZoom = true;
+  await wait(320);
+  log('T2 zoom_class', {bodyZoomed: D.body.classList.contains('zoomed'), listZoomed: D.getElementById('list').classList.contains('zoomed'), touchAction: W.getComputedStyle(D.getElementById('list')).touchAction});
+  (function(){
+    var p = rowRect(1);
+    touch(p.el, 'touchstart', [[p.x, p.y]]);
+  })();
+  await wait(520);   // 450ms 롱프레스 시점 통과
+  var draggingInZoom = !!D.querySelector('.row.dragging');
+  var ev2 = (function(){
+    var p = rowRect(1);
+    return touch(p.el, 'touchmove', [[p.x, p.y + 120]]);
+  })();
+  log('T2 zoom_longpress', {dragging: draggingInZoom, preventDefaultCalled: ev2.defaultPrevented});
+  touch(rowRect(1).el, 'touchend', [[rowRect(1).x, rowRect(1).y + 120]], [[rowRect(1).x, rowRect(1).y + 120]]);
+  await wait(400);
+  log('T2 zoom_reorder_blocked', {changed: JSON.stringify(listOf()) !== JSON.stringify(base0)});
+
+  // ── 3) 확대 상태: 왼쪽 스와이프로도 삭제 안 됨 ──
+  (function(){
+    var p = rowRect(2);
+    touch(p.el, 'touchstart', [[p.x + 100, p.y]]);
+    touch(p.el, 'touchmove', [[p.x - 40, p.y]]);
+    touch(p.el, 'touchmove', [[p.x - 160, p.y]]);
+    touch(p.el, 'touchend', [], [[p.x - 160, p.y]]);
+  })();
+  await wait(400);
+  log('T3 zoom_swipe_no_delete', {rows: $rows().length, changed: JSON.stringify(listOf()) !== JSON.stringify(base0), swopen: !!D.querySelector('.row.swopen')});
+
+  // ── 4) 실제 visualViewport.scale 경로로 확대 판별되는지(감시 타이머 250ms) ──
+  W.__amZoom = null;
+  var vv = W.visualViewport, patched = false;
+  try{ Object.defineProperty(vv, 'scale', {configurable:true, get:function(){ return 2; }}); patched = (vv.scale === 2); }catch(e){}
+  if(!patched){ try{ var proto = Object.getPrototypeOf(vv); Object.defineProperty(proto, 'scale', {configurable:true, get:function(){ return 2; }}); patched = true; }catch(e2){} }
+  await wait(400);
+  log('T4 real_scale_path', {patched: patched, bodyZoomed: D.body.classList.contains('zoomed')});
+  try{ delete vv.scale; }catch(e){}
+  await wait(400);
+  log('T4 zoom_released', {bodyZoomed: D.body.classList.contains('zoomed')});
+
+  // ── 5) 핀치: 두 손가락이 닿으면 손 뗄 때까지 + 400ms 롱프레스 잠금 ──
+  (function(){
+    var p = rowRect(3);
+    touch(p.el, 'touchstart', [[p.x, p.y, 0], [p.x + 40, p.y + 40, 1]]);   // 두 손가락
+    touch(p.el, 'touchmove', [[p.x, p.y + 10]]);                            // 한 손가락만 남아 움직임
+  })();
+  touch(rowRect(3).el, 'touchend', [], [[rowRect(3).x, rowRect(3).y + 40]]);
+  await wait(60);   // 400ms 잠금 안쪽
+  (function(){ var p = rowRect(3); touch(p.el, 'touchstart', [[p.x, p.y]]); })();
+  await wait(500);
+  log('T5 pinch_lock', {dragging: !!D.querySelector('.row.dragging'), changed: JSON.stringify(listOf()) !== JSON.stringify(base0)});
+  touch(rowRect(3).el, 'touchend', [], [[rowRect(3).x, rowRect(3).y]]);
+  await wait(500);
+
+  // ── 6) 정상 배율: 450ms 롱프레스 + 이동 → 순서가 실제로 바뀌는지(기능 유지) ──
+  var before6 = listOf();
+  (function(){ var p = rowRect(0); touch(p.el, 'touchstart', [[p.x, p.y]]); })();
+  await wait(520);
+  var engaged = !!D.querySelector('.row.dragging');
+  (function(){ var p = rowRect(0); touch(p.el, 'touchmove', [[p.x, p.y + 70]]); })();
+  touch(rowRect(0).el, 'touchend', [], [[rowRect(0).x, rowRect(0).y + 70]]);
+  await wait(500);
+  var after6 = listOf();
+  log('T6 normal_reorder', {engaged: engaged, changed: JSON.stringify(before6) !== JSON.stringify(after6), movedFrom: before6[0], movedTo: after6[1]});
+
+  // ── 7) 정상 배율: 스와이프 삭제는 그대로 동작 ──
+  var rowsBefore7 = $rows().length;
+  (function(){
+    var p = rowRect(1);
+    touch(p.el, 'touchstart', [[p.x + 100, p.y]]);
+    touch(p.el, 'touchmove', [[p.x - 20, p.y]]);
+    touch(p.el, 'touchmove', [[p.x - 200, p.y]]);
+    touch(p.el, 'touchend', [], [[p.x - 200, p.y]]);
+  })();
+  await wait(500);
+  log('T7 normal_swipe_delete', {rowsBefore: rowsBefore7, rowsAfter: $rows().length});
+
+  restore();
+  log('DONE', {restored: true});
+  // 화면을 원상복구
+  fr.contentWindow.location.reload();
+})().catch(function(e){ document.getElementById('out').textContent += '\nERROR: ' + (e && e.message || e); });
+</script>
