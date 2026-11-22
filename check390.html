@@ -10,6 +10,10 @@
 </style>
 </head>
 <body>
-<iframe id="f" src="./index.html?v=check390" width="390" height="844"></iframe>
+<iframe id="f" width="390" height="844"></iframe>
+<script>
+  var q = location.search || "";
+  document.getElementById("f").src = "./index.html" + (q ? q : "?v=check390");
+</script>
 </body>
 </html>

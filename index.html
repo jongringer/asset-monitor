@@ -292,6 +292,8 @@
   var DBG = /[?&]debug/.test(location.search);
   /* ?krmode=open|closed — 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
   var FORCE_KR = (function(){ var m = /[?&]krmode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
+  /* ?samode=open|closed — 사우디 타다울 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
+  var FORCE_SA = (function(){ var m = /[?&]samode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
   var diag = [];
   function dg(s){ diag.push(s); while(diag.length>7) diag.shift(); }
 
@@ -424,6 +426,7 @@
       if(JP_NV && (Date.now() - JP_NV.at) < 180000 && JP_NV.status==="OPEN") MK.jp = true;
       if(CN_NV && (Date.now() - CN_NV.at) < 180000 && CN_NV.status==="OPEN") MK.cn = true;
       if(FORCE_KR) MK.kr = (FORCE_KR === "open");
+      if(FORCE_SA) MK.sa = (FORCE_SA === "open");
     }catch(e){}
     MK.coin = true;
   }
