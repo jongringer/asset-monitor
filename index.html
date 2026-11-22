@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-zoompan-1">
+<meta name="build" content="2026-11-23-zoompan-2">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -1567,25 +1567,58 @@
   }
 
   /* ───────── 행 순서 변경: 모바일 롱프레스 · PC 마우스 드래그 + 저장 ─────────
-     - 터치: 250ms 길게 누르면 드래그가 붙고(15ms 진동 + 들뜬 그림자/테두리), 그 뒤 위아래로 끌면 실시간으로 자리를 바꾼다.
-       250ms 안에 8px 넘게 움직이면 스크롤로 보고 드래그를 포기한다. 드래그 중에만 preventDefault로 스크롤을 막는다.
+     - 터치: 450ms 길게 누르면 드래그가 붙고(15ms 진동 + 들뜬 그림자/테두리), 그 뒤 위아래로 끌면 실시간으로 자리를 바꾼다.
+       450ms 안에 4px 넘게 움직이면 '종목을 찾아 훑어보는 손짓'으로 보고 즉시 드래그를 포기한다.
      - 마우스: 누른 뒤 8px 이상 움직이면 드래그 시작(user-select:none으로 텍스트 선택 방지).
+     - 확대(핀치 줌인) 중이거나 핀치 직후에는 순서 변경·스와이프 삭제를 시작조차 하지 않고,
+       이미 시작된 제스처도 절대 커밋하지 않는다(placeAt·flushSettle·delAsset에서도 다시 막는다).
      - 핸들 열을 두지 않고 행 자체를 잡으므로 기존 4열 구조(이름·미니그래프·가격·변동률)는 그대로다.
      - 순서는 localStorage(assetMonitor.order.v1)에 저장해 새로고침·재방문·10초 자동 갱신에도 유지한다. */
   var ORD_KEY = "assetMonitor.order.v1";    // BASE_ORDER는 applyAssets()가 채운다
   var closeSwipeOpen = function(){};       // wireDrag가 실제 구현을 넣는다
-  var HOLD_MS = 250, SLOP = 8;             // 터치 롱프레스 시간 / 손짓 허용 오차(px)
-  /* 확대(핀치 줌인) 판별: 1.03배를 넘으면 '확대 중'으로 본다. 확대 중에는 스와이프 삭제·순서 변경을 끈다. */
-  var ZOOM_MIN = 1.03;
-  function isZoomed(){
-    if(window.__amZoom != null) return !!window.__amZoom;      // 실측 검증용 강제 플래그(없으면 실제 배율)
+  var HOLD_MS = 450, TOUCH_SLOP = 4, MOUSE_SLOP = 8;   // 롱프레스 대기(ms) / 터치·마우스 허용 오차(px)
+
+  /* ── 확대(핀치 줌인) 판별 ──────────────────────────────────────────────
+     안드로이드 크롬·WebView 는 핀치 중 visualViewport.scale 갱신이 조금 늦거나
+     이벤트를 빠뜨릴 때가 있어 한 신호만 믿지 않는다. 아래 중 하나라도 걸리면 '확대 중':
+       ① visualViewport.scale > 1.01
+       ② documentElement.clientWidth / innerWidth > 1.01   (레이아웃 폭이 줄어든 확대)
+       ③ visualViewport.offsetLeft/offsetTop > 1            (확대 후 화면을 옮긴 상태)
+       ④ visualViewport.width < clientWidth - 2             (보이는 폭이 좁아진 확대)
+     여기에 이번 제스처에서 관측된 최대 배율(peakZoom)과 핀치 여부(pinchSeen)까지 더해
+     이벤트가 늦게 오거나 빠져도 '확대였다'는 사실을 놓치지 않는다. */
+  var ZOOM_MIN = 1.01, PINCH_LOCK_MS = 400;
+  var peakZoom = 1;          // 이번 제스처에서 관측된 최대 배율
+  var pinchSeen = false;     // 이번 제스처에서 두 손가락이 한 번이라도 닿았는가
+  var gestureLockUntil = 0;  // 이 시각까지 롱프레스·스와이프 진입 금지(핀치 뒤 남은 손가락 방어)
+  function rawScale(){
     var vv = window.visualViewport;
-    if(vv && typeof vv.scale === "number" && vv.scale > 0) return vv.scale > ZOOM_MIN;
-    var de = document.documentElement;
-    return !!de.clientWidth && (de.clientWidth / window.innerWidth) > ZOOM_MIN;
+    return (vv && typeof vv.scale === "number" && vv.scale > 0) ? vv.scale : 1;
+  }
+  function isZoomed(){
+    if(window.__amZoom != null) return !!window.__amZoom;      // 실측 검증용 강제 플래그
+    var vv = window.visualViewport, de = document.documentElement;
+    var cw = de.clientWidth || 0, iw = window.innerWidth || 0;
+    if(vv){
+      if(typeof vv.scale === "number" && vv.scale > ZOOM_MIN) return true;
+      if((vv.offsetLeft || 0) > 1 || (vv.offsetTop || 0) > 1) return true;
+      if(cw && vv.width > 0 && vv.width < cw - 2) return true;
+    }
+    if(cw && iw && (cw / iw) > ZOOM_MIN) return true;
+    return false;
+  }
+  /* 이번 제스처를 이어가면 안 되는 상태인가(확대 중 · 핀치 직후 · 핀치였던 제스처) */
+  function gestureBlocked(){
+    return pinchSeen || isZoomed() || peakZoom > ZOOM_MIN || Date.now() < gestureLockUntil;
+  }
+  /* 순서 저장·삭제처럼 되돌리기 어려운 쓰기 직전의 최종 관문 */
+  function zoomWriteBlocked(){
+    return isZoomed() || peakZoom > ZOOM_MIN;
   }
   var drag = null, settleT = 0, settleEl = null, settleTo = 0;
   var lp = {el:null, t:0, y0:0, x0:0};     // 롱프레스 대기 상태
+  function cancelLp(){ if(lp.t){ clearTimeout(lp.t); lp.t = 0; } lp.el = null; }
+  function beginPinch(){ pinchSeen = true; gestureLockUntil = Date.now() + PINCH_LOCK_MS; }
 
   function listRows(){ return Array.prototype.slice.call($("#list").children); }
 
@@ -1647,6 +1680,7 @@
   }
   function delAsset(id){
     if(!id || !BY[id]) return;
+    if(zoomWriteBlocked()){ closeSwipeOpen(); return; }   // 확대 중에는 삭제 금지
     if(BY[id].custom) custom = custom.filter(function(c){ return c.id !== id; });
     else deleted[id] = 1;
     ORDER = ORDER.filter(function(x){ return x !== id; });
@@ -1894,8 +1928,10 @@
     }
     dragRAF = requestAnimationFrame(dragAutoScroll);
   }
-  /* DOM을 새 순서로 바꾸고 저장한다. 바꾸기 직전 좌표와 직후 자연 좌표가 같아 화면이 튀지 않는다. */
+  /* DOM을 새 순서로 바꾸고 저장한다. 바꾸기 직전 좌표와 직후 자연 좌표가 같아 화면이 튀지 않는다.
+     확대 중에는 어떤 경로로도 순서를 쓰지 않는다(원천 차단). */
   function placeAt(el, target){
+    if(zoomWriteBlocked()){ clearDrag(); return; }
     var list = $("#list");
     var rest = listRows().filter(function(r){ return r !== el; });
     list.insertBefore(el, rest[target] || null);
@@ -1908,12 +1944,19 @@
     clearTimeout(settleT); settleT = 0;
     var el = settleEl, to = settleTo;
     settleEl = null;
+    if(zoomWriteBlocked()){ clearDrag(); return; }     // 정산 예약 뒤에 확대됐다면 폐기
     if(el && el.parentNode) placeAt(el, to);
   }
   function dragDrop(d, keep){
     d.active = false;
     stopDragScroll();
     var el = d.el, tgt = keep ? d.target : d.idx;
+    if(gestureBlocked()){                              // 확대·핀치로 끝난 제스처는 순서를 남기지 않는다
+      drag = null; settleEl = null;
+      if(settleT){ clearTimeout(settleT); settleT = 0; }
+      clearDrag(d.rows);
+      return;
+    }
     el.style.transition = "transform .15s cubic-bezier(.2,.7,.25,1)";
     el.style.transform = "translateY(" + ((tgt - d.idx) * d.rowH).toFixed(1) + "px)";
     drag = null;
@@ -1957,6 +2000,7 @@
     }
     function swMove(x, y){
       if(!swNow) return false;
+      if(gestureBlocked()){ swCancel(); return false; }   // 확대·핀치 중엔 스와이프도 없다
       var dx = x - swNow.x0, dy = y - swNow.y0;
       swNow.dx = dx;
       if(!swNow.active){
@@ -1989,10 +2033,16 @@
       swNow = null;
     }
 
-    /* ── 터치: 롱프레스로 드래그, 가로 우세면 스와이프 ── */
+    /* ── 터치: 롱프레스로 드래그, 가로 우세면 스와이프 ──
+       확대 중·핀치 직후에는 어떤 제스처도 시작하지 않고, 진행 중이던 것도 폐기한다.
+       이 경로에서는 preventDefault를 절대 부르지 않아 브라우저의 자유 패닝이 그대로 동작한다. */
     L.addEventListener("touchstart", function(e){
-      if(syncZoom()){ zoomAbort(); return; }      // 확대 중: 제스처 시작 금지(자유 패닝)
-      if(e.touches.length !== 1) return;
+      var n = e.touches ? e.touches.length : 0;
+      if(n > 1){                                  // 두 손가락 = 핀치 시작: 손 뗄 때까지 잠금
+        beginPinch(); zoomAbort(); return;
+      }
+      if(gestureBlocked()){ zoomAbort(); return; }  // 확대 중·핀치 직후: 제스처 시작 금지(자유 패닝)
+      if(n !== 1) return;
       var el = dragPick(e);
       if(!el) return;
       var t0 = e.touches[0];
@@ -2002,8 +2052,9 @@
       lp.t = setTimeout(function(){
         lp.t = 0;
         var el2 = lp.el;
-        if(!el2 || syncZoom()) return;             // 확대 중이면 롱프레스로 붙지 않는다
-        if(swNow){ swNow = null; }                 // 롱프레스가 붙으면 스와이프는 포기
+        if(!el2) return;
+        if(gestureBlocked()) return;              // 450ms 사이에 확대됐다면 붙지 않는다
+        if(swNow){ swNow = null; }                // 롱프레스가 붙으면 스와이프는 포기
         closeSwipeOpen();
         var d = dragStart("touch", el2, lp.x0, lp.y0);
         if(!d) return;
@@ -2012,33 +2063,41 @@
     }, {passive:true});
 
     L.addEventListener("touchmove", function(e){
-      if(syncZoom()){ zoomAbort(); return; }      // 확대 중: preventDefault 없이 브라우저가 사방으로 패닝
+      var n = e.touches ? e.touches.length : 0;
+      if(n > 1){                                  // 핀치 중: 진행 제스처 폐기, preventDefault 없음
+        beginPinch(); zoomAbort(); return;
+      }
+      if(gestureBlocked()){                       // 확대 중·핀치 직후: 브라우저가 사방으로 패닝
+        if(drag || swNow || lp.t) zoomAbort();
+        return;                                   // ← 여기서 preventDefault 를 절대 부르지 않는다
+      }
       if(drag && drag.active){
         e.preventDefault();                        // 드래그가 붙은 뒤에만 스크롤을 막는다
         if(e.touches[0]) dragMove(drag, e.touches[0].clientY);
-        return;
-      }
-      if(e.touches.length > 1){                    // 두 손가락(핀치) → 진행 중 제스처를 즉시 취소
-        if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
-        lp.el = null;
-        swCancel();
-        if(drag){ clearDrag(drag.rows); drag = null; }
         return;
       }
       if(!e.touches[0]) return;
       var t1 = e.touches[0];
       if(swMove(t1.clientX, t1.clientY)){ e.preventDefault(); return; }
       if(lp.el){
-        if(Math.abs(t1.clientY - lp.y0) > SLOP || Math.abs(t1.clientX - lp.x0) > SLOP){
-          if(lp.t){ clearTimeout(lp.t); lp.t = 0; }   // 스크롤하려는 손짓 → 롱프레스 취소
-          lp.el = null;
+        if(Math.abs(t1.clientY - lp.y0) > TOUCH_SLOP || Math.abs(t1.clientX - lp.x0) > TOUCH_SLOP){
+          cancelLp();                                // 4px 넘게 움직임 = 훑어보는 손짓 → 롱프레스 취소
         }
       }
     }, {passive:false});
 
     function touchDone(e){
-      if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
-      lp.el = null;
+      var left = (e.touches && e.touches.length) ? e.touches.length : 0;
+      if(left > 0) return;                        // 아직 손가락이 남아 있으면 아무것도 확정하지 않는다
+      cancelLp();
+      syncZoom();
+      if(pinchSeen){                              // 핀치였던 제스처는 순서·삭제로 절대 커밋하지 않는다
+        zoomAbort();
+        pinchSeen = false;
+        gestureLockUntil = Date.now() + PINCH_LOCK_MS;   // 남은 손가락이 다시 움직여도 400ms 잠금
+        return;
+      }
+      if(isZoomed() || Date.now() < gestureLockUntil){ zoomAbort(); return; }
       if(drag && drag.active){
         if(e.cancelable) e.preventDefault();
         dragDrop(drag, true);
@@ -2048,12 +2107,15 @@
       if(swEnd() && e.cancelable) e.preventDefault();
     }
     L.addEventListener("touchend", touchDone, {passive:false});
-    L.addEventListener("touchcancel", function(e){ swCancel(); touchDone(e); }, {passive:false});
+    L.addEventListener("touchcancel", function(e){
+      zoomAbort(); cancelLp();
+      if(!e.touches || !e.touches.length){ pinchSeen = false; gestureLockUntil = Date.now() + PINCH_LOCK_MS; }
+    }, {passive:true});
 
     /* ── 마우스: 가로 우세면 스와이프, 세로/기타 8px 이동이면 드래그 ── */
     L.addEventListener("mousedown", function(e){
       if(e.button !== 0) return;
-      if(syncZoom()){ zoomAbort(); return; }        // 확대 중: 마우스 스와이프·드래그 금지
+      if(gestureBlocked()){ zoomAbort(); return; }  // 확대 중·핀치 직후: 마우스 스와이프·드래그 금지
       var el = dragPick(e);
       if(!el) return;
       swBegin(el, e.clientX, e.clientY);
@@ -2063,7 +2125,7 @@
       if(e.cancelable) e.preventDefault();          // 텍스트 선택 방지
     });
     document.addEventListener("mousemove", function(e){
-      if(syncZoom()){ zoomAbort(); return; }
+      if(gestureBlocked()){ zoomAbort(); return; }
       if(swNow && swNow.active){
         e.preventDefault();
         swMove(e.clientX, e.clientY);
@@ -2078,7 +2140,7 @@
           e.preventDefault();
           return;
         }
-        if(Math.abs(dx) <= SLOP && Math.abs(dy) <= SLOP) return;
+        if(Math.abs(dx) <= MOUSE_SLOP && Math.abs(dy) <= MOUSE_SLOP) return;
         dragEngage(drag);
       }
       if(e.cancelable) e.preventDefault();
@@ -2090,6 +2152,7 @@
       if(!drag || drag.kind !== "mouse") return;
       if(drag.active) dragDrop(drag, true);
       else drag = null;
+      peakZoom = 1;                                  // 마우스 제스처 종료 → 관측 배율 초기화
     });
     L.addEventListener("contextmenu", function(e){ if(drag) e.preventDefault(); });
     document.addEventListener("selectstart", function(e){ if(drag && drag.active) e.preventDefault(); });
@@ -2100,6 +2163,7 @@
 
     /* ── 탭: 드러난 휴지통을 누르면 삭제, 다른 곳을 누르면 닫기 ── */
     L.addEventListener("click", function(e){
+      if(zoomWriteBlocked()) return;                 // 확대 중에는 휴지통 클릭으로도 삭제되지 않는다
       if(Date.now() - swGuard < 350) return;         // 스와이프 직후의 합성 클릭은 무시
       var t = e.target;
       var del = t && t.closest ? t.closest(".del") : null;
@@ -2122,27 +2186,37 @@
 
     /* ── 핀치 확대 상태 동기화: 확대 중이면 스와이프·롱프레스·드래그를 모두 취소하고
        #list·.row 의 touch-action 을 pan-x pan-y 로 풀어 상하좌우 자유 패닝을 보장한다.
-       1.0x 로 돌아오면 원래 touch-action(pan-y pinch-zoom)으로 복귀. ── */
+       1.0x 로 돌아오면 원래 touch-action(pan-y pinch-zoom)으로 복귀.
+       visualViewport 이벤트가 늦거나 빠지는 기기를 위해 250ms 감시 타이머와
+       제스처 이벤트·ctrl+휠(데스크톱 줌)까지 함께 본다. ── */
     var zoomNow = false;
+    function applyZoomUi(z){
+      document.body.classList.toggle("zoomed", z);
+      var LM = document.getElementById("list");
+      if(LM) LM.classList.toggle("zoomed", z);
+    }
     function zoomAbort(){
-      if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
-      lp.el = null;
+      cancelLp();
       if(swNow){
         if(swNow.active && swNow.el){ swNow.el.classList.remove("swiping"); swSet(swNow.el, 0); }
         swNow = null;
       }
       if(swOpen) swClose();
       if(drag){ clearDrag(drag.rows); drag = null; }
+      settleEl = null;                              // 예약된 순서 정산도 버린다
+      if(settleT){ clearTimeout(settleT); settleT = 0; }
     }
     function syncZoom(){
+      var s = rawScale();
+      if(s > peakZoom) peakZoom = s;                // 이벤트가 늦게 와도 확대 사실은 기억
       var z = isZoomed();
+      if(z) peakZoom = Math.max(peakZoom, ZOOM_MIN + 0.001);
       if(z !== zoomNow){
         zoomNow = z;
-        document.body.classList.toggle("zoomed", z);
-        var LM = document.getElementById("list");
-        if(LM) LM.classList.toggle("zoomed", z);
+        applyZoomUi(z);
         if(z) zoomAbort();
       }
+      if(!z && s <= ZOOM_MIN && Date.now() >= gestureLockUntil){ pinchSeen = false; peakZoom = 1; }   // 1.0배로 돌아오면 초기화
       return zoomNow;
     }
     syncZoom();
@@ -2152,6 +2226,9 @@
       window.visualViewport.addEventListener("resize", syncZoom);
       window.visualViewport.addEventListener("scroll", syncZoom);
     }
+    document.addEventListener("gesturestart", function(){ beginPinch(); zoomAbort(); }, {passive:true});
+    document.addEventListener("wheel", function(e){ if(e.ctrlKey){ beginPinch(); zoomAbort(); } }, {passive:true});
+    setInterval(syncZoom, 250);                     // scale 갱신이 늦는 기기용 감시(가벼움)
 
     closeSwipeOpen = swClose;      // 다른 곳(모달·삭제 후 재구축)에서도 닫을 수 있게
   })();
