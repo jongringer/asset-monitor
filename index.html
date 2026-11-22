@@ -9,11 +9,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-rowdrag-1">
+<meta name="build" content="2026-11-23-xyz28-1">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율 20개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="20개 주요 자산(미국·한국·일본·중국·사우디)의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="28개 주요 자산(미국·한국·일본·중국·사우디 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -86,13 +86,18 @@
     font-size:.54em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (20개) ── */
-  main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.48em;
-    background:var(--panel);border:1px solid var(--edge);border-radius:.68em;overflow:hidden}
+  /* ── 자산 리스트 (28개 · 스크롤) ── */
+  main{flex:1 1 auto;display:block;min-height:0;margin-top:.5em;
+    background:var(--panel);border:1px solid var(--edge);border-radius:.68em;
+    overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+  main::-webkit-scrollbar{width:4px}
+  main::-webkit-scrollbar-track{background:transparent}
+  main::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px}
   .row{
-    position:relative;flex:1 1 0;min-height:0;
+    position:relative;
     display:flex;flex-direction:column;justify-content:center;
-    padding:.12em .6em .15em .74em;overflow:hidden;transition:opacity .45s ease;
+    padding:.6em .6em .58em .78em;overflow:hidden;transition:opacity .45s ease;
   }
   .row + .row{border-top:1px solid var(--line)}
   .row.stale{opacity:.45}
@@ -105,6 +110,10 @@
   .top{display:flex;align-items:center;gap:.28em;min-width:0}
   .nm{flex:1 1 auto;min-width:0;font-size:.77em;font-weight:700;color:#FFFFFF;letter-spacing:-.014em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 출처 배지: 하이퍼리퀴드 xyz 마켓 표시 */
+  .nm .tag{display:inline-block;margin-left:.42em;padding:.08em .34em .12em;border-radius:.28em;
+    font-size:.66em;font-weight:800;letter-spacing:.07em;color:#7FA6C8;vertical-align:.14em;
+    background:rgba(120,170,230,.13);border:1px solid rgba(120,170,230,.26)}
   .px{flex:0 0 auto;min-width:4.95em;text-align:right;font-size:1.08em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
   .pct{flex:0 0 auto;min-width:3.85em;margin-left:.22em;text-align:right;font-size:1.24em;font-weight:800;
@@ -174,7 +183,7 @@
   <header>
     <div class="hrow">
       <div class="hleft">
-        <div class="ttl">주요 자산 현황 · <span id="cnt">20</span></div>
+        <div class="ttl">주요 자산 현황 · <span id="cnt">28</span></div>
         <button class="ordreset" id="ordreset" type="button" aria-label="자산 순서를 기본 순서로 되돌리기">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
           순서 초기화
@@ -301,8 +310,24 @@
     {id:"tasi",  name:"사우디 TASI",     yahoo:"^TASI.SR", mkt:"sa", ath:12883.29, athDate:"24.03.24 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"btc",   name:"비트코인",         yahoo:null,    mkt:"coin", histSym:"BTC-USD", ath:126198, athDate:"25.10.06 장중", dec:0, cur:"$", chgLabel:"24h"},
     {id:"eth",   name:"이더리움",         yahoo:null,    mkt:"coin", histSym:"ETH-USD", ath:4953.73, athDate:"25.08.24 장중", dec:2, cur:"$", chgLabel:"24h"},
-    {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", mkt:"fx",   ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"}
+    {id:"krw",   name:"원/달러 환율",     yahoo:"KRW=X", mkt:"fx",   ath:1587.70,  athDate:"26.07.09 장중", dec:2, cur:"",  chgLabel:"전일"},
+
+    /* ── 하이퍼리퀴드 Hyperliquid Trade[XYZ] (`xyz` dex · HIP-3) 8종 ──
+       가격은 Hyperliquid `metaAndAssetCtxs`(dex:"xyz")의 markPx, 등락은 prevDayPx 대비 24시간,
+       365일 24시간 거래라 항상 장중(초록) · 보조 변동 표기도 24h로 통일한다.
+       최고점은 다른 행과 같은 기준(그 기초자산의 3년내 최고점, Yahoo 일별 고가)을 쓴다.
+       실심볼: SKHYNIX → `xyz:SKHX`(한국 상장 SK하이닉스의 달러 표시), WTIOIL → `xyz:CL`(WTI 선물). */
+    {id:"xsp500", name:"S&P500",      tag:"xyz", mkt:"xyz", hl:"xyz:SP500",    histSym:"^GSPC",  ath:7844.52,  athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xnvda",  name:"엔비디아",     tag:"xyz", mkt:"xyz", hl:"xyz:NVDA",     histSym:"NVDA",   ath:243.37,   athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xsoxl",  name:"SOXL",       tag:"xyz", mkt:"xyz", hl:"xyz:SOXL",     histSym:"SOXL",   ath:302.00,   athDate:"26.06.22 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xskhx",  name:"SK하이닉스",   tag:"xyz", mkt:"xyz", hl:"xyz:SKHX",     histSym:"000660.KS", fxSym:"KRW=X", ath:1931.48, athDate:"26.06.25 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xwti",   name:"WTI유",       tag:"xyz", mkt:"xyz", hl:"xyz:CL",       histSym:"CL=F",   ath:119.48,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xmu",    name:"마이크론",     tag:"xyz", mkt:"xyz", hl:"xyz:MU",       histSym:"MU",     ath:1255.00,  athDate:"26.06.25 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xbrn",   name:"브렌트유",     tag:"xyz", mkt:"xyz", hl:"xyz:BRENTOIL", histSym:"BZ=F",   ath:126.10,   athDate:"26.04.30 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"xewy",   name:"EWY 한국ETF", tag:"xyz", mkt:"xyz", hl:"xyz:EWY",      histSym:"EWY",    ath:220.89,   athDate:"26.06.18 장중", dec:2, cur:"$", chgLabel:"24h"}
   ];
+  /* 2026-11-23 추가분 — 저장된 사용자 순서가 있어도 항상 맨 아래에 붙는다 */
+  var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy"];
   var BY = {}, ORDER = [];
   ASSETS.forEach(function(a){ BY[a.id]=a; ORDER.push(a.id); });
 
@@ -459,9 +484,11 @@
     if(p.wd==="Fri") return p.t<1020;
     return true;
   }
-  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, jp:jpOpen, cn:cnOpen, night:k200Open, sa:saOpen, fx:fxOpen, coin:function(){ return true; }};
+  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, jp:jpOpen, cn:cnOpen, night:k200Open, sa:saOpen, fx:fxOpen,
+                 coin:function(){ return true; },
+                 xyz:function(){ return true; }};    // 하이퍼리퀴드 xyz 마켓은 365일 24시간
 
-  var MK = {us:false, cme:false, kr:false, jp:false, cn:false, night:false, sa:false, fx:false, coin:true};
+  var MK = {us:false, cme:false, kr:false, jp:false, cn:false, night:false, sa:false, fx:false, coin:true, xyz:true};
   function computeMarkets(){
     try{
       MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.jp = jpOpen(); MK.cn = cnOpen();
@@ -478,6 +505,7 @@
       if(FORCE_NK) MK.night = (FORCE_NK === "open");
     }catch(e){}
     MK.coin = true;
+    MK.xyz = true;
   }
   var KP_OK_AT = 0, KP_FRESH = 60000;    // KOSPILAB 응답이 60초 안에 왔으면 '추정가 갱신 중' (연속 실패할 때만 빨강)
   function krLiveNow(){
@@ -861,6 +889,49 @@
             function(e){ if(DBG) dg("coin:"+(Date.now()-t0)+"ms fail"); throw e; });
   }
 
+  /* ───────── 하이퍼리퀴드 Hyperliquid Trade[XYZ] (`xyz` dex) 8종 ─────────
+     https://api.hyperliquid.xyz/info 에 {"type":"metaAndAssetCtxs","dex":"xyz"} 를 POST하면
+     universe(147종 이름 배열)와 같은 순서의 ctx 배열(markPx·prevDayPx·oraclePx·dayNtlVlm…)을 준다.
+     이 엔드포인트는 `access-control-allow-origin: *`를 내려 주고 프리플라이트도 허용하므로 **프록시 없이 직접** 부른다.
+     한 번(약 65KB)에 147종을 받아 그중 8종만 쓰므로, 종목을 추가할 때는 hl 심볼만 늘리면 된다. */
+  var HL_URL = "https://api.hyperliquid.xyz/info";
+  function postText(url, body, ms){
+    var ctl = new AbortController();
+    var timer = setTimeout(function(){ ctl.abort(); }, ms);
+    return fetch(url, {method:"POST", signal:ctl.signal, cache:"no-store", mode:"cors", credentials:"omit",
+        headers:{"Content-Type":"application/json"}, body:body})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+      .then(function(t){ clearTimeout(timer); return t; }, function(e){ clearTimeout(timer); throw e; });
+  }
+  function getXyz(){
+    var t0 = Date.now();
+    var want = {};
+    ASSETS.forEach(function(a){ if(a.hl) want[a.hl] = a; });
+    return postText(HL_URL, JSON.stringify({type:"metaAndAssetCtxs", dex:"xyz"}), 8000)
+      .then(function(txt){
+        var d = JSON.parse(txt);
+        var uni = d && d[0] && d[0].universe, ctxs = d && d[1];
+        if(!Array.isArray(uni) || !Array.isArray(ctxs) || !uni.length) throw new Error("bad hl payload");
+        var n = 0, now = Date.now();
+        for(var i=0;i<uni.length;i++){
+          var u = uni[i], c = ctxs[i];
+          if(!u || !c) continue;
+          var a = want[u.name];
+          if(!a) continue;
+          var px = Number(c.markPx);
+          if(!isFinite(px) || px<=0) continue;
+          var prev = Number(c.prevDayPx);
+          var chg = (isFinite(prev) && prev>0) ? (px-prev)/prev*100 : null;
+          state[a.id] = {px:px, chg:chg, t:now};
+          n++;
+        }
+        if(!n) throw new Error("no xyz symbols");
+        srcTag.xyz = "Hyperliquid";
+        if(DBG) dg("xyz:" + (Date.now()-t0) + "ms n=" + n);
+        return n;
+      });
+  }
+
   /* ───────── KOSPILAB 해외 실시간 추정가 (삼성전자·SK하이닉스) ─────────
      kospilab.com/api/prices 는 CORS 헤더가 없어 프록시 체인을 거쳐 읽는다. */
   var KP_URL = "https://kospilab.com/api/prices";
@@ -904,7 +975,9 @@
   // 14개 심볼을 한 요청으로 (지수·선물·원자재·환율 + BTC-USD·ETH-USD), 3년 월별
   function histURL(){
     var syms = [];
-    ASSETS.forEach(function(a){ var s = histSym(a); if(s) syms.push(s); });
+    ASSETS.forEach(function(a){
+      [histSym(a), a.fxSym].forEach(function(s){ if(s && syms.indexOf(s)<0) syms.push(s); });
+    });
     return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
       encodeURIComponent(syms.join(",")) + "&range=3y&interval=1mo&_=" + Date.now();
   }
@@ -942,12 +1015,30 @@
     if(v.length > 3) v.pop();
     return v.length >= 2 ? v : null;
   }
+  /* 두 월봉 계열을 달(UTC) 단위로 맞추기 위한 열쇠 */
+  function monKey(sec){ var d = new Date(sec*1000); return d.getUTCFullYear()+"-"+d.getUTCMonth(); }
   function histApply(d){
     var n = 0;
     ASSETS.forEach(function(a){
       var node = d && d[histSym(a)];
       if(!node) return;
-      var v = histSeries(a, node.close || node.c || []);
+      var closes = node.close || node.c || [];
+      if(a.fxSym){                     // 달러 표시 자산(하이퍼리퀴드 SK하이닉스): 월별 원화 종가를 그달 환율로 나눈 달러 계열
+        var fnode = d[a.fxSym];
+        var fxs = fnode && (fnode.close || fnode.c);
+        if(!fxs) return;
+        var map = {}, ft = fnode.timestamp || [], mt = node.timestamp || [], i;
+        if(ft.length === fxs.length && mt.length === closes.length){
+          for(i=0;i<ft.length;i++) map[monKey(ft[i])] = fxs[i];      // 달(UTC) 단위로 맞춰 나눈다
+          closes = closes.map(function(c,k){
+            var f = map[monKey(mt[k])];
+            return (c!=null && f) ? c/f : null;
+          });
+        }else if(fxs.length === closes.length){
+          closes = closes.map(function(c,k){ return (c!=null && fxs[k]) ? c/fxs[k] : null; });
+        }else return;
+      }
+      var v = histSeries(a, closes);
       if(v){ HIST[a.id] = v; n++; }
     });
     return n;
@@ -1080,7 +1171,7 @@
     });
   }
   function loadHistOne(){
-    var list = ASSETS.filter(function(a){ return histSym(a) && !HIST[a.id]; });
+    var list = ASSETS.filter(function(a){ return histSym(a) && !a.fxSym && !HIST[a.id]; });   // 환율 환산 행은 단일 심볼 폴백에서 뺀다
     var i = 0, bad = 0;
     function step(){
       if(i >= list.length || bad >= 2) return;
@@ -1182,7 +1273,7 @@
       var a = BY[id];
       return '<div class="row stale" id="row-'+a.id+'" data-id="'+a.id+'">'+
         '<div class="top">'+
-          '<div class="nm">'+rowName(a)+'</div>'+
+          '<div class="nm"><span class="nl">'+rowName(a)+'</span>'+(a.tag?'<span class="tag">'+a.tag+'</span>':'')+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
           '<div class="px">—</div>'+
           '<div class="pct flat">—</div>'+
@@ -1201,7 +1292,7 @@
     var s = priceOf(a);
     var pxEl = el.querySelector(".px"), pEl = el.querySelector(".pct"),
         dcEl = el.querySelector(".dc"), athEl = el.querySelector(".ath"),
-        nmEl = el.querySelector(".nm");
+        nmEl = el.querySelector(".nm .nl") || el.querySelector(".nm");
 
     // 장중/마감에 따라 행 이름 자동 전환: 삼성전자 ↔ 삼성전자 예상가
     var nm = rowName(a);
@@ -1295,6 +1386,10 @@
       if(typeof id === "string" && BY[id] && !seen[id]){ out.push(id); seen[id] = 1; }
     });
     if(!out.length) return;
+    // 이번에 새로 추가된 자산(APPEND_IDS)은 기존 순서와 상관없이 항상 맨 아래에 붙인다
+    APPEND_IDS.forEach(function(id){
+      if(BY[id] && !seen[id]){ out.push(id); seen[id] = 1; }
+    });
     BASE_ORDER.forEach(function(id, i){
       if(seen[id]) return;
       var at = -1, k;
@@ -1327,7 +1422,7 @@
     flushSettle();                                   // 직전 드롭 정산이 남아 있으면 먼저 마무리
     var rows = listRows(), idx = rows.indexOf(el);
     if(idx < 0) return null;
-    return {kind:kind, el:el, idx:idx, target:idx, x0:x, y0:y, dy:0,
+    return {kind:kind, el:el, idx:idx, target:idx, x0:x, y0:y, y:y, dy:0,
             rows:rows, rowH:el.getBoundingClientRect().height, active:false};
   }
   function dragEngage(d){
@@ -1336,8 +1431,10 @@
     document.body.classList.add("dragging");
     for(var i=0;i<d.rows.length;i++) if(d.rows[i] !== d.el) d.rows[i].classList.add("ghost");
     try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}   // 가벼운 햅틱
+    if(!dragRAF) dragRAF = requestAnimationFrame(dragAutoScroll);    // 목록 위·아래 끝에 닿으면 자동 스크롤
   }
   function dragMove(d, y){
+    d.y = y;
     d.dy = y - d.y0;
     var h = d.rowH || 1, last = d.rows.length - 1;
     var t = Math.round(d.dy / h) + d.idx;            // 이웃 행 높이 단위로 자리 계산
@@ -1355,11 +1452,32 @@
     }
   }
   function clearDrag(rows){
+    stopDragScroll();
     (rows || listRows()).forEach(function(r){
       r.style.transition = ""; r.style.transform = "";
       r.classList.remove("dragging"); r.classList.remove("ghost");
     });
     document.body.classList.remove("dragging");
+  }
+  /* 드래그 중 손가락이 목록 위·아래 끝(each 56px)에 닿으면 목록을 저절로 굴려
+     28행 어디로든 옮길 수 있게 한다. 스크롤한 만큼 y0을 같이 밀어 행이 손가락 밑에 머물게 한다. */
+  var DRAG_EDGE = 56, dragRAF = 0;
+  function stopDragScroll(){
+    if(dragRAF){ cancelAnimationFrame(dragRAF); dragRAF = 0; }
+  }
+  function dragAutoScroll(){
+    dragRAF = 0;
+    if(!drag || !drag.active) return;
+    var L = $("#list"), r = L.getBoundingClientRect(), y = drag.y, sp = 0;
+    if(y < r.top + DRAG_EDGE) sp = -Math.min(16, (r.top + DRAG_EDGE - y) * 0.32);
+    else if(y > r.bottom - DRAG_EDGE) sp = Math.min(16, (y - (r.bottom - DRAG_EDGE)) * 0.32);
+    if(sp){
+      var before = L.scrollTop;
+      L.scrollTop = before + sp;
+      var moved = L.scrollTop - before;
+      if(moved){ drag.y0 -= moved; dragMove(drag, y); }
+    }
+    dragRAF = requestAnimationFrame(dragAutoScroll);
   }
   /* DOM을 새 순서로 바꾸고 저장한다. 바꾸기 직전 좌표와 직후 자연 좌표가 같아 화면이 튀지 않는다. */
   function placeAt(el, target){
@@ -1379,6 +1497,7 @@
   }
   function dragDrop(d, keep){
     d.active = false;
+    stopDragScroll();
     var el = d.el, tgt = keep ? d.target : d.idx;
     el.style.transition = "transform .15s cubic-bezier(.2,.7,.25,1)";
     el.style.transform = "translateY(" + ((tgt - d.idx) * d.rowH).toFixed(1) + "px)";
@@ -1508,13 +1627,14 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0};
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0};
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
       race(getKorea(), 13000).then(function(n){ res.kr = n; }).catch(function(){ res.kr = 0; }),
       race(getAsia(), 13000).then(function(n){ res.asia = n; }).catch(function(){ res.asia = 0; }),
-      race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; })
+      race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
+      race(getXyz(), 9000).then(function(n){ res.xyz = n; }).catch(function(){ res.xyz = 0; })
     ];
     if(krNow){
       tasks.push(race(getStocks(), 13000).then(function(n){ res.stk = n; }).catch(function(){ res.stk = 0; }));
@@ -1532,7 +1652,7 @@
 
     Promise.all(tasks).then(function(){
       renderAll();
-      var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0, okA = res.asia > 0;
+      var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0, okA = res.asia > 0, okX = res.xyz > 0;
       var okStock = (krNow ? res.stk : res.kp) > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
@@ -1541,21 +1661,23 @@
       if(!krNow && res.kp > 0) bits.push("KOSPILAB");
       if(res.sa > 0) bits.push(srcTag.sa || "investing.com");
       if(res.k200 > 0) bits.push(srcTag.k200 || "PreKOSPI");
+      if(okX) bits.push(srcTag.xyz || "Hyperliquid");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC && okR && okA && okStock){
+      if(okI && okC && okR && okA && okStock && okX){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
-      }else if(okI || okC || okR || okA || okStock){
+      }else if(okI || okC || okR || okA || okStock || okX){
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
         if(!okR) miss.push("한국지수");
         if(!okA) miss.push("닛케이·CSI");
         if(!okStock) miss.push(krNow ? "한국현재가" : "예상가");
+        if(!okX) miss.push("하이퍼리퀴드");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
       }else{
