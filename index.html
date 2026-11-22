@@ -609,7 +609,7 @@
       if(CN_NV && (Date.now() - CN_NV.at) < 180000 && CN_NV.status==="OPEN") MK.cn = true;
       // 야간선물 시세 API가 세션 진행 중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
       if(NK && (Date.now() - NK.at) < 180000 && NK.open) MK.night = true;
-      if(FORCE_KR) MK.kr = (FORCE_KR === "open" || FORCE_KR === "pre" || FORCE_KR === "after");
+      if(FORCE_KR) MK.kr = (FORCE_KR === "open");      // 푸터·지수·코스피 행은 정규장 기준(프리/애프터는 삼성전자·하이닉스 행만)
       if(FORCE_SA) MK.sa = (FORCE_SA === "open");
       if(FORCE_NK) MK.night = (FORCE_NK === "open");
     }catch(e){}

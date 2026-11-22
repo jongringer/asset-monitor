@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<iframe id="f" src="index.html?b=390x844&amp;t=6"></iframe>
+<iframe id="f" src="index.html?b=390x844&amp;t=7"></iframe>
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
@@ -18,7 +18,7 @@
   var ifq = q.get("ifq") || "";
   var rowId = q.get("row") || "sp500";
   var f = document.getElementById("f");
-  if(ifq) f.src = "index.html?b=390x844&t=6&" + ifq;
+  if(ifq) f.src = "index.html?b=390x844&t=7&" + ifq;
   f.addEventListener("load", function(){
     var d = f.contentDocument, w = f.contentWindow;
     function fire(target, type, x, y, buttons){
