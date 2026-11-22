@@ -127,6 +127,39 @@
   log('T7 normal_swipe_delete', {rowsBefore: rowsBefore7, rowsAfter: $rows().length});
 
   restore();
+  log('DONE-BASE', {restored: true});
+
+  // ── 8) 실제 scale 경로(2배) 상태에서 롱프레스·드래그 → 순서 불변 ──
+  var vv2 = W.visualViewport;
+  Object.defineProperty(vv2, 'scale', {configurable:true, get:function(){ return 2; }});
+  await wait(400);
+  var before8 = listOf();
+  (function(){ var p = rowRect(2); touch(p.el, 'touchstart', [[p.x, p.y]]); })();
+  await wait(520);
+  var drag8 = !!D.querySelector('.row.dragging');
+  var ev8 = (function(){ var p = rowRect(2); return touch(p.el, 'touchmove', [[p.x, p.y + 150]]); })();
+  touch(rowRect(2).el, 'touchend', [], [[rowRect(2).x, rowRect(2).y + 150]]);
+  await wait(400);
+  log('T8 scale2_gesture', {dragging: drag8, preventDefaultCalled: ev8.defaultPrevented, changed: JSON.stringify(listOf()) !== JSON.stringify(before8), bodyZoomed: D.body.classList.contains('zoomed')});
+  try{ delete vv2.scale; }catch(e){}
+  await wait(500);
+  log('T8 released', {bodyZoomed: D.body.classList.contains('zoomed')});
+
+  // ── 9) 드래그가 붙은 뒤에 두 번째 손가락(핀치)이 닿으면 커밋 없이 취소 ──
+  var before9 = listOf();
+  (function(){ var p = rowRect(0); touch(p.el, 'touchstart', [[p.x, p.y]]); })();
+  await wait(520);
+  var engaged9 = !!D.querySelector('.row.dragging');
+  (function(){ var p = rowRect(0); touch(p.el, 'touchmove', [[p.x, p.y + 60]]); })();
+  var moved9 = !!D.querySelector('.row.dragging');
+  (function(){ var p = rowRect(0); touch(p.el, 'touchstart', [[p.x, p.y + 60, 0], [p.x + 50, p.y + 90, 1]]); })();   // 둘째 손가락
+  var survived9 = !!D.querySelector('.row.dragging');
+  (function(){ var p = rowRect(0); touch(p.el, 'touchmove', [[p.x, p.y + 140]]); })();
+  touch(rowRect(0).el, 'touchend', [], [[rowRect(0).x, rowRect(0).y + 140]]);
+  await wait(500);
+  log('T9 pinch_during_drag', {engaged: engaged9, stillAfterMove: moved9, stillAfterSecondFinger: survived9, changed: JSON.stringify(listOf()) !== JSON.stringify(before9)});
+
+  restore();
   log('DONE', {restored: true});
   // 화면을 원상복구
   fr.contentWindow.location.reload();
