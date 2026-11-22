@@ -97,9 +97,12 @@
   .row{
     position:relative;
     display:flex;flex-direction:column;justify-content:center;
-    padding:.6em .6em .58em .78em;overflow:hidden;transition:opacity .45s ease;
+    padding:.54em .5em .52em .72em;overflow:hidden;transition:opacity .45s ease;
   }
   .row + .row{border-top:1px solid var(--line)}
+  /* 하이퍼리퀴드 xyz 8종: 딥 슬레이트 네이비 바탕으로 기존 행과 은은하게 구분 */
+  .row.xyz{background:#171D2A}
+  .row + .row.xyz{border-top-color:rgba(124,160,220,.16)}
   .row.stale{opacity:.45}
 
   /* 좌측 상태 인디케이터: 장중=초록 · 장마감=빨강 */
@@ -107,17 +110,17 @@
     background:var(--closed);opacity:.92;transition:background .5s ease}
   .row.open::before{background:var(--open);box-shadow:0 0 6px rgba(47,191,113,.25)}
 
-  .top{display:flex;align-items:center;gap:.2em;min-width:0}
-  .nm{flex:1 1 auto;min-width:0;font-size:.98em;font-weight:700;color:#FFFFFF;letter-spacing:-.02em;
+  .top{display:flex;align-items:center;gap:.14em;min-width:0}
+  .nm{flex:1 1 auto;min-width:0;font-size:.96em;font-weight:700;color:#FFFFFF;letter-spacing:-.025em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 출처 배지: 하이퍼리퀴드 xyz 마켓 표시 */
-  .nm .tag{display:inline-block;margin-left:.36em;padding:.06em .3em .1em;border-radius:.26em;
-    font-size:.62em;font-weight:800;letter-spacing:.06em;color:#7FA6C8;vertical-align:.16em;
-    background:rgba(120,170,230,.13);border:1px solid rgba(120,170,230,.26)}
-  .px{flex:0 0 auto;min-width:4.5em;text-align:right;font-size:1.3em;font-weight:800;color:#fff;
-    font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.08}
-  .pct{flex:0 0 auto;min-width:3.5em;margin-left:.18em;text-align:right;font-size:1.46em;font-weight:800;
-    font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1.05;color:var(--down)}
+  .nm .tag{display:inline-block;margin-left:.32em;padding:.04em .26em .08em;border-radius:.24em;
+    font-size:.6em;font-weight:800;letter-spacing:.05em;color:#8FB3D6;vertical-align:.16em;
+    background:rgba(120,170,230,.14);border:1px solid rgba(120,170,230,.3)}
+  .px{flex:0 0 auto;min-width:4.35em;text-align:right;font-size:1.22em;font-weight:800;color:#fff;
+    font-variant-numeric:tabular-nums;letter-spacing:-.035em;line-height:1.08}
+  .pct{flex:0 0 auto;min-width:3.3em;margin-left:.12em;text-align:right;font-size:1.36em;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:-.045em;line-height:1.05;color:var(--down)}
   .pct.up{color:var(--up)}
   .pct.flat{color:#A7AFB9}
 
@@ -131,9 +134,9 @@
   .row.newhigh .ath b{color:#FFC663}
 
   /* ── 3년 월별 추이 미니 그래프 (월별 상승=빨강 · 하락=파랑) ── */
-  .spk{flex:0 0 auto;width:44px;height:19px;display:block;align-self:center;
-    margin:0 .08em 0 .14em;overflow:visible;pointer-events:none}
-  .spk svg{display:block;width:44px;height:19px}
+  .spk{flex:0 0 auto;width:38px;height:18px;display:block;align-self:center;
+    margin:0 .06em 0 .1em;overflow:visible;pointer-events:none}
+  .spk svg{display:block;width:38px;height:18px}
 
   /* ── 행 드래그 순서 변경 (모바일 롱프레스 · PC 마우스) ── */
   #list{touch-action:pan-y pinch-zoom}            /* 평소엔 세로 스크롤·핀치 확대 허용, 드래그가 붙은 뒤에만 preventDefault */
@@ -966,7 +969,7 @@
   }
 
   /* ───────── 3년 월별(약 36개월) 히스토리 → 자산명 옆 미니 스파크라인 ───────── */
-  var SPK_W = 44, SPK_H = 19, SPK_PAD = 2.4;
+  var SPK_W = 38, SPK_H = 18, SPK_PAD = 2.2;
   var HIST_KEY = "apm.hist.v4", HIST_TTL = 6*3600*1000;
   var HIST = {}, histAt = 0, SPKC = {};
 
@@ -1291,7 +1294,7 @@
   function buildList(){
     $("#list").innerHTML = ORDER.map(function(id){
       var a = BY[id];
-      return '<div class="row stale" id="row-'+a.id+'" data-id="'+a.id+'">'+
+      return '<div class="row stale'+(a.mkt==="xyz"?' xyz':'')+'" id="row-'+a.id+'" data-id="'+a.id+'">'+
         '<div class="top">'+
           '<div class="nm"><span class="nl">'+rowName(a)+'</span>'+(a.tag?'<span class="tag">'+a.tag+'</span>':'')+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
