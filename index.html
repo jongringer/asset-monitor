@@ -178,6 +178,58 @@
     font-size:.6em;color:var(--dim2);font-weight:700;padding:0 .12em}
   .frow > span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .frow .src{font-variant-numeric:tabular-nums;opacity:.9;text-align:right}
+
+  /* ── 헤더 우측 묶음 + 추가 버튼 ── */
+  .hrow{display:flex;align-items:center;justify-content:space-between;gap:.4em}
+  .hright{display:flex;align-items:center;gap:.34em;flex:0 0 auto}
+  .addbtn{all:unset;cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+    font-size:.58em;font-weight:800;letter-spacing:.01em;color:#CFE0F2;white-space:nowrap;
+    padding:.5em .72em;border-radius:99px;border:1px solid rgba(124,160,220,.38);background:rgba(124,160,220,.14);line-height:1.25}
+  .addbtn:active{background:rgba(124,160,220,.26)}
+
+  /* ── 옆으로 밀어 삭제: 행 내용이 왼쪽으로 열리면 빨간 바탕+휴지통이 드러나다 ── */
+  .row .rc{position:relative;z-index:1;transform:translateX(0);transition:transform .22s cubic-bezier(.2,.7,.25,1)}
+  .row.swiping .rc{transition:none}
+  .row .del{position:absolute;z-index:0;right:0;top:0;bottom:0;width:0;background:var(--closed);overflow:hidden;
+    transition:width .22s cubic-bezier(.2,.7,.25,1)}
+  .row.swiping .del{transition:none}
+  .row .del svg{position:absolute;right:.78em;top:50%;transform:translateY(-50%);width:1.5em;height:1.5em;
+    stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+
+  /* ── 종목 추가 모달 ── */
+  .ov{position:absolute;inset:0;z-index:40;display:none;align-items:flex-end;justify-content:center;background:rgba(4,6,9,.7)}
+  .ov.on{display:flex}
+  .sheet{width:100%;max-height:86%;display:flex;flex-direction:column;min-height:0;
+    background:#141A22;border:1px solid var(--edge);border-bottom:0;border-radius:1.1em 1.1em 0 0;
+    padding:.9em .85em calc(.8em + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 44px rgba(0,0,0,.66)}
+  .shh{display:flex;align-items:center;justify-content:space-between;gap:.6em;margin-bottom:.55em}
+  .shh b{font-size:.9em;font-weight:800;color:#fff;letter-spacing:-.015em}
+  .shh .x{all:unset;cursor:pointer;font-size:.62em;font-weight:700;color:var(--dim);padding:.45em .8em;border-radius:99px;border:1px solid var(--edge)}
+  .tabs{display:flex;gap:.3em;margin-bottom:.6em}
+  .tabs button{all:unset;cursor:pointer;flex:1 1 0;text-align:center;font-size:.6em;font-weight:800;color:var(--dim);
+    padding:.62em .2em;border-radius:.5em;border:1px solid var(--edge);background:#171D24}
+  .tabs button.on{color:#fff;background:rgba(124,160,220,.2);border-color:rgba(124,160,220,.46)}
+  .pane{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:.42em}
+  .pane.on{display:flex}
+  .fld{width:100%;font-size:.68em;font-weight:700;color:#E8EDF3;background:#0F141A;
+    border:1px solid var(--edge);border-radius:.5em;padding:.72em .8em;outline:none}
+  .fld::placeholder{color:#5E6773;font-weight:600}
+  .lst{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    border:1px solid var(--line);border-radius:.5em;background:#11161D}
+  .it{display:flex;align-items:center;gap:.5em;padding:.6em .7em;border-bottom:1px solid var(--line)}
+  .it:last-child{border-bottom:0}
+  .it .nm2{flex:1 1 auto;min-width:0;font-size:.72em;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .it .sub2{display:block;font-size:.8em;font-weight:700;color:#7C8591;margin-top:.16em}
+  .it .px2{flex:0 0 auto;font-size:.68em;font-weight:700;color:#B9C1CA;font-variant-numeric:tabular-nums;text-align:right}
+  .it .go{all:unset;cursor:pointer;flex:0 0 auto;font-size:.6em;font-weight:800;color:#A8CBEC;
+    padding:.5em .8em;border-radius:99px;border:1px solid rgba(124,160,220,.4);background:rgba(124,160,220,.16)}
+  .it .go.off{color:#5E6773;border-color:rgba(255,255,255,.14);background:transparent;cursor:default}
+  .empty{font-size:.64em;font-weight:700;color:#6A727C;padding:.9em .2em;text-align:center}
+  .yadd{all:unset;cursor:pointer;text-align:center;font-size:.68em;font-weight:800;color:#DCE9F7;
+    padding:.78em;border-radius:.55em;border:1px solid rgba(124,160,220,.42);background:rgba(124,160,220,.2)}
+  .yadd:active{background:rgba(124,160,220,.32)}
+  .msg{font-size:.62em;font-weight:700;color:#8B939D;min-height:1.3em;line-height:1.45}
+  .msg.bad{color:#EF8A8C}
 </style>
 </head>
 <body>
@@ -192,7 +244,10 @@
           순서 초기화
         </button>
       </div>
-      <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
+      <div class="hright">
+        <button class="addbtn" id="addbtn" type="button" aria-label="종목 추가">+ 추가</button>
+        <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
+      </div>
     </div>
     <div class="sub">
       <span class="grad">3년내 최고점 대비 변동률</span>
@@ -281,6 +336,32 @@
     </div>
   </footer>
 
+  <div class="ov" id="ov" role="dialog" aria-modal="true" aria-label="종목 추가">
+    <div class="sheet">
+      <div class="shh"><b>종목 추가</b><button class="x" id="ovx" type="button">닫기</button></div>
+      <div class="tabs" id="tabs">
+        <button type="button" data-tab="back" class="on">삭제한 종목</button>
+        <button type="button" data-tab="xyz">하이퍼리퀴드 xyz</button>
+        <button type="button" data-tab="yahoo">Yahoo 티커</button>
+      </div>
+      <div class="pane on" id="pane-back">
+        <div class="lst" id="lstBack"></div>
+        <div class="msg" id="msgBack"></div>
+      </div>
+      <div class="pane" id="pane-xyz">
+        <input class="fld" id="hlq" type="search" placeholder="xyz 종목 검색 (예: TSLA, GOLD, EWY)" autocomplete="off">
+        <div class="lst" id="lstHL"></div>
+        <div class="msg" id="msgHL"></div>
+      </div>
+      <div class="pane" id="pane-yahoo">
+        <input class="fld" id="yq" type="text" placeholder="Yahoo 티커 (예: TSLA, SI=F, 005930.KS)" autocomplete="off" autocapitalize="characters">
+        <input class="fld" id="yname" type="text" placeholder="표시 이름 (비우면 티커 그대로)" autocomplete="off">
+        <button class="yadd" id="yadd" type="button">3년 최고점·차트까지 받아서 추가</button>
+        <div class="msg" id="msgY">추가하면 3년내 최고점·36개월 미니차트·실시간 시세를 자동으로 채웁니다.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -290,7 +371,7 @@
   /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ─────────
      mkt: us = 미국 정규장 · cme = 미국 선물(글롭엑스) · jp = 일본(TSE) · cn = 중국(상해) · kr = 한국 정규장 · night = 코스피200 야간선물 · sa = 사우디(타다울) · fx = 외환 · coin = 24/7
      src: nvw = 네이버 해외지수 실시간(.N225·.CSI300), Yahoo는 보조 */
-  var ASSETS = [
+  var DEFAULTS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", mkt:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"es",    name:"US500 선물",      yahoo:"ES=F",  mkt:"cme",  ath:7897.50,  athDate:"26.10.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  mkt:"us",   ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -331,14 +412,38 @@
   ];
   /* 2026-11-23 추가분 — 저장된 사용자 순서가 있어도 항상 맨 아래에 붙는다 */
   var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy"];
-  var BY = {}, ORDER = [];
-  ASSETS.forEach(function(a){ BY[a.id]=a; ORDER.push(a.id); });
+
+  /* 화면에 실제로 올라가는 목록: 기본 28종 − 삭제한 종목 + 사용자가 추가한 종목 */
+  var ASSETS = [], BY = {}, ORDER = [], BASE_ORDER = [], YSYMS = [];
+  var DEL_KEY = "assetMonitor.deleted.v1", CUS_KEY = "assetMonitor.custom.v1";
+  var deleted = {}, custom = [];
+  function applyAssets(){
+    ASSETS = [];
+    DEFAULTS.forEach(function(d){ if(!deleted[d.id]) ASSETS.push(d); });
+    custom.forEach(function(c){ if(c && c.id && !deleted[c.id]) ASSETS.push(c); });
+    BY = {};
+    ASSETS.forEach(function(a){ BY[a.id] = a; });
+    BASE_ORDER = ASSETS.map(function(a){ return a.id; });
+    YSYMS = ASSETS.filter(function(a){ return a.yahoo && a.src!=="naver"; }).map(function(a){ return a.yahoo; });
+  }
+  function loadPrefs(){
+    try{ var d = JSON.parse(localStorage.getItem(DEL_KEY) || "[]");
+      if(Array.isArray(d)) d.forEach(function(id){ if(typeof id==="string") deleted[id] = 1; }); }catch(e){}
+    try{ var c = JSON.parse(localStorage.getItem(CUS_KEY) || "null");
+      if(Array.isArray(c)) custom = c.filter(function(x){ return x && x.id && x.name; }); }catch(e){}
+  }
+  function savePrefs(){
+    try{
+      var dl = Object.keys(deleted);
+      if(dl.length) localStorage.setItem(DEL_KEY, JSON.stringify(dl)); else localStorage.removeItem(DEL_KEY);
+      if(custom.length) localStorage.setItem(CUS_KEY, JSON.stringify(custom)); else localStorage.removeItem(CUS_KEY);
+    }catch(e){}
+  }
 
   var UP = "#EF5A5C", DOWN = "#2E7CE0";     // 한국식 상승(빨강) / 하락(파랑)
 
   /* Yahoo는 지수·선물·환율용이지만 한국 지수는 장중 당일 봉을 주지 않아(직전 거래일 종가에 멈춤)
-     코스피·코스닥은 네이버 증권 실시간(polling) 시세를 따로 받는다. */
-  var YSYMS = ASSETS.filter(function(a){return a.yahoo && a.src!=="naver";}).map(function(a){return a.yahoo;});
+     코스피·코스닥은 네이버 증권 실시간(polling) 시세를 따로 받는다. YSYMS는 applyAssets()에서 채운다. */
   var CYCLE = 10000;       // 10초마다 자동 갱신
   var STALE_MS = 120000;   // 2분 넘게 갱신 안 된 값은 흐리게
 
@@ -544,9 +649,9 @@
   }
 
   /* ───────── 지수·금·원유·환율: Yahoo (브라우저 CORS 차단 → 프록시 폴백 체인) ───────── */
-  function yahooURL(){
+  function yahooURL(list){
     return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
-      encodeURIComponent(YSYMS.join(",")) + "&range=1d&interval=1d&_=" + Date.now();
+      encodeURIComponent((list || YSYMS).join(",")) + "&range=1d&interval=1d&_=" + Date.now();
   }
   var ROUTES = [
     {n:"jina",      f:function(u){ return "https://r.jina.ai/" + u; },            ms:6000},
@@ -576,7 +681,22 @@
     });
   }
   function getIndices(){
-    var target = yahooURL();
+    // Yahoo spark는 심볼 20개까지만 받는다(사용자 추가 종목이 늘면 나눠 부른다)
+    var chunks = [], i;
+    for(i=0;i<YSYMS.length;i+=20) chunks.push(YSYMS.slice(i,i+20));
+    if(!chunks.length) return Promise.reject(new Error("no yahoo symbols"));
+    var total = 0;
+    return chunks.reduce(function(p, ch){
+      return p.then(function(){
+        return getIndicesChunk(ch).then(function(n){ total += n; }, function(e){ if(DBG) dg("idx chunk fail"); });
+      });
+    }, Promise.resolve()).then(function(){
+      if(!total) throw new Error("all chunks failed");
+      return total;
+    });
+  }
+  function getIndicesChunk(list){
+    var target = yahooURL(list);
     var gi = 0;
     function attempt(){
       if(gi >= GROUPS.length) return Promise.reject(new Error("all routes failed"));
@@ -915,19 +1035,21 @@
         var d = JSON.parse(txt);
         var uni = d && d[0] && d[0].universe, ctxs = d && d[1];
         if(!Array.isArray(uni) || !Array.isArray(ctxs) || !uni.length) throw new Error("bad hl payload");
-        var n = 0, now = Date.now();
+        var n = 0, now = Date.now(), all = [];
         for(var i=0;i<uni.length;i++){
           var u = uni[i], c = ctxs[i];
           if(!u || !c) continue;
-          var a = want[u.name];
-          if(!a) continue;
           var px = Number(c.markPx);
-          if(!isFinite(px) || px<=0) continue;
           var prev = Number(c.prevDayPx);
           var chg = (isFinite(prev) && prev>0) ? (px-prev)/prev*100 : null;
+          if(isFinite(px) && px>0) all.push({name:u.name, px:px, chg:chg});
+          var a = want[u.name];
+          if(!a) continue;
+          if(!isFinite(px) || px<=0) continue;
           state[a.id] = {px:px, chg:chg, t:now};
           n++;
         }
+        if(all.length) HL_ALL = all;        // 추가 모달의 검색 목록(147종)
         if(!n) throw new Error("no xyz symbols");
         srcTag.xyz = "Hyperliquid";
         if(DBG) dg("xyz:" + (Date.now()-t0) + "ms n=" + n);
@@ -1295,6 +1417,11 @@
     $("#list").innerHTML = ORDER.map(function(id){
       var a = BY[id];
       return '<div class="row stale'+(a.mkt==="xyz"?' xyz':'')+'" id="row-'+a.id+'" data-id="'+a.id+'">'+
+        '<div class="del" aria-label="삭제">'+
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/>'+
+          '<path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/></svg>'+
+        '</div>'+
+        '<div class="rc">'+
         '<div class="top">'+
           '<div class="nm"><span class="nl">'+rowName(a)+'</span>'+(a.tag?'<span class="tag">'+a.tag+'</span>':'')+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
@@ -1302,8 +1429,9 @@
           '<div class="pct flat">—</div>'+
         '</div>'+
         '<div class="bot">'+
-          '<div class="ath">최고 '+nf(a.ath,a.dec)+' · '+a.athDate+'</div>'+
+          '<div class="ath">'+(a.ath>0 ? '최고 '+nf(a.ath,a.dec)+' · '+a.athDate : '최고점 조회 중…')+'</div>'+
           '<div class="dc"></div>'+
+        '</div>'+
         '</div>'+
       '</div>';
     }).join("");
@@ -1333,21 +1461,26 @@
     }
 
     var px = Number(s.px);
-    var isNew = px > a.ath;                       // 3년내 최고점 갱신 시 자동 반영
-    var pct = (px - a.ath) / a.ath * 100;         // 미니 그래프의 0% 기준과 동일
-    var up = pct > 0.0001;
+    var hasAth = a.ath > 0;
+    var isNew = hasAth && px > a.ath;             // 3년내 최고점 갱신 시 자동 반영
+    var pct = hasAth ? (px - a.ath) / a.ath * 100 : null;   // 미니 그래프의 0% 기준과 동일
+    var up = pct != null && pct > 0.0001;
 
     el.classList.toggle("stale", (Date.now() - (s.t||0)) > STALE_MS);
     el.classList.toggle("newhigh", isNew);
 
     pxEl.textContent = (a.cur||"") + nf(px, a.dec);
 
-    pEl.textContent = (pct>0?"+":"") + pct.toFixed(2) + "%";
-    pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
-
-    athEl.innerHTML = isNew
-      ? '3년내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
-      : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
+    if(pct == null){
+      pEl.textContent = "—"; pEl.className = "pct flat";
+      athEl.textContent = "3년 최고점 조회 중…";
+    }else{
+      pEl.textContent = (pct>0?"+":"") + pct.toFixed(2) + "%";
+      pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
+      athEl.innerHTML = isNew
+        ? '3년내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
+        : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
+    }
 
     if(s.chg==null || !isFinite(s.chg)){
       dcEl.textContent = a.chgLabel; dcEl.className = "dc";
@@ -1385,8 +1518,8 @@
      - 마우스: 누른 뒤 8px 이상 움직이면 드래그 시작(user-select:none으로 텍스트 선택 방지).
      - 핸들 열을 두지 않고 행 자체를 잡으므로 기존 4열 구조(이름·미니그래프·가격·변동률)는 그대로다.
      - 순서는 localStorage(assetMonitor.order.v1)에 저장해 새로고침·재방문·10초 자동 갱신에도 유지한다. */
-  var ORD_KEY = "assetMonitor.order.v1";
-  var BASE_ORDER = ORDER.slice();          // 코드에 정의된 기본 순서
+  var ORD_KEY = "assetMonitor.order.v1";    // BASE_ORDER는 applyAssets()가 채운다
+  var closeSwipeOpen = function(){};       // wireDrag가 실제 구현을 넣는다
   var HOLD_MS = 250, SLOP = 8;             // 터치 롱프레스 시간 / 손짓 허용 오차(px)
   var drag = null, settleT = 0, settleEl = null, settleTo = 0;
   var lp = {el:null, t:0, y0:0, x0:0};     // 롱프레스 대기 상태
@@ -1431,7 +1564,201 @@
   }
   function ordSetUI(){
     var b = document.getElementById("ordreset");
-    if(b) b.classList.toggle("on", ORDER.join(",") !== BASE_ORDER.join(","));
+    if(!b) return;
+    var changed = ORDER.join(",") !== BASE_ORDER.join(",") || custom.length > 0 || Object.keys(deleted).length > 0;
+    b.classList.toggle("on", changed);
+  }
+
+  /* ───────── 목록 재구축 · 삭제 · 종목 추가 ───────── */
+  function rebuild(){
+    closeSwipeOpen();
+    applyAssets();
+    var keep = ORDER.filter(function(id){ return !!BY[id]; });
+    ASSETS.forEach(function(a){ if(keep.indexOf(a.id) < 0) keep.push(a.id); });
+    ORDER = keep;
+    var cnt = document.getElementById("cnt");
+    if(cnt) cnt.textContent = ASSETS.length;
+    buildList(); renderAll(); ordSave(); ordSetUI();
+    setTimeout(loadHist, 400);          // 새로 추가된 종목의 3년 월별 히스토리
+    try{ cache(); }catch(e){}
+  }
+  function delAsset(id){
+    if(!id || !BY[id]) return;
+    if(BY[id].custom) custom = custom.filter(function(c){ return c.id !== id; });
+    else deleted[id] = 1;
+    ORDER = ORDER.filter(function(x){ return x !== id; });
+    savePrefs();
+    rebuild();
+  }
+  function restoreDefault(id){
+    if(!deleted[id]) return;
+    var idx = -1;
+    DEFAULTS.forEach(function(d, i){ if(d.id === id) idx = i; });
+    var after = null;
+    for(var k = idx-1; k >= 0; k--){ if(BY[DEFAULTS[k].id]){ after = DEFAULTS[k].id; break; } }
+    delete deleted[id];
+    var list = ORDER.slice();
+    var at = after ? list.indexOf(after) + 1 : 0;
+    if(at < 0) at = list.length;
+    list.splice(at, 0, id);
+    ORDER = list;
+    savePrefs();
+    rebuild();
+  }
+
+  function escHtml(s){
+    return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function ymd2(sec){ var d = new Date(sec*1000); return String(d.getFullYear()).slice(2)+"."+pad2(d.getMonth()+1)+"."+pad2(d.getDate()); }
+  function guessDef(sym){
+    var s = sym.toUpperCase(), mkt = "us";
+    if(/\.(KS|KQ)$/.test(s)) mkt = "kr";
+    else if(/=F$/.test(s)) mkt = "cme";
+    else if(/=X$/.test(s)) mkt = "fx";
+    else if(/(USDT|-USD)$/.test(s)) mkt = "coin";
+    return {mkt:mkt, dec:(mkt==="kr" ? 0 : 2), cur:((mkt==="kr"||mkt==="fx") ? "" : "$"),
+            chgLabel:(mkt==="coin" ? "24h" : "전일")};
+  }
+
+  /* 하이퍼리퀴드 xyz 전체 목록(모달용) — getXyz가 갱신 */
+  var HL_ALL = null;
+  function hlDisp(sym){ return String(sym||"").replace(/^xyz:/, ""); }
+
+  var ovEl = document.getElementById("ov");
+  function setTab(t){
+    var tabs = document.querySelectorAll("#tabs button");
+    for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].getAttribute("data-tab") === t);
+    ["back","xyz","yahoo"].forEach(function(k){
+      var p = document.getElementById("pane-"+k); if(p) p.classList.toggle("on", k === t);
+    });
+    if(t === "back") renderBackList();
+    if(t === "xyz"){ renderHLList(); if(!HL_ALL) fetchHLList(); }
+  }
+  function openModal(){
+    if(!ovEl) return;
+    closeSwipeOpen();
+    ovEl.classList.add("on");
+    var q = document.getElementById("hlq"); if(q) q.value = "";
+    setTab("back");
+  }
+  function closeModal(){ if(ovEl) ovEl.classList.remove("on"); }
+
+  function renderBackList(){
+    var box = document.getElementById("lstBack");
+    if(!box) return;
+    var html = "";
+    DEFAULTS.forEach(function(d){
+      if(!deleted[d.id]) return;
+      html += '<div class="it"><div class="nm2">'+escHtml(d.name)+'</div>'+
+              '<button class="go" type="button" data-back="'+d.id+'">되돌리기</button></div>';
+    });
+    box.innerHTML = html || '<div class="empty">삭제한 기본 종목이 없습니다</div>';
+    document.getElementById("msgBack").textContent =
+      html ? "되돌리면 원래 있던 자리(앞 종목 바로 뒤)로 다시 들어갑니다." : "기본 28종이 모두 들어 있습니다.";
+  }
+
+  function fetchHLList(){
+    var box = document.getElementById("lstHL");
+    if(box) box.innerHTML = '<div class="empty">하이퍼리퀴드 xyz 목록을 불러오는 중…</div>';
+    getXyz().then(function(){ renderHLList(); }, function(e){
+      if(box) box.innerHTML = '<div class="empty">목록을 받지 못했습니다. 잠시 뒤 다시 열어 주세요.</div>';
+      if(DBG) dg("hl list fail");
+    });
+  }
+  function renderHLList(){
+    var box = document.getElementById("lstHL");
+    if(!box) return;
+    if(!HL_ALL){ box.innerHTML = '<div class="empty">목록을 불러오는 중…</div>'; return; }
+    var q = ((document.getElementById("hlq") || {}).value || "").trim().toUpperCase();
+    var html = "", n = 0;
+    HL_ALL.forEach(function(m){
+      var disp = hlDisp(m.name);
+      if(q && disp.toUpperCase().indexOf(q) < 0) return;
+      if(n >= 60) return;
+      n++;
+      var have = false;
+      for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].hl === m.name){ have = true; break; } }
+      html += '<div class="it">'+
+        '<div class="nm2">'+escHtml(disp)+'<span class="sub2">'+escHtml(m.name)+'</span></div>'+
+        '<div class="px2">'+(isFinite(m.px) ? "$"+nf(m.px,2) : "—")+'</div>'+
+        '<button class="go'+(have?" off":"")+'" type="button" data-hl="'+escHtml(m.name)+'"'+(have?" disabled":"")+'>'+(have?"추가됨":"추가")+'</button>'+
+      '</div>';
+    });
+    box.innerHTML = html || '<div class="empty">검색 결과가 없습니다</div>';
+    var msg = document.getElementById("msgHL");
+    if(msg) msg.textContent = HL_ALL.length + "종 중 " + n + "종 표시 · 365일 24시간 거래";
+  }
+
+  function addHL(sym){
+    if(!sym) return;
+    for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].hl === sym) return; }
+    var disp = hlDisp(sym);
+    var def = {id:"h:"+disp, custom:true, name:disp, tag:"xyz", mkt:"xyz", hl:sym,
+               ath:0, athDate:"", dec:2, cur:"$", chgLabel:"24h"};
+    custom.push(def);
+    ORDER.push(def.id);
+    savePrefs();
+    rebuild();
+    loadHLMeta(def);
+    renderHLList();
+  }
+  function loadHLMeta(a){
+    var end = Date.now(), start = end - 3*365*86400000;
+    function body(iv){ return JSON.stringify({type:"candleSnapshot", req:{coin:a.hl, interval:iv, startTime:start, endTime:end}}); }
+    postText(HL_URL, body("1d"), 15000).then(function(t){
+      var d = JSON.parse(t);
+      if(!Array.isArray(d) || !d.length) throw new Error("no candles");
+      var best = 0, bt = 0;
+      d.forEach(function(c){ var h = Number(c.h); if(isFinite(h) && h > best){ best = h; bt = Number(c.t); } });
+      if(!(best > 0)) throw new Error("bad candles");
+      a.ath = best; a.athDate = ymd2(bt/1000) + " 장중";
+      savePrefs(); renderAll();
+      return postText(HL_URL, body("1M"), 15000);
+    }).then(function(t){
+      var m = JSON.parse(t);
+      if(!Array.isArray(m) || m.length < 2) return;
+      var v = histSeries(a, m.map(function(c){ return Number(c.c); }));
+      if(v){ HIST[a.id] = v; histAt = Date.now(); histSave(); drawSpark(a, pctOf(a, state[a.id] && state[a.id].px)); }
+    }).catch(function(e){ if(DBG) dg("hlmeta:"+((e&&e.message)||e)); });
+  }
+
+  function chart3y(sym){
+    var u = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(sym) +
+            "?range=3y&interval=1d&_=" + Date.now();
+    return histGet(u);
+  }
+  function addYahooTicker(){
+    var yq = document.getElementById("yq"), yn = document.getElementById("yname"), msg = document.getElementById("msgY");
+    var sym = (yq.value || "").trim().toUpperCase();
+    var nm = (yn.value || "").trim();
+    if(!sym){ msg.className = "msg bad"; msg.textContent = "티커를 입력해 주세요."; return; }
+    for(var i=0;i<ASSETS.length;i++){
+      if(String(ASSETS[i].yahoo||"").toUpperCase() === sym){ msg.className = "msg bad"; msg.textContent = "이미 목록에 있는 티커입니다."; return; }
+    }
+    msg.className = "msg"; msg.textContent = "3년 최고점을 조회하는 중…";
+    chart3y(sym).then(function(d){
+      var r = d && d.chart && d.chart.result && d.chart.result[0];
+      if(!r) throw new Error("티커를 찾을 수 없습니다");
+      var q = r.indicators && r.indicators.quote && r.indicators.quote[0];
+      var hi = (q && (q.high || q.close)) || [], ts = r.timestamp || [];
+      var best = 0, bi = -1;
+      for(var k=0;k<hi.length;k++){ var v = hi[k]; if(v!=null && isFinite(v) && v > best){ best = v; bi = k; } }
+      if(!(best > 0)) throw new Error("시세가 없습니다");
+      var g = guessDef(sym);
+      var def = {id:"c:"+sym.replace(/[^A-Z0-9._=-]/g,"")+"."+Date.now().toString(36), custom:true,
+                 name:(nm || sym), yahoo:sym, histSym:sym, mkt:g.mkt,
+                 ath:best, athDate:(bi>=0 && ts[bi] ? ymd2(ts[bi]) : ymd2(Date.now()/1000))+" 장중",
+                 dec:g.dec, cur:g.cur, chgLabel:g.chgLabel};
+      custom.push(def); ORDER.push(def.id);
+      savePrefs(); rebuild();
+      yq.value = ""; yn.value = "";
+      msg.className = "msg";
+      msg.textContent = def.name + " 추가됨 · 3년 최고 " + nf(best, g.dec) + " (" + def.athDate + ")";
+    }).catch(function(e){
+      msg.className = "msg bad";
+      msg.textContent = "추가하지 못했습니다: " + ((e && e.message) || e) + " — 티커를 확인해 주세요.";
+    });
   }
 
   function dragPick(e){
@@ -1450,6 +1777,7 @@
   }
   function dragEngage(d){
     d.active = true;
+    closeSwipeOpen();                                // 열린 삭제 바를 닫고 드래그
     d.el.classList.add("dragging");
     document.body.classList.add("dragging");
     for(var i=0;i<d.rows.length;i++) if(d.rows[i] !== d.el) d.rows[i].classList.add("ghost");
@@ -1536,18 +1864,82 @@
   (function wireDrag(){
     var L = $("#list");
 
-    /* ── 터치: 롱프레스로 드래그 시작 ── */
+    /* ── 옆으로 밀어 삭제: 행 내용만 왼쪽으로 당기면 뒤에 빨간 휴지통이 드러난다 ──
+       세로 스크롤(|dy|>|dx|)·롱프레스 순서변경(250ms)·핀치가 우선이고,
+       가로 우세(dx<-12px && |dx|>|dy|*1.3)이고 드래그가 안 붙은 때만 열린다. */
+    var REVEAL = 64, SW_DELETE = 104, swNow = null, swOpen = null, swGuard = 0;
+    function swParts(el){ return {rc:el.querySelector(".rc"), del:el.querySelector(".del")}; }
+    function swSet(el, x){
+      var p = swParts(el); if(!p.rc) return;
+      var v = Math.max(-REVEAL*2.2, Math.min(0, x));
+      p.rc.style.transform = v ? "translateX(" + v.toFixed(1) + "px)" : "";
+      p.del.style.width = (-v).toFixed(1) + "px";
+    }
+    function swClose(){
+      if(!swOpen) return;
+      var el = swOpen; swOpen = null;
+      el.classList.remove("swopen");
+      swSet(el, 0);
+    }
+    function swOpenTo(el){
+      if(swOpen && swOpen !== el) swClose();
+      swOpen = el; el.classList.add("swopen");
+      swSet(el, -REVEAL);
+    }
+    function swBegin(el, x, y){
+      if(drag) return false;
+      swNow = {el:el, x0:x, y0:y, base:(el===swOpen ? -REVEAL : 0), dx:0, active:false};
+      return true;
+    }
+    function swMove(x, y){
+      if(!swNow) return false;
+      var dx = x - swNow.x0, dy = y - swNow.y0;
+      swNow.dx = dx;
+      if(!swNow.active){
+        if(dx < -12 && Math.abs(dx) > Math.abs(dy)*1.3){
+          swNow.active = true;
+          if(lp.t){ clearTimeout(lp.t); lp.t = 0; } lp.el = null;
+          if(swOpen && swOpen !== swNow.el) swClose();
+          swNow.el.classList.add('swiping');
+        }
+      }
+      if(!swNow.active) return false;
+      swSet(swNow.el, swNow.base + dx);
+      return true;
+    }
+    function swEnd(){
+      if(!swNow) return false;
+      var s = swNow; swNow = null;
+      if(!s.active) return false;
+      s.el.classList.remove("swiping");
+      swGuard = Date.now();
+      var d = s.base + s.dx;
+      if(d <= -SW_DELETE){ delAsset(s.el.getAttribute("data-id")); return true; }
+      if(d <= -REVEAL*0.55) swOpenTo(s.el);
+      else if(s.el === swOpen) swClose();
+      else swSet(s.el, 0);
+      return true;
+    }
+    function swCancel(){
+      if(swNow && swNow.active){ swNow.el.classList.remove("swiping"); swSet(swNow.el, swNow.base ? -REVEAL : 0); }
+      swNow = null;
+    }
+
+    /* ── 터치: 롱프레스로 드래그, 가로 우세면 스와이프 ── */
     L.addEventListener("touchstart", function(e){
       if(e.touches.length !== 1) return;
       var el = dragPick(e);
       if(!el) return;
       var t0 = e.touches[0];
+      swBegin(el, t0.clientX, t0.clientY);
       lp.el = el; lp.y0 = t0.clientY; lp.x0 = t0.clientX;
       if(lp.t) clearTimeout(lp.t);
       lp.t = setTimeout(function(){
         lp.t = 0;
         var el2 = lp.el;
         if(!el2) return;
+        if(swNow){ swNow = null; }                 // 롱프레스가 붙으면 스와이프는 포기
+        closeSwipeOpen();
         var d = dragStart("touch", el2, lp.x0, lp.y0);
         if(!d) return;
         drag = d; dragEngage(d);
@@ -1560,8 +1952,11 @@
         if(e.touches[0]) dragMove(drag, e.touches[0].clientY);
         return;
       }
-      if(lp.el && e.touches[0]){
-        var t1 = e.touches[0];
+      if(e.touches.length > 1){ swCancel(); return; }   // 두 손가락(핀치)은 건드리지 않는다
+      if(!e.touches[0]) return;
+      var t1 = e.touches[0];
+      if(swMove(t1.clientX, t1.clientY)){ e.preventDefault(); return; }
+      if(lp.el){
         if(Math.abs(t1.clientY - lp.y0) > SLOP || Math.abs(t1.clientX - lp.x0) > SLOP){
           if(lp.t){ clearTimeout(lp.t); lp.t = 0; }   // 스크롤하려는 손짓 → 롱프레스 취소
           lp.el = null;
@@ -1575,31 +1970,49 @@
       if(drag && drag.active){
         if(e.cancelable) e.preventDefault();
         dragDrop(drag, true);
+        swNow = null;
+        return;
       }
+      if(swEnd() && e.cancelable) e.preventDefault();
     }
     L.addEventListener("touchend", touchDone, {passive:false});
-    L.addEventListener("touchcancel", touchDone, {passive:false});
+    L.addEventListener("touchcancel", function(e){ swCancel(); touchDone(e); }, {passive:false});
 
-    /* ── 마우스: 8px 움직이면 드래그 시작 ── */
+    /* ── 마우스: 가로 우세면 스와이프, 세로/기타 8px 이동이면 드래그 ── */
     L.addEventListener("mousedown", function(e){
       if(e.button !== 0) return;
       var el = dragPick(e);
       if(!el) return;
+      swBegin(el, e.clientX, e.clientY);
       var d = dragStart("mouse", el, e.clientX, e.clientY);
       if(!d) return;
       drag = d;
       if(e.cancelable) e.preventDefault();          // 텍스트 선택 방지
     });
     document.addEventListener("mousemove", function(e){
+      if(swNow && swNow.active){
+        e.preventDefault();
+        swMove(e.clientX, e.clientY);
+        return;
+      }
       if(!drag || drag.kind !== "mouse") return;
       if(!drag.active){
-        if(Math.abs(e.clientX - drag.x0) <= SLOP && Math.abs(e.clientY - drag.y0) <= SLOP) return;
+        var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+        if(dx < -12 && Math.abs(dx) > Math.abs(dy)*1.3 && swNow){   // 가로 우세 → 스와이프로 전환
+          swMove(e.clientX, e.clientY);
+          drag = null;
+          e.preventDefault();
+          return;
+        }
+        if(Math.abs(dx) <= SLOP && Math.abs(dy) <= SLOP) return;
         dragEngage(drag);
       }
       if(e.cancelable) e.preventDefault();
       dragMove(drag, e.clientY);
     });
-    document.addEventListener("mouseup", function(){
+    document.addEventListener("mouseup", function(e){
+      if(swNow && swNow.active){ swEnd(); drag = null; return; }
+      swNow = null;
       if(!drag || drag.kind !== "mouse") return;
       if(drag.active) dragDrop(drag, true);
       else drag = null;
@@ -1611,18 +2024,29 @@
       if(t2 && t2.closest && t2.closest("#list")) e.preventDefault();   // 브라우저 기본 끌기 방지
     });
 
-    /* ── 순서 초기화(저장된 사용자 순서가 있을 때만 보임) ── */
+    /* ── 탭: 드러난 휴지통을 누르면 삭제, 다른 곳을 누르면 닫기 ── */
+    L.addEventListener("click", function(e){
+      if(Date.now() - swGuard < 350) return;         // 스와이프 직후의 합성 클릭은 무시
+      var t = e.target;
+      var del = t && t.closest ? t.closest(".del") : null;
+      if(del){
+        var row = del.closest(".row");
+        if(row) delAsset(row.getAttribute("data-id"));
+        return;
+      }
+      if(swOpen) swClose();
+    });
+
+    /* ── 초기화: 순서 + 삭제 + 추가 종목을 모두 기본 28종으로 ── */
     var rb = document.getElementById("ordreset");
     if(rb) rb.addEventListener("click", function(){
-      ORDER = BASE_ORDER.slice();
+      deleted = {}; custom = []; savePrefs();
       try{ localStorage.removeItem(ORD_KEY); }catch(e){}
-      var list = $("#list");
-      ORDER.forEach(function(id){
-        var el = document.getElementById("row-" + id);
-        if(el) list.appendChild(el);
-      });
-      clearDrag(); renderAll(); ordSetUI();
+      ORDER = [];
+      rebuild();
     });
+
+    closeSwipeOpen = swClose;      // 다른 곳(모달·삭제 후 재구축)에서도 닫을 수 있게
   })();
 
   /* ───────── 갱신 ───────── */
@@ -1755,12 +2179,15 @@
   });
 
   /* ───────── 시작 ───────── */
+  loadPrefs();                     // 삭제한 종목 · 사용자가 추가한 종목
+  applyAssets();
+  ORDER = ASSETS.map(function(a){ return a.id; });
   computeMarkets();
-  ordRestore();                     // 저장된 사용자 순서가 있으면 먼저 되살리고 그 순서로 그린다
+  histRestore();                   // 저장된 히스토리 캐시를 먼저
+  ordRestore();                    // 저장된 사용자 순서가 있으면 먼저 되살리고 그 순서로 그린다
   buildList();
   ordSetUI();
   $("#cnt").textContent = ASSETS.length;
-  histRestore();
   restore();
   $("#clock").textContent = kstTime();
   renderMarket();
@@ -1769,6 +2196,29 @@
   setTimeout(loadHistCSI, 1200);   // CSI 300 월봉은 동방재부에서 따로
   setTimeout(loadHistTASI, 1400);  // 사우디 TASI 월봉은 investing.com에서 따로
   setTimeout(loadHistK200, 1700);   // 코스피200 야간선물 월봉도 investing.com에서 따로
+
+  /* ───────── 종목 추가 모달 배선 ───────── */
+  (function wireModal(){
+    var addBtn = document.getElementById("addbtn");
+    if(addBtn) addBtn.addEventListener("click", openModal);
+    if(!ovEl) return;
+    ovEl.addEventListener("click", function(e){
+      var t = e.target;
+      if(t === ovEl){ closeModal(); return; }
+      var b = t && t.closest ? t.closest("button") : null;
+      if(b){
+        if(b.id === "ovx"){ closeModal(); return; }
+        if(b.getAttribute("data-tab")){ setTab(b.getAttribute("data-tab")); return; }
+        if(b.getAttribute("data-back")){ restoreDefault(b.getAttribute("data-back")); renderBackList(); return; }
+        if(b.getAttribute("data-hl")){ addHL(b.getAttribute("data-hl")+""); return; }
+        if(b.id === "yadd"){ addYahooTicker(); return; }
+      }
+    });
+    var hq = document.getElementById("hlq");
+    if(hq) hq.addEventListener("input", renderHLList);
+    var yy = document.getElementById("yq");
+    if(yy) yy.addEventListener("keydown", function(e){ if(e.key === "Enter") addYahooTicker(); });
+  })();
   setInterval(function(){ if(!busy) renderAll(); }, 30000);
 
   /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
