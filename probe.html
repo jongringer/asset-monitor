@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>probe k200 v2</title>
+<title>probe k200 v3</title>
 <style>body{background:#111;color:#eee;font:12px/1.5 monospace;padding:8px}#o{white-space:pre-wrap}</style>
 </head><body><div id="o">start</div>
 <script>
@@ -21,57 +21,33 @@ function jsonLoose(txt){
   return JSON.parse(txt.slice(i,j+1));
 }
 function dstr(x){ var m=x.getMonth()+1, dd=x.getDate(); return x.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(dd<10?"0":"")+dd; }
+var HDR={"domain-id":"www","accept":"application/json"};
 
-/* A) investing.com 견적 */
-function invQuote(){
+function daily(){
+  var now=new Date(); var from=new Date(now.getTime()-10*86400000);
+  var u="https://api.investing.com/api/financialdata/historical/8987?start-date="+dstr(from)+"&end-date="+dstr(now)+"&time-frame=Daily&add-missing-rows=false&_="+Date.now();
+  getText(u, 12000, HDR).then(function(t){
+    var rows=jsonLoose(t).data||[];
+    log("D rows="+rows.length);
+    rows.slice(0,4).forEach(function(r){
+      log("D "+r.rowDate+" o="+r.last_open+" h="+r.last_max+" l="+r.last_min+" c="+r.last_close+" chg="+r.change_precent+" vol="+r.volume);
+    });
+  }).catch(function(e){ log("D fail "+(e&&e.message||e)); });
+}
+function quotes(){
   var urls=[
-    "https://api.investing.com/api/financialdata/8987",
-    "https://api.investing.com/api/financialdata/8987/quotes",
-    "https://api.investing.com/api/financialdata/quote/8987"
+    "https://api.investing.com/api/financialdata/quotes/pairIds?pairIds=8987",
+    "https://api.investing.com/api/financialdata/quotes?pairIds=8987",
+    "https://api.investing.com/api/financialdata/8987/quotes/pairIds?",
+    "https://api.investing.com/api/financialdata/chart/sparkline/8987?start-date="+dstr(new Date(Date.now()-7*86400000))+"&end-date="+dstr(new Date())+"&time-frame=Daily"
   ];
   urls.forEach(function(u){
-    getText(u+"?_="+Date.now(), 12000, {"domain-id":"www","accept":"application/json"}).then(function(t){
+    getText(u+(u.indexOf("?")<0?"?":"&")+"_="+Date.now(), 12000, HDR).then(function(t){
       var j=jsonLoose(t);
-      var keys=Object.keys(j).slice(0,18).join(",");
-      log("Q ok "+u.replace("https://api.investing.com/api/financialdata/","")+" keys="+keys);
-      var pick={};
-      ["last","last_close","lastPairDecimal","change","changePct","lastRaw","changePercent"].forEach(function(k){ if(j[k]!==undefined) pick[k]=j[k]; });
-      log("Q  vals="+JSON.stringify(pick).slice(0,400));
-    }).catch(function(e){ log("Q fail "+u.split("/").pop()+" "+((e&&e.message)||e)); });
+      log("R ok "+u.slice(42,110)+" :: "+JSON.stringify(j).slice(0,320));
+    }).catch(function(e){ log("R fail "+u.slice(42,100)+" "+((e&&e.message)||e)); });
   });
 }
-
-/* B) investing.com 주/일봉 3년 최고 */
-function invHist(tf, months){
-  var now=new Date(); var from=new Date(now.getFullYear(), now.getMonth()-months, 1);
-  var u="https://api.investing.com/api/financialdata/historical/8987?start-date="+dstr(from)+"&end-date="+dstr(now)+"&time-frame="+tf+"&add-missing-rows=false&_="+Date.now();
-  getText(u, 15000, {"domain-id":"www","accept":"application/json"}).then(function(t){
-    var rows=(jsonLoose(t).data)||[];
-    var best=null, lowestClose=null;
-    rows.forEach(function(r){
-      var h=parseFloat(String(r.last_maxRaw||r.last_max).replace(/,/g,""));
-      var c=parseFloat(String(r.last_closeRaw||r.last_close).replace(/,/g,""));
-      if(isFinite(h) && (!best || h>best[1])) best=[r.rowDate,h];
-    });
-    log("H "+tf+" rows="+rows.length+" maxHigh="+JSON.stringify(best)+" first="+(rows[0]&&rows[0].rowDate)+" last="+(rows[rows.length-1]&&rows[rows.length-1].rowDate));
-  }).catch(function(e){ log("H "+tf+" fail "+((e&&e.message)||e)); });
-}
-
-/* C) prekospi 나머지 프록시 */
-function pre(){
-  var T="https://www.prekospi.com/api/home";
-  var rs=[
-    ["allorigins","https://api.allorigins.win/raw?url="+encodeURIComponent(T)],
-    ["codetabs","https://api.codetabs.com/v1/proxy/?quest="+encodeURIComponent(T)]
-  ];
-  rs.forEach(function(r){
-    getText(r[1]+"&_="+Date.now(), 15000).then(function(t){
-      var f=jsonLoose(t).futures||{};
-      log("PRE "+r[0]+" ok price="+f.price+" prev="+f.prevClose);
-    }).catch(function(e){ log("PRE "+r[0]+" fail "+(e&&e.message||e)); });
-  });
-}
-
 log("clock "+new Date().toISOString());
-invQuote(); invHist("Weekly",40); invHist("Daily",40); pre();
+daily(); quotes();
 </script></body></html>
