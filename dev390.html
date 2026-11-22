@@ -10,6 +10,68 @@
 </style>
 </head>
 <body>
-<iframe id="f" src="index.html?b=390x844&t=5"></iframe>
+<iframe id="f" src="index.html?b=390x844&amp;t=6"></iframe>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+  var t = q.get("t") || "";
+  var ifq = q.get("ifq") || "";
+  var rowId = q.get("row") || "sp500";
+  var f = document.getElementById("f");
+  if(ifq) f.src = "index.html?b=390x844&t=6&" + ifq;
+  f.addEventListener("load", function(){
+    var d = f.contentDocument, w = f.contentWindow;
+    function fire(target, type, x, y, buttons){
+      target.dispatchEvent(new w.MouseEvent(type, {bubbles:true, cancelable:true, view:w,
+        clientX:x, clientY:y, button:0, buttons:(buttons==null?1:buttons)}));
+    }
+    function swipe(el, dx){
+      var r = el.getBoundingClientRect();
+      var x0 = r.right - 30, y0 = r.top + r.height/2;
+      fire(el, "mousedown", x0, y0);
+      var steps = 6;
+      for(var i=1;i<=steps;i++){
+        fire(d, "mousemove", x0 + dx*i/steps, y0 + 1);
+      }
+      fire(d, "mouseup", x0 + dx, y0 + 1, 0);
+    }
+    setTimeout(function(){
+      try{
+        if(!d) return;
+        if(t === "swipe"){
+          var el = d.getElementById("row-" + rowId);
+          el.scrollIntoView({block:"center"});
+          setTimeout(function(){ swipe(el, -78); }, 400);
+        }else if(t === "delete"){
+          var el2 = d.getElementById("row-" + rowId);
+          el2.scrollIntoView({block:"center"});
+          setTimeout(function(){ swipe(el2, -140); }, 400);
+        }else if(t === "trash"){
+          var el3 = d.getElementById("row-" + rowId);
+          el3.scrollIntoView({block:"center"});
+          setTimeout(function(){
+            swipe(el3, -78);
+            setTimeout(function(){
+              var del = el3.querySelector(".del");
+              if(del) del.dispatchEvent(new w.MouseEvent("click", {bubbles:true, cancelable:true, view:w}));
+            }, 400);
+          }, 400);
+        }else if(t === "modal"){
+          d.getElementById("addbtn").click();
+        }else if(t === "modalxyz"){
+          d.getElementById("addbtn").click();
+          setTimeout(function(){
+            var tabs = d.querySelectorAll("#tabs button");
+            if(tabs[1]) tabs[1].click();
+          }, 300);
+        }else if(t === "scrolldown"){
+          var L = d.getElementById("list");
+          L.scrollTop = L.scrollHeight;
+        }
+      }catch(e){ document.title = "ERR " + e.message; }
+    }, 2600);
+  });
+})();
+</script>
 </body>
 </html>
