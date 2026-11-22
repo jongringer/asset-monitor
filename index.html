@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-kospi200-night-1">
+<meta name="build" content="2026-11-23-rowdrag-1">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율 20개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -55,6 +55,15 @@
   /* ── 헤더 ── */
   header{flex:0 0 auto;padding:0 .4em}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
+  .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
+  /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
+  .ordreset{all:unset;display:none;cursor:pointer;flex:0 0 auto;white-space:nowrap;
+    font-size:.54em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
+    padding:.18em .52em;border-radius:99px;border:1px dashed rgba(255,255,255,.16);line-height:1.4}
+  .ordreset.on{display:inline-flex;align-items:center;gap:.26em}
+  .ordreset svg{width:.95em;height:.95em;display:block;stroke:currentColor;fill:none;
+    stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+  .ordreset:active{color:#C3CBD4;border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.06)}
   .ttl{font-size:.6em;font-weight:700;letter-spacing:.19em;color:var(--dim2);text-transform:uppercase}
   .clock{font-size:.88em;font-weight:700;font-variant-numeric:tabular-nums;color:#D3DAE2;letter-spacing:.01em}
   .clock .tz{font-size:.6em;color:var(--dim2);font-weight:700;margin-left:.34em;letter-spacing:.12em}
@@ -117,6 +126,19 @@
     margin:0 .12em 0 .22em;overflow:visible;pointer-events:none}
   .spk svg{display:block;width:58px;height:21px}
 
+  /* ── 행 드래그 순서 변경 (모바일 롱프레스 · PC 마우스) ── */
+  #list{touch-action:pan-y}                      /* 평소엔 세로 스크롤 허용, 드래그 중에만 preventDefault */
+  .row{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  @media (hover:hover){ .row{cursor:grab} }
+  .row.ghost{transition:transform .17s cubic-bezier(.2,.7,.25,1),opacity .45s ease;will-change:transform}
+  .row.dragging{
+    z-index:6;cursor:grabbing;transition:none;will-change:transform;
+    background:#232B35;border-radius:.4em;
+    box-shadow:0 12px 28px rgba(0,0,0,.62),0 0 0 1px rgba(150,185,225,.55),0 0 26px rgba(120,170,230,.16);
+  }
+  .row.dragging::before{opacity:1}
+  body.dragging{user-select:none;-webkit-user-select:none}
+
   /* ── 푸터 ── */
   footer{flex:0 0 auto;padding:.44em .4em 0;display:flex;flex-direction:column;gap:.28em}
   .mrow{display:flex;gap:.28em}
@@ -151,7 +173,13 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황 · <span id="cnt">20</span></div>
+      <div class="hleft">
+        <div class="ttl">주요 자산 현황 · <span id="cnt">20</span></div>
+        <button class="ordreset" id="ordreset" type="button" aria-label="자산 순서를 기본 순서로 되돌리기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+          순서 초기화
+        </button>
+      </div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub">
@@ -1152,7 +1180,7 @@
   function buildList(){
     $("#list").innerHTML = ORDER.map(function(id){
       var a = BY[id];
-      return '<div class="row stale" id="row-'+a.id+'">'+
+      return '<div class="row stale" id="row-'+a.id+'" data-id="'+a.id+'">'+
         '<div class="top">'+
           '<div class="nm">'+rowName(a)+'</div>'+
           '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
@@ -1236,6 +1264,224 @@
     one($("#mktJP"), MK.jp, "일본 시장");
     one($("#mktCN"), MK.cn, "중국 시장");
   }
+
+  /* ───────── 행 순서 변경: 모바일 롱프레스 · PC 마우스 드래그 + 저장 ─────────
+     - 터치: 250ms 길게 누르면 드래그가 붙고(15ms 진동 + 들뜬 그림자/테두리), 그 뒤 위아래로 끌면 실시간으로 자리를 바꾼다.
+       250ms 안에 8px 넘게 움직이면 스크롤로 보고 드래그를 포기한다. 드래그 중에만 preventDefault로 스크롤을 막는다.
+     - 마우스: 누른 뒤 8px 이상 움직이면 드래그 시작(user-select:none으로 텍스트 선택 방지).
+     - 핸들 열을 두지 않고 행 자체를 잡으므로 기존 4열 구조(이름·미니그래프·가격·변동률)는 그대로다.
+     - 순서는 localStorage(assetMonitor.order.v1)에 저장해 새로고침·재방문·10초 자동 갱신에도 유지한다. */
+  var ORD_KEY = "assetMonitor.order.v1";
+  var BASE_ORDER = ORDER.slice();          // 코드에 정의된 기본 순서
+  var HOLD_MS = 250, SLOP = 8;             // 터치 롱프레스 시간 / 손짓 허용 오차(px)
+  var drag = null, settleT = 0, settleEl = null, settleTo = 0;
+  var lp = {el:null, t:0, y0:0, x0:0};     // 롱프레스 대기 상태
+
+  function listRows(){ return Array.prototype.slice.call($("#list").children); }
+
+  function ordSave(){
+    try{
+      if(ORDER.join(",") === BASE_ORDER.join(",")) localStorage.removeItem(ORD_KEY);
+      else localStorage.setItem(ORD_KEY, JSON.stringify(ORDER));
+    }catch(e){}
+  }
+  /* 저장된 순서를 되살린다. 저장 이후 새로 추가된 자산은 기본 순서의 앞뒤 이웃 사이로 자연스럽게 합류시킨다. */
+  function ordRestore(){
+    var saved = null;
+    try{ saved = JSON.parse(localStorage.getItem(ORD_KEY) || "null"); }catch(e){}
+    if(!Array.isArray(saved) || !saved.length) return;
+    var out = [], seen = {};
+    saved.forEach(function(id){
+      if(typeof id === "string" && BY[id] && !seen[id]){ out.push(id); seen[id] = 1; }
+    });
+    if(!out.length) return;
+    BASE_ORDER.forEach(function(id, i){
+      if(seen[id]) return;
+      var at = -1, k;
+      for(k = i-1; k >= 0; k--){                        // 앞쪽 이웃 바로 뒤
+        if(seen[BASE_ORDER[k]]){ at = out.indexOf(BASE_ORDER[k]) + 1; break; }
+      }
+      if(at < 0){
+        for(k = i+1; k < BASE_ORDER.length; k++){        // 앞쪽 이웃이 없으면 뒤쪽 이웃 바로 앞
+          if(seen[BASE_ORDER[k]]){ at = out.indexOf(BASE_ORDER[k]); break; }
+        }
+      }
+      if(at < 0 || at > out.length) at = out.length;
+      out.splice(at, 0, id); seen[id] = 1;
+    });
+    ORDER = out;
+  }
+  function ordSetUI(){
+    var b = document.getElementById("ordreset");
+    if(b) b.classList.toggle("on", ORDER.join(",") !== BASE_ORDER.join(","));
+  }
+
+  function dragPick(e){
+    var t = e.target;
+    if(!t || !t.closest) return null;
+    var el = t.closest(".row");
+    if(!el || !el.parentNode || el.parentNode.id !== "list") return null;
+    return el;
+  }
+  function dragStart(kind, el, x, y){
+    flushSettle();                                   // 직전 드롭 정산이 남아 있으면 먼저 마무리
+    var rows = listRows(), idx = rows.indexOf(el);
+    if(idx < 0) return null;
+    return {kind:kind, el:el, idx:idx, target:idx, x0:x, y0:y, dy:0,
+            rows:rows, rowH:el.getBoundingClientRect().height, active:false};
+  }
+  function dragEngage(d){
+    d.active = true;
+    d.el.classList.add("dragging");
+    document.body.classList.add("dragging");
+    for(var i=0;i<d.rows.length;i++) if(d.rows[i] !== d.el) d.rows[i].classList.add("ghost");
+    try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}   // 가벼운 햅틱
+  }
+  function dragMove(d, y){
+    d.dy = y - d.y0;
+    var h = d.rowH || 1, last = d.rows.length - 1;
+    var t = Math.round(d.dy / h) + d.idx;            // 이웃 행 높이 단위로 자리 계산
+    if(t < 0) t = 0;
+    if(t > last) t = last;
+    d.target = t;
+    d.el.style.transform = "translateY(" + d.dy.toFixed(1) + "px)";
+    for(var i=0;i<d.rows.length;i++){
+      var r = d.rows[i];
+      if(r === d.el) continue;
+      var off = 0;
+      if(t > d.idx && i > d.idx && i <= t) off = -h;        // 빈자리를 메우러 위로
+      else if(t < d.idx && i >= t && i < d.idx) off = h;    // 빈자리를 메우러 아래로
+      r.style.transform = off ? "translateY(" + off.toFixed(1) + "px)" : "";
+    }
+  }
+  function clearDrag(rows){
+    (rows || listRows()).forEach(function(r){
+      r.style.transition = ""; r.style.transform = "";
+      r.classList.remove("dragging"); r.classList.remove("ghost");
+    });
+    document.body.classList.remove("dragging");
+  }
+  /* DOM을 새 순서로 바꾸고 저장한다. 바꾸기 직전 좌표와 직후 자연 좌표가 같아 화면이 튀지 않는다. */
+  function placeAt(el, target){
+    var list = $("#list");
+    var rest = listRows().filter(function(r){ return r !== el; });
+    list.insertBefore(el, rest[target] || null);
+    clearDrag();
+    ORDER = listRows().map(function(r){ return r.getAttribute("data-id"); }).filter(Boolean);
+    ordSave(); ordSetUI(); renderAll();
+  }
+  function flushSettle(){
+    if(!settleT) return;
+    clearTimeout(settleT); settleT = 0;
+    var el = settleEl, to = settleTo;
+    settleEl = null;
+    if(el && el.parentNode) placeAt(el, to);
+  }
+  function dragDrop(d, keep){
+    d.active = false;
+    var el = d.el, tgt = keep ? d.target : d.idx;
+    el.style.transition = "transform .15s cubic-bezier(.2,.7,.25,1)";
+    el.style.transform = "translateY(" + ((tgt - d.idx) * d.rowH).toFixed(1) + "px)";
+    drag = null;
+    if(tgt === d.idx){
+      setTimeout(function(){ clearDrag(d.rows); }, 130);
+    }else{
+      settleEl = el; settleTo = tgt;
+      settleT = setTimeout(flushSettle, 150);
+    }
+  }
+
+  (function wireDrag(){
+    var L = $("#list");
+
+    /* ── 터치: 롱프레스로 드래그 시작 ── */
+    L.addEventListener("touchstart", function(e){
+      if(e.touches.length !== 1) return;
+      var el = dragPick(e);
+      if(!el) return;
+      var t0 = e.touches[0];
+      lp.el = el; lp.y0 = t0.clientY; lp.x0 = t0.clientX;
+      if(lp.t) clearTimeout(lp.t);
+      lp.t = setTimeout(function(){
+        lp.t = 0;
+        var el2 = lp.el;
+        if(!el2) return;
+        var d = dragStart("touch", el2, lp.x0, lp.y0);
+        if(!d) return;
+        drag = d; dragEngage(d);
+      }, HOLD_MS);
+    }, {passive:true});
+
+    L.addEventListener("touchmove", function(e){
+      if(drag && drag.active){
+        e.preventDefault();                        // 드래그가 붙은 뒤에만 스크롤을 막는다
+        if(e.touches[0]) dragMove(drag, e.touches[0].clientY);
+        return;
+      }
+      if(lp.el && e.touches[0]){
+        var t1 = e.touches[0];
+        if(Math.abs(t1.clientY - lp.y0) > SLOP || Math.abs(t1.clientX - lp.x0) > SLOP){
+          if(lp.t){ clearTimeout(lp.t); lp.t = 0; }   // 스크롤하려는 손짓 → 롱프레스 취소
+          lp.el = null;
+        }
+      }
+    }, {passive:false});
+
+    function touchDone(e){
+      if(lp.t){ clearTimeout(lp.t); lp.t = 0; }
+      lp.el = null;
+      if(drag && drag.active){
+        if(e.cancelable) e.preventDefault();
+        dragDrop(drag, true);
+      }
+    }
+    L.addEventListener("touchend", touchDone, {passive:false});
+    L.addEventListener("touchcancel", touchDone, {passive:false});
+
+    /* ── 마우스: 8px 움직이면 드래그 시작 ── */
+    L.addEventListener("mousedown", function(e){
+      if(e.button !== 0) return;
+      var el = dragPick(e);
+      if(!el) return;
+      var d = dragStart("mouse", el, e.clientX, e.clientY);
+      if(!d) return;
+      drag = d;
+      if(e.cancelable) e.preventDefault();          // 텍스트 선택 방지
+    });
+    document.addEventListener("mousemove", function(e){
+      if(!drag || drag.kind !== "mouse") return;
+      if(!drag.active){
+        if(Math.abs(e.clientX - drag.x0) <= SLOP && Math.abs(e.clientY - drag.y0) <= SLOP) return;
+        dragEngage(drag);
+      }
+      if(e.cancelable) e.preventDefault();
+      dragMove(drag, e.clientY);
+    });
+    document.addEventListener("mouseup", function(){
+      if(!drag || drag.kind !== "mouse") return;
+      if(drag.active) dragDrop(drag, true);
+      else drag = null;
+    });
+    L.addEventListener("contextmenu", function(e){ if(drag) e.preventDefault(); });
+    document.addEventListener("selectstart", function(e){ if(drag && drag.active) e.preventDefault(); });
+    document.addEventListener("dragstart", function(e){
+      var t2 = e.target;
+      if(t2 && t2.closest && t2.closest("#list")) e.preventDefault();   // 브라우저 기본 끌기 방지
+    });
+
+    /* ── 순서 초기화(저장된 사용자 순서가 있을 때만 보임) ── */
+    var rb = document.getElementById("ordreset");
+    if(rb) rb.addEventListener("click", function(){
+      ORDER = BASE_ORDER.slice();
+      try{ localStorage.removeItem(ORD_KEY); }catch(e){}
+      var list = $("#list");
+      ORDER.forEach(function(id){
+        var el = document.getElementById("row-" + id);
+        if(el) list.appendChild(el);
+      });
+      clearDrag(); renderAll(); ordSetUI();
+    });
+  })();
 
   /* ───────── 갱신 ───────── */
   function race(p, ms){
@@ -1365,7 +1611,9 @@
 
   /* ───────── 시작 ───────── */
   computeMarkets();
+  ordRestore();                     // 저장된 사용자 순서가 있으면 먼저 되살리고 그 순서로 그린다
   buildList();
+  ordSetUI();
   $("#cnt").textContent = ASSETS.length;
   histRestore();
   restore();
