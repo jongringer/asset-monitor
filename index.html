@@ -2249,6 +2249,10 @@
   setTimeout(loadHistCSI, 1200);   // CSI 300 월봉은 동방재부에서 따로
   setTimeout(loadHistTASI, 1400);  // 사우디 TASI 월봉은 investing.com에서 따로
   setTimeout(loadHistK200, 1700);   // 코스피200 야간선물 월봉도 investing.com에서 따로
+  // 사용자가 추가한 하이퍼리퀴드 xyz 종목: 히스토리·최고점을 다시 채운다(캐시가 없거나 상장후 고점이 비었을 때)
+  custom.forEach(function(c, k){
+    if(c.hl && (!HIST[c.id] || !(c.ath > 0))) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
+  });
 
   /* ───────── 종목 추가 모달 배선 ───────── */
   (function wireModal(){
