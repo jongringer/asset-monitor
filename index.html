@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
 <meta name="theme-color" content="#0C1014">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -58,24 +58,24 @@
   .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
   /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
   .ordreset{all:unset;display:none;cursor:pointer;flex:0 0 auto;white-space:nowrap;
-    font-size:.54em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
+    font-size:.6em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
     padding:.18em .52em;border-radius:99px;border:1px dashed rgba(255,255,255,.16);line-height:1.4}
   .ordreset.on{display:inline-flex;align-items:center;gap:.26em}
   .ordreset svg{width:.95em;height:.95em;display:block;stroke:currentColor;fill:none;
     stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
   .ordreset:active{color:#C3CBD4;border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.06)}
-  .ttl{font-size:.6em;font-weight:700;letter-spacing:.19em;color:var(--dim2);text-transform:uppercase}
+  .ttl{font-size:.64em;font-weight:700;letter-spacing:.19em;color:var(--dim2);text-transform:uppercase}
   .clock{font-size:.88em;font-weight:700;font-variant-numeric:tabular-nums;color:#D3DAE2;letter-spacing:.01em}
   .clock .tz{font-size:.6em;color:var(--dim2);font-weight:700;margin-left:.34em;letter-spacing:.12em}
   .sub{margin-top:.26em;display:flex;align-items:center;gap:.42em;min-width:0}
   .grad{font-size:1.30em;font-weight:800;letter-spacing:-.028em;line-height:1.16;color:#fff;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .live{flex:0 0 auto;font-size:.48em;font-weight:800;letter-spacing:.1em;color:#6EE7A8;
+  .live{flex:0 0 auto;font-size:.52em;font-weight:800;letter-spacing:.1em;color:#6EE7A8;
     background:rgba(47,191,113,.13);border:1px solid rgba(47,191,113,.34);
     border-radius:99px;padding:.3em .62em;line-height:1.35}
   .live.off{color:#9AA3AD;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
   .btn{all:unset;flex:0 0 auto;margin-left:auto;cursor:pointer;display:inline-flex;align-items:center;gap:.3em;
-    font-size:.56em;font-weight:700;letter-spacing:.02em;color:#C3CBD4;
+    font-size:.6em;font-weight:700;letter-spacing:.02em;color:#C3CBD4;
     padding:.42em .68em;border-radius:99px;border:1px solid var(--edge);background:#171D24}
   .btn:active{background:#232B33}
   .btn svg{width:.95em;height:.95em;display:block;stroke:#B7C0C9}
@@ -83,7 +83,7 @@
   .bar > i{position:absolute;inset:0;width:100%;border-radius:99px;
     background:linear-gradient(90deg,#39424D,#A7B0BB);transform-origin:left center;will-change:transform}
   .barmeta{display:flex;justify-content:space-between;align-items:center;margin-top:.26em;
-    font-size:.54em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
+    font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
   /* ── 자산 리스트 (28개 · 스크롤) ── */
@@ -107,36 +107,36 @@
     background:var(--closed);opacity:.92;transition:background .5s ease}
   .row.open::before{background:var(--open);box-shadow:0 0 6px rgba(47,191,113,.25)}
 
-  .top{display:flex;align-items:center;gap:.28em;min-width:0}
-  .nm{flex:1 1 auto;min-width:0;font-size:.77em;font-weight:700;color:#FFFFFF;letter-spacing:-.014em;
+  .top{display:flex;align-items:center;gap:.2em;min-width:0}
+  .nm{flex:1 1 auto;min-width:0;font-size:.98em;font-weight:700;color:#FFFFFF;letter-spacing:-.02em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 출처 배지: 하이퍼리퀴드 xyz 마켓 표시 */
-  .nm .tag{display:inline-block;margin-left:.42em;padding:.08em .34em .12em;border-radius:.28em;
-    font-size:.66em;font-weight:800;letter-spacing:.07em;color:#7FA6C8;vertical-align:.14em;
+  .nm .tag{display:inline-block;margin-left:.36em;padding:.06em .3em .1em;border-radius:.26em;
+    font-size:.62em;font-weight:800;letter-spacing:.06em;color:#7FA6C8;vertical-align:.16em;
     background:rgba(120,170,230,.13);border:1px solid rgba(120,170,230,.26)}
-  .px{flex:0 0 auto;min-width:4.95em;text-align:right;font-size:1.08em;font-weight:800;color:#fff;
-    font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
-  .pct{flex:0 0 auto;min-width:3.85em;margin-left:.22em;text-align:right;font-size:1.24em;font-weight:800;
-    font-variant-numeric:tabular-nums;letter-spacing:-.028em;line-height:1.05;color:var(--down)}
+  .px{flex:0 0 auto;min-width:4.5em;text-align:right;font-size:1.3em;font-weight:800;color:#fff;
+    font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.08}
+  .pct{flex:0 0 auto;min-width:3.5em;margin-left:.18em;text-align:right;font-size:1.46em;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:-.04em;line-height:1.05;color:var(--down)}
   .pct.up{color:var(--up)}
   .pct.flat{color:#A7AFB9}
 
-  .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0;margin-top:.08em}
-  .ath{font-size:.56em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.005em}
+  .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0;margin-top:.16em}
+  .ath{font-size:.7em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.002em}
   .ath b{color:#B6BFC8;font-weight:700}
-  .dc{flex:0 0 auto;font-size:.56em;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dc{flex:0 0 auto;font-size:.7em;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
   .dc.up{color:var(--up)}
   .dc.down{color:var(--down)}
   .row.newhigh .ath b{color:#FFC663}
 
   /* ── 3년 월별 추이 미니 그래프 (월별 상승=빨강 · 하락=파랑) ── */
-  .spk{flex:0 0 auto;width:58px;height:21px;display:block;align-self:center;
-    margin:0 .12em 0 .22em;overflow:visible;pointer-events:none}
-  .spk svg{display:block;width:58px;height:21px}
+  .spk{flex:0 0 auto;width:44px;height:19px;display:block;align-self:center;
+    margin:0 .08em 0 .14em;overflow:visible;pointer-events:none}
+  .spk svg{display:block;width:44px;height:19px}
 
   /* ── 행 드래그 순서 변경 (모바일 롱프레스 · PC 마우스) ── */
-  #list{touch-action:pan-y}                      /* 평소엔 세로 스크롤 허용, 드래그 중에만 preventDefault */
+  #list{touch-action:pan-y pinch-zoom}            /* 평소엔 세로 스크롤·핀치 확대 허용, 드래그가 붙은 뒤에만 preventDefault */
   .row{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   @media (hover:hover){ .row{cursor:grab} }
   .row.ghost{transition:transform .17s cubic-bezier(.2,.7,.25,1),opacity .45s ease;will-change:transform}
@@ -153,7 +153,7 @@
   .mrow{display:flex;gap:.28em}
   .mkt{flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:.3em;min-width:0;
     padding:.4em .3em;border-radius:.5em;border:1px solid var(--edge);background:#161C22;
-    font-size:.54em;font-weight:700;color:#B9C1CA;letter-spacing:.01em;white-space:nowrap}
+    font-size:.6em;font-weight:700;color:#B9C1CA;letter-spacing:.01em;white-space:nowrap}
   .mkt i{flex:0 0 auto;width:.66em;height:.66em;border-radius:99px;background:var(--closed);
     box-shadow:0 0 0 .2em rgba(229,72,77,.14)}
   /* 장중 = 초록 동그라미 1초 주기 점멸 / 장마감 = 빨강 고정 */
@@ -172,7 +172,7 @@
   .mkt .st{font-weight:800;color:var(--closed);white-space:nowrap}
   .mkt.open .st{color:#4ED493}
   .frow{display:flex;align-items:center;justify-content:space-between;gap:.5em;
-    font-size:.54em;color:var(--dim2);font-weight:700;padding:0 .12em}
+    font-size:.6em;color:var(--dim2);font-weight:700;padding:0 .12em}
   .frow > span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .frow .src{font-variant-numeric:tabular-nums;opacity:.9;text-align:right}
 </style>
@@ -966,7 +966,7 @@
   }
 
   /* ───────── 3년 월별(약 36개월) 히스토리 → 자산명 옆 미니 스파크라인 ───────── */
-  var SPK_W = 58, SPK_H = 21, SPK_PAD = 2.6;
+  var SPK_W = 44, SPK_H = 19, SPK_PAD = 2.4;
   var HIST_KEY = "apm.hist.v4", HIST_TTL = 6*3600*1000;
   var HIST = {}, histAt = 0, SPKC = {};
 
@@ -1771,8 +1771,8 @@
   /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
   function fit(){
     var app = $("#app");
-    var s = Math.min(app.clientWidth/408, app.clientHeight/800);
-    s = Math.max(0.56, Math.min(1.28, s));
+    var s = Math.min(app.clientWidth/390, app.clientHeight/700);   // 세로는 스크롤하므로 폭을 기준으로 키운다
+    s = Math.max(0.58, Math.min(1.30, s));
     app.style.fontSize = (16*s).toFixed(2) + "px";
   }
   window.addEventListener("resize", fit);
