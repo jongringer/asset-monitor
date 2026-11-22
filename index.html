@@ -9,11 +9,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-22-saudi-tasi-1">
+<meta name="build" content="2026-11-23-kospi200-night-1">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율 19개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율 20개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="19개 주요 자산(미국·한국·일본·중국·사우디)의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="20개 주요 자산(미국·한국·일본·중국·사우디)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -77,7 +77,7 @@
     font-size:.54em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (19개) ── */
+  /* ── 자산 리스트 (20개) ── */
   main{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;margin-top:.48em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;overflow:hidden}
   .row{
@@ -151,7 +151,7 @@
 
   <header>
     <div class="hrow">
-      <div class="ttl">주요 자산 현황 · <span id="cnt">19</span></div>
+      <div class="ttl">주요 자산 현황 · <span id="cnt">20</span></div>
       <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
     </div>
     <div class="sub">
@@ -248,7 +248,7 @@
   "use strict";
 
   /* ───────── 자산 정의 · 3년내(2024~2026) 최고점 기준(고정값) ─────────
-     mkt: us = 미국 정규장 · cme = 미국 선물(글롭엑스) · jp = 일본(TSE) · cn = 중국(상해) · kr = 한국 정규장 · sa = 사우디(타다울) · fx = 외환 · coin = 24/7
+     mkt: us = 미국 정규장 · cme = 미국 선물(글롭엑스) · jp = 일본(TSE) · cn = 중국(상해) · kr = 한국 정규장 · night = 코스피200 야간선물 · sa = 사우디(타다울) · fx = 외환 · coin = 24/7
      src: nvw = 네이버 해외지수 실시간(.N225·.CSI300), Yahoo는 보조 */
   var ASSETS = [
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", mkt:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
@@ -261,6 +261,8 @@
     {id:"csi300",name:"CSI 300",          yahoo:"000300.SS", mkt:"cn", src:"nvw", nvw:".CSI300", ath:5064.27, athDate:"26.06.23 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   src:"naver", nv:"KOSPI",  ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kosdaq",name:"코스닥",           yahoo:"^KQ11", mkt:"kr",   src:"naver", nv:"KOSDAQ", ath:1226.18,  athDate:"26.04.27 종가", dec:2, cur:"", chgLabel:"전일"},
+    /* 코스피200 야간선물: 3년내 최고점은 최근월물 연속 일별 고가 최대 1,535.00 (2026-06-18 장중, investing.com 8987 일별 기준) */
+    {id:"k200",  name:"코스피200 야간선물", mkt:"night", ath:1535.00, athDate:"26.06.18 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"hynix", name:"SK하이닉스 예상가", liveName:"SK하이닉스",  dual:true, yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -294,6 +296,8 @@
   var FORCE_KR = (function(){ var m = /[?&]krmode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
   /* ?samode=open|closed — 사우디 타다울 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
   var FORCE_SA = (function(){ var m = /[?&]samode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
+  /* ?nightmode=open|closed — 코스피200 야간선물 장중/마감 화면을 시간과 무관하게 미리 보는 검증용 스위치 */
+  var FORCE_NK = (function(){ var m = /[?&]nightmode=(open|closed)/.exec(location.search); return m ? m[1] : null; })();
   var diag = [];
   function dg(s){ diag.push(s); while(diag.length>7) diag.shift(); }
 
@@ -304,11 +308,11 @@
     return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Seoul",hour12:false,
       hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(d||new Date());
   }
-  function tzNow(tz){
+  function tzNow(tz, when){
     var o={};
     new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,year:"numeric",month:"2-digit",day:"2-digit",
       weekday:"short",hour:"2-digit",minute:"2-digit"})
-      .formatToParts(new Date()).forEach(function(p){ o[p.type]=p.value; });
+      .formatToParts(when || new Date()).forEach(function(p){ o[p.type]=p.value; });
     var h = parseInt(o.hour,10)%24;
     return {wd:o.weekday, ymd:o.year+"-"+o.month+"-"+o.day, t:h*60+parseInt(o.minute,10)};
   }
@@ -399,6 +403,19 @@
     if(CN_HOL[p.ymd]) return false;
     return (p.t>=630 && p.t<750) || (p.t>=840 && p.t<960);
   }
+  /* 코스피200 야간선물(KRX 야간파생상품시장): 정규장이 열린 날 18:00~익일 06:00 KST (05:50~06:00은 종가 단일가).
+     금요일 밤 세션이 토요일 06:00까지 이어지는 반면, 일요일 밤에는 열리지 않는다 — 개장 여부는 그날 정규장이 열렸는지로 정해진다. */
+  function krTradeDay(p){
+    if(p.wd==="Sat"||p.wd==="Sun") return false;
+    if(KR_HOL[p.ymd]) return false;
+    return true;
+  }
+  function k200Open(){
+    var p = tzNow(KSTZ);
+    if(p.t >= 1080) return krTradeDay(p);                       // 오늘 18:00에 열린 세션
+    if(p.t < 360)  return krTradeDay(tzNow(KSTZ, new Date(Date.now() - 86400000)));  // 어제 18:00에 열려 06:00에 끝나는 세션
+    return false;                                               // 06:00~18:00 휴장
+  }
   /* 사우디 타다울(TASI): 일~목 개장, 10:00~15:20 Asia/Riyadh (종가동시호가 포함) — 금·토 휴장. 한국시간 16:00~21:20 */
   var SAA_TZ = "Asia/Riyadh";
   function saOpen(){
@@ -414,19 +431,23 @@
     if(p.wd==="Fri") return p.t<1020;
     return true;
   }
-  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, jp:jpOpen, cn:cnOpen, sa:saOpen, fx:fxOpen, coin:function(){ return true; }};
+  var OPENERS = {us:usOpen, cme:cmeOpen, kr:krOpen, jp:jpOpen, cn:cnOpen, night:k200Open, sa:saOpen, fx:fxOpen, coin:function(){ return true; }};
 
-  var MK = {us:false, cme:false, kr:false, jp:false, cn:false, sa:false, fx:false, coin:true};
+  var MK = {us:false, cme:false, kr:false, jp:false, cn:false, night:false, sa:false, fx:false, coin:true};
   function computeMarkets(){
     try{
-      MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.jp = jpOpen(); MK.cn = cnOpen(); MK.sa = saOpen(); MK.fx = fxOpen();
+      MK.us = usOpen(); MK.cme = cmeOpen(); MK.kr = krOpen(); MK.jp = jpOpen(); MK.cn = cnOpen();
+      MK.night = k200Open(); MK.sa = saOpen(); MK.fx = fxOpen();
       // 네이버가 장중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
       if(KR_NV && (Date.now() - KR_NV.at) < 120000 && KR_NV.status==="OPEN") MK.kr = true;
       if(STK_AT && (Date.now() - STK_AT) < 120000 && STK_STATUS==="OPEN") MK.kr = true;
       if(JP_NV && (Date.now() - JP_NV.at) < 180000 && JP_NV.status==="OPEN") MK.jp = true;
       if(CN_NV && (Date.now() - CN_NV.at) < 180000 && CN_NV.status==="OPEN") MK.cn = true;
+      // 야간선물 시세 API가 세션 진행 중이라고 하면 휴장일 표가 틀렸더라도 장중으로 본다
+      if(NK && (Date.now() - NK.at) < 180000 && NK.open) MK.night = true;
       if(FORCE_KR) MK.kr = (FORCE_KR === "open");
       if(FORCE_SA) MK.sa = (FORCE_SA === "open");
+      if(FORCE_NK) MK.night = (FORCE_NK === "open");
     }catch(e){}
     MK.coin = true;
   }
@@ -726,6 +747,50 @@
     return attempt();
   }
 
+  /* ───────── 코스피200 야간선물: KRX 야간 세션 시세 ─────────
+     prekospi.com/api/home 은 야간장 체결(한국투자증권 OpenAPI 수집)을 price·prevClose·diffPct·session.isOpen으로 준다.
+     CORS 헤더가 없어 프록시 체인을 거치고, 프록시 캐시를 피해 매회 캐시버스터를 붙인다.
+     (네이버 증권에는 국내선물 API가 없고 Yahoo에도 코스피200 선물이 없어 이 경로를 쓴다) */
+  var K200_URL = "https://www.prekospi.com/api/home";
+  var K200_ROUTES = [
+    {n:"jina",       f:function(u){ return "https://r.jina.ai/" + u; },                                        ms:9000},
+    {n:"allorigins", f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); },  ms:6500},
+    {n:"codetabs",   f:function(u){ return "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u); }, ms:6500},
+    {n:"cors.lol",   f:function(u){ return "https://api.cors.lol/?url=" + encodeURIComponent(u); },            ms:5000},
+    {n:"direct",     f:function(u){ return u; },                                                              ms:5000}
+  ];
+  var NK = null;                      // 마지막으로 받은 야간 세션 상태
+  function k200Get(){
+    var target = K200_URL + "?_=" + Date.now();
+    var i = 0;
+    function next(){
+      if(i >= K200_ROUTES.length) return Promise.reject(new Error("all k200 routes failed"));
+      var r = K200_ROUTES[i++];
+      return getText(r.f(target), r.ms).then(jsonLoose).catch(function(e){
+        if(DBG) dg("k200:" + r.n + " x");
+        return next();
+      });
+    }
+    return next();
+  }
+  function getK200(){
+    var t0 = Date.now();
+    return k200Get().then(function(d){
+      var f = d && d.futures;
+      if(!f) throw new Error("no futures");
+      var px = Number(f.price);
+      if(!isFinite(px) || px<=0) throw new Error("bad k200 px");
+      var prev = isFinite(f.prevClose) ? Number(f.prevClose) : null;
+      var chg = isFinite(f.diffPct) ? Number(f.diffPct)
+              : ((prev ? (px-prev)/prev*100 : null));
+      state.k200 = {px:px, chg:chg, t:Date.now()};
+      NK = {open: !!(f.session && f.session.isOpen), at:Date.now(), ts:f.ts||null};
+      srcTag.k200 = "PreKOSPI";
+      if(DBG) dg("k200:" + (Date.now()-t0) + "ms " + nf(px,2));
+      return 1;
+    });
+  }
+
   /* ───────── 가상자산: CoinGecko → OKX → Upbit ───────── */
   function setCoin(id, px, chg){ if(isFinite(px)) state[id] = {px:px, chg:chg, t:Date.now()}; }
   function coinGecko(){
@@ -806,7 +871,7 @@
   var HIST_KEY = "apm.hist.v4", HIST_TTL = 6*3600*1000;
   var HIST = {}, histAt = 0, SPKC = {};
 
-  function histSym(a){ if(a.id==="csi300"||a.id==="tasi") return null; return a.histSym || a.yahoo; }   // CSI300은 아래 동방재부 월봉, TASI는 investing.com 월봉으로 채운다
+  function histSym(a){ if(a.id==="csi300"||a.id==="tasi"||a.id==="k200") return null; return a.histSym || a.yahoo; }   // CSI300은 동방재부, TASI·코스피200 야간선물은 investing.com 월봉으로 채운다
 
   // 14개 심볼을 한 요청으로 (지수·선물·원자재·환율 + BTC-USD·ETH-USD), 3년 월별
   function histURL(){
@@ -961,6 +1026,31 @@
       });
   }
 
+  /* 코스피200 야간선물: Yahoo에 선물 심볼이 없어 investing.com 월봉(최근월물 연속 8987)으로 3년 월별 종가를 채운다.
+     3년내 최고점(1,535.00)도 같은 API의 일별 고가 최대값(747거래일, 2026-06-18)에서 확정했다. */
+  var INV_K200 = "https://api.investing.com/api/financialdata/historical/8987";
+  var k200HistTry = 0;
+  function loadHistK200(){
+    if(HIST.k200 && histAt && (Date.now() - histAt) < HIST_TTL) return;
+    var now = new Date();
+    var from = new Date(now.getFullYear(), now.getMonth()-36, 1);
+    var url = INV_K200 + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
+              "&time-frame=Monthly&add-missing-rows=false&_=" + Date.now();
+    invGet(url, 9000).then(function(d){
+      var rows = d && d.data;
+      if(!Array.isArray(rows) || rows.length < 6) throw new Error("no rows");
+      var closes = rows.slice().reverse().map(function(r){ return invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close); });
+      var v = histSeries(BY.k200, closes);
+      if(!v) throw new Error("no series");
+      HIST.k200 = v; histAt = Date.now(); histSave();
+      drawSpark(BY.k200, pctOf(BY.k200, state.k200 && state.k200.px));
+      if(DBG) dg("hist k200 " + v.length);
+      k200HistTry = 0;
+    }).catch(function(e){
+      if(DBG) dg("hist k200 fail:" + ((e&&e.message)||e));
+      if(k200HistTry++ < 2) setTimeout(loadHistK200, 15000);
+    });
+  }
   function loadHistOne(){
     var list = ASSETS.filter(function(a){ return histSym(a) && !HIST[a.id]; });
     var i = 0, bad = 0;
@@ -1172,7 +1262,7 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0};
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0};
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
@@ -1184,6 +1274,10 @@
       tasks.push(race(getStocks(), 13000).then(function(n){ res.stk = n; }).catch(function(){ res.stk = 0; }));
     }else{
       tasks.push(race(kospilab(), 20000).then(function(n){ res.kp = n; }).catch(function(){ res.kp = 0; }));
+    }
+    // 코스피200 야간선물: 프록시(jina) 부담을 줄이려 25초 간격으로만 받는다(가격은 화면에서 계속 재렌더)
+    if(!state.k200 || (Date.now() - (state.k200.t||0)) > 25000){
+      tasks.push(race(getK200(), 11000).then(function(n){ res.k200 = n; }).catch(function(){ res.k200 = 0; }));
     }
     // 사우디 TASI: Yahoo(YSYMS에 포함)가 90초 넘게 값을 못 주면 investing.com 종가로 대신 채운다
     if(!state.tasi || (Date.now() - (state.tasi.t||0)) > 90000){
@@ -1200,6 +1294,7 @@
       if(okR) bits.push(srcTag.kr || "네이버 증권");
       if(!krNow && res.kp > 0) bits.push("KOSPILAB");
       if(res.sa > 0) bits.push(srcTag.sa || "investing.com");
+      if(res.k200 > 0) bits.push(srcTag.k200 || "PreKOSPI");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
@@ -1280,6 +1375,7 @@
   setTimeout(loadHist, 600);       // 3년 월별 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
   setTimeout(loadHistCSI, 1200);   // CSI 300 월봉은 동방재부에서 따로
   setTimeout(loadHistTASI, 1400);  // 사우디 TASI 월봉은 investing.com에서 따로
+  setTimeout(loadHistK200, 1700);   // 코스피200 야간선물 월봉도 investing.com에서 따로
   setInterval(function(){ if(!busy) renderAll(); }, 30000);
 
   /* ───────── 화면 꽉 채우기 (9:16 비율 유지) ───────── */
