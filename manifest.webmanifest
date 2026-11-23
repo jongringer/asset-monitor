@@ -1,7 +1,7 @@
 {
   "name": "자산 변동률 · 3년내 최고점 대비",
   "short_name": "자산 변동률",
-  "description": "US500 선물·S&P500·코스피·금·비트코인 등 14개 주요 자산의 3년내 최고점 대비 변동률을 10초마다 보여주는 실시간 모니터",
+  "description": "US500 선물·S&P500·코스피·금·비트코인 등 28개 주요 자산의 3년내 최고점 대비 변동률을 10초마다 보여주는 실시간 모니터",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -10,8 +10,25 @@
   "theme_color": "#0C1014",
   "lang": "ko",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "id": "./",
+  "prefer_related_applications": false
 }

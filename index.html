@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-24-chart-modal">
+<meta name="build" content="2026-11-24-kakao-bridge">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -334,10 +334,64 @@
   .cvhint{flex:1 1 auto;min-width:0;text-align:right;font-size:.6em;font-weight:700;color:#6A727C;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cvhint.bad{color:#EF8A8C}
+
+  /* ───────── 카카오톡 인앱 → 크롬 전환 안내 (카톡에서만 표시) ───────── */
+  .kbb{display:none;flex:0 0 auto;margin:0 0 .5em;padding:.62em .6em .66em;border-radius:.66em;
+    background:linear-gradient(180deg,#1A2029 0%,#141A21 100%);
+    border:1px solid rgba(254,229,0,.26);box-shadow:0 6px 18px rgba(0,0,0,.42)}
+  .kbb.on{display:block}
+  .kbb .kt{display:flex;align-items:flex-start;gap:.5em}
+  .kbb .ki{flex:0 0 auto;width:1.45em;height:1.45em;border-radius:.42em;background:#FEE500;color:#3A1D1E;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.78em;line-height:1;
+    font-family:var(--font)}
+  .kbb .kb{flex:1 1 auto;min-width:0}
+  .kbb .k1{font-size:.90em;font-weight:800;letter-spacing:-.012em;line-height:1.28;color:#F3F6FA}
+  .kbb .k2{margin-top:.2em;font-size:.74em;font-weight:600;color:#A2ACB8;line-height:1.45;letter-spacing:-.005em}
+  .kbb .kx{flex:0 0 auto;border:0;background:rgba(255,255,255,.07);color:#AEB7C2;font:800 .68em/1 var(--font);
+    width:2.1em;height:2.1em;border-radius:99px;cursor:pointer;padding:0}
+  .kbb .kx:active{background:rgba(255,255,255,.16)}
+  .kbb .ka{display:block;width:100%;margin-top:.55em;padding:.78em .7em;border:0;border-radius:.55em;
+    background:linear-gradient(180deg,#FFEB57 0%,#FEE500 100%);color:#2A1D00;
+    font-family:inherit;font-size:.92em;font-weight:900;letter-spacing:-.02em;line-height:1.2;
+    text-align:center;text-decoration:none;cursor:pointer}
+  .kbb .ka:active{filter:brightness(.95)}
+  .kbb .ks{display:flex;gap:.34em;margin-top:.42em}
+  .kbb .ks i{flex:1 1 0;min-width:0;padding:.4em .42em;border-radius:.45em;background:rgba(255,255,255,.055);
+    font-size:.64em;font-weight:700;color:#C4CCD6;text-align:center;line-height:1.4;font-style:normal;letter-spacing:-.01em}
+  .kbb .ks i b{display:block;color:#FEE500;font-size:1.15em;line-height:1.3}
+  .kbb .kn{margin-top:.44em;font-size:.62em;font-weight:700;color:#7E8895;text-align:center;letter-spacing:-.005em}
+
+  /* ───────── 설치 칩 (설치 가능한 브라우저에서만 · 앱으로 열면 숨김) ───────── */
+  .ibp{display:none;flex:0 0 auto;align-items:center;gap:.4em;margin:.42em 0 .06em;
+    padding:.34em .38em .34em .66em;border-radius:.6em;
+    background:#141B23;border:1px solid rgba(47,191,113,.3)}
+  .ibp.on{display:flex}
+  .ibp .ibt{flex:1 1 auto;min-width:0;font-size:.68em;font-weight:800;letter-spacing:-.01em;color:#C9E4D6;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+  .ibp .ibb{all:unset;flex:0 0 auto;cursor:pointer;font:900 .64em/1.2 var(--font);color:#04160C;
+    background:#2FBF71;padding:.55em .8em;border-radius:99px;letter-spacing:-.01em}
+  .ibp .ibx{all:unset;flex:0 0 auto;cursor:pointer;font:900 .68em/1 var(--font);color:#79828D;padding:.35em .3em}
 </style>
 </head>
 <body>
 <div id="app">
+
+  <!-- 카카오톡 인앱 브라우저: 크롬으로 전환 + 앱 설치 안내 (카톡에서만 노출) -->
+  <div class="kbb" id="kbb" role="region" aria-label="카카오톡 안내">
+    <div class="kt">
+      <div class="ki" aria-hidden="true">K</div>
+      <div class="kb">
+        <div class="k1">카카오톡에서는 앱 설치가 제한됩니다</div>
+        <div class="k2" id="kbDesc">크롬으로 열면 ‘자산 변동률’을 홈 화면에 앱처럼 설치할 수 있어요.</div>
+      </div>
+      <button class="kx" id="kbx" type="button" aria-label="안내 닫기">✕</button>
+    </div>
+    <a class="ka" id="kba" href="#" rel="noopener">크롬으로 열어서 앱 설치하기</a>
+    <div class="ks" id="kbs" aria-hidden="true">
+      <i><b>1</b>오른쪽 위 ⋯</i><i><b>2</b>Safari로 열기</i><i><b>3</b>홈 화면에 추가</i>
+    </div>
+    <div class="kn" id="kbn">자동으로 넘어가지 않으면 위 버튼을 눌러 주세요.</div>
+  </div>
 
   <header>
     <div class="tfb">
@@ -376,6 +430,13 @@
   </header>
 
   <main id="list"></main>
+
+  <!-- 설치 칩: 설치 가능한 브라우저에서만, 앱(standalone)으로 열면 숨김 -->
+  <div class="ibp" id="ibp" role="region" aria-label="앱 설치">
+    <span class="ibt" id="ibt">‘자산 변동률’을 홈 화면에 앱으로 설치할 수 있어요</span>
+    <button class="ibb" id="ibb" type="button">앱 설치</button>
+    <button class="ibx" id="ibx" type="button" aria-label="설치 안내 닫기">✕</button>
+  </div>
 
   <footer>
     <div class="mrow">
@@ -519,6 +580,138 @@
   </div>
 
 </div>
+
+<script>
+/* ───────── 카카오톡 인앱 브라우저 → 크롬 전환 안내 · PWA 설치 칩 · 서비스 워커 ───────── */
+(function(){
+  "use strict";
+
+  var ua = navigator.userAgent || "";
+  var isKakao   = /KAKAOTALK/i.test(ua);
+  var isAndroid = /Android/i.test(ua);
+  var isIOS     = /iPhone|iPad|iPod/i.test(ua);
+  var standalone = false;
+  try{
+    standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+              || navigator.standalone === true;
+  }catch(e){}
+
+  function intentUrl(){
+    /* 크롬 패키지로 현재 주소를 그대로 넘긴다. 크롬이 없으면 기본 브라우저로 폴백. */
+    return "intent://" + location.host + location.pathname + (location.search || "") +
+      "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" +
+      encodeURIComponent(location.href) + ";end";
+  }
+
+  /* ① 카카오톡 인앱: 안내 배너 + (안드로이드) 크롬 자동 전환 1회 */
+  function kakaoBridge(){
+    var box = document.getElementById("kbb");
+    if(!box) return;
+    var a    = document.getElementById("kba");
+    var desc = document.getElementById("kbDesc");
+    var steps= document.getElementById("kbs");
+    var note = document.getElementById("kbn");
+    var x    = document.getElementById("kbx");
+
+    box.classList.add("on");
+    if(x) x.addEventListener("click", function(){ box.classList.remove("on"); });
+
+    if(isAndroid){
+      var intent = intentUrl();
+      if(a){
+        a.setAttribute("href", intent);
+        a.addEventListener("click", function(){ box.setAttribute("data-jump", "fired"); });
+      }
+      if(steps) steps.style.display = "none";
+      if(desc) desc.textContent = "크롬으로 열면 ‘자산 변동률’을 홈 화면에 앱처럼 설치할 수 있어요.";
+      if(note) note.textContent = "자동으로 넘어가지 않으면 위 버튼을 눌러 주세요.";
+
+      var KEY = "assetMonitor.kakaoBridge.v1";
+      var done = false;
+      try{ done = sessionStorage.getItem(KEY) === "1"; }catch(e){}
+      if(!done){
+        try{ sessionStorage.setItem(KEY, "1"); }catch(e){}
+        box.setAttribute("data-jump", "scheduled");
+        setTimeout(function(){
+          box.setAttribute("data-jump", "fired");
+          try{ location.href = intent; }catch(e){}
+        }, 420);
+      }
+      return;
+    }
+
+    /* iOS 카톡: 크롬 intent 가 없으므로 Safari로 열기 → 홈 화면에 추가 안내 */
+    if(a){
+      a.setAttribute("href", location.href);
+      a.textContent = "주소 복사";
+      a.style.background = "linear-gradient(180deg,#2A3340 0%,#222A35 100%)";
+      a.style.color = "#E6ECF3";
+      a.addEventListener("click", function(ev){
+        ev.preventDefault();
+        var url = location.href, ok = false;
+        try{
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(url); ok = true;
+          }
+        }catch(e){}
+        if(!ok){
+          var t = document.createElement("textarea");
+          t.value = url; t.style.cssText = "position:fixed;opacity:0;left:-9999px";
+          document.body.appendChild(t); t.select();
+          try{ ok = document.execCommand("copy"); }catch(e){}
+          document.body.removeChild(t);
+        }
+        a.textContent = ok ? "주소가 복사됐어요. Safari에 붙여넣기" : url;
+      });
+    }
+    if(desc) desc.textContent = "Safari로 열면 ‘자산 변동률’을 홈 화면에 앱처럼 설치할 수 있어요.";
+    if(note) note.textContent = "Safari에서 열린 뒤 공유 → ‘홈 화면에 추가’를 누르면 앱처럼 설치됩니다.";
+  }
+
+  if(isKakao && (isAndroid || isIOS) && !standalone) kakaoBridge();
+
+  /* ② 설치 칩: beforeinstallprompt 가 온 브라우저에서만, 한 번 닫으면 다시 띄우지 않는다 */
+  var chip = document.getElementById("ibp");
+  var deferred = null;
+  function hideChip(){ if(chip) chip.classList.remove("on"); }
+
+  var cbx = document.getElementById("ibx");
+  if(cbx) cbx.addEventListener("click", function(){
+    hideChip();
+    try{ localStorage.setItem("assetMonitor.installDismissed.v1", "1"); }catch(e){}
+  });
+
+  var cbt = document.getElementById("ibb");
+  if(cbt) cbt.addEventListener("click", function(){
+    if(!deferred) return;
+    try{
+      deferred.prompt();
+      deferred.userChoice.then(function(){ hideChip(); deferred = null; }).catch(function(){});
+    }catch(e){ hideChip(); }
+  });
+
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferred = e;
+    if(standalone || isKakao) return;
+    var dismissed = false;
+    try{ dismissed = localStorage.getItem("assetMonitor.installDismissed.v1") === "1"; }catch(err){}
+    if(!dismissed) chip && chip.classList.add("on");
+  });
+
+  window.addEventListener("appinstalled", function(){
+    deferred = null; hideChip();
+    try{ localStorage.setItem("assetMonitor.installDismissed.v1", "1"); }catch(e){}
+  });
+
+  /* ③ 서비스 워커: 크롬 PWA 설치 조건 (network-first) */
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function(){});
+    });
+  }
+})();
+</script>
 
 <script>
 (function(){

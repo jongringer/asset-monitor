@@ -205,11 +205,32 @@
 ## 파일
 
 - `index.html` — 전체 페이지(스타일·스크립트 포함 단일 파일)
+- `sw.js` — 서비스 워커(network-first). 크롬 PWA 설치 조건 + 오프라인 시 마지막 화면
 - `manifest.webmanifest`, `icon.svg`, `icon-192.png`, `icon-512.png` — 홈 화면 추가(PWA)용
+
+## 카카오톡 링크로 열었을 때 (인앱 브라우저 → 크롬 자동 전환)
+
+카카오톡으로 링크를 받은 사람이 주소를 복사·붙여넣기 하지 않아도 앱 설치까지 이어지게 한다.
+`navigator.userAgent`에 `KAKAOTALK`이 있을 때만 동작하며, 일반 크롬·PC에서는 아무것도 뜨지 않는다.
+
+- **안드로이드 카톡**: 진입 0.42초 뒤 `intent://{host}{path}{query}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=…;end`
+  로 크롬 자동 전환 1회(`sessionStorage` 키 `assetMonitor.kakaoBridge.v1`로 세션당 1회 제한, 같은 세션 재방문 시 배너만).
+  크롬이 없으면 `browser_fallback_url`이 기본 브라우저로 연다.
+- **자동 전환이 막힌 경우**: 화면 맨 위에 ***카카오톡에서는 앱 설치가 제한됩니다*** 배너와 큰 **`크롬으로 열어서 앱 설치하기`** 버튼(`intent://` 링크),
+  **`닫기`**(✕) 버튼을 함께 띄운다.
+- **iOS 카톡**: `intent://`가 없으므로 같은 배너에 **`⋯ → Safari로 열기 → 홈 화면에 추가`** 3단계 안내와 **`주소 복사`** 버튼을 보여 준다.
+- 이미 PWA(standalone)로 열린 화면에서는 배너를 띄우지 않는다.
+
+## 설치 칩 (`beforeinstallprompt`)
+
+크롬이 설치를 제안할 수 있는 상태(`beforeinstallprompt` 발생)에서만 리스트 아래에 작은 **`앱 설치`** 칩이 뜬다.
+누르면 크롬 설치 대화상자를 띄우고, `✕`로 닫으면 `localStorage`(`assetMonitor.installDismissed.v1`)에 기억해 다시 띄우지 않는다.
+`standalone`으로 열린 앱 안과 카카오톡 인앱에서는 뜨지 않는다.
 
 ## 홈 화면에 추가 (안드로이드 크롬)
 
 페이지를 연 뒤 오른쪽 위 ⋮ → **홈 화면에 추가**. 세로 전체 화면 앱처럼 열립니다.
+(설치 칩의 `앱 설치` 버튼이나 주소창의 설치 아이콘으로도 설치됩니다.)
 
 ## 배포
 
