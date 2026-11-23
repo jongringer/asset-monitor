@@ -360,6 +360,10 @@
     font-size:.64em;font-weight:700;color:#C4CCD6;text-align:center;line-height:1.4;font-style:normal;letter-spacing:-.01em}
   .kbb .ks i b{display:block;color:#FEE500;font-size:1.15em;line-height:1.3}
   .kbb .kn{margin-top:.44em;font-size:.62em;font-weight:700;color:#7E8895;text-align:center;letter-spacing:-.005em}
+  .kbb .kalt{display:block;width:100%;margin-top:.3em;padding:.35em .2em;border:0;background:transparent;
+    color:#8E99A7;font:800 .62em/1.3 var(--font);letter-spacing:-.005em;text-align:center;cursor:pointer;
+    text-decoration:underline;text-decoration-style:dotted;text-underline-offset:.22em}
+  .kbb .kalt:active{color:#C6D0DB}
 
   /* ───────── 설치 칩 (설치 가능한 브라우저에서만 · 앱으로 열면 숨김) ───────── */
   .ibp{display:none;flex:0 0 auto;align-items:center;gap:.4em;margin:.42em 0 .06em;
@@ -391,6 +395,7 @@
       <i><b>1</b>오른쪽 위 ⋯</i><i><b>2</b>Safari로 열기</i><i><b>3</b>홈 화면에 추가</i>
     </div>
     <div class="kn" id="kbn">자동으로 넘어가지 않으면 위 버튼을 눌러 주세요.</div>
+    <button class="kalt" id="kbAlt" type="button">그래도 안 되면 다른 브라우저로 열기</button>
   </div>
 
   <header>
@@ -603,6 +608,26 @@
       encodeURIComponent(location.href) + ";end";
   }
 
+  /* 카카오톡 전용 스킴: 인앱에서 기본 브라우저(Safari 포함)로 내보내는 가장 확실한 길 */
+  function openExternal(){
+    try{ location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(location.href); }catch(e){}
+  }
+
+  function copyUrl(a){
+    var url = location.href, ok = false;
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(url); ok = true; }
+    }catch(e){}
+    if(!ok){
+      var t = document.createElement("textarea");
+      t.value = url; t.style.cssText = "position:fixed;opacity:0;left:-9999px";
+      document.body.appendChild(t); t.select();
+      try{ ok = document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(t);
+    }
+    if(a) a.textContent = ok ? "주소가 복사됐어요. Safari 주소창에 붙여넣기" : url;
+  }
+
   /* ① 카카오톡 인앱: 안내 배너 + (안드로이드) 크롬 자동 전환 1회 */
   function kakaoBridge(){
     var box = document.getElementById("kbb");
@@ -612,6 +637,7 @@
     var steps= document.getElementById("kbs");
     var note = document.getElementById("kbn");
     var x    = document.getElementById("kbx");
+    var alt  = document.getElementById("kbAlt");
 
     box.classList.add("on");
     if(x) x.addEventListener("click", function(){ box.classList.remove("on"); });
@@ -625,6 +651,10 @@
       if(steps) steps.style.display = "none";
       if(desc) desc.textContent = "크롬으로 열면 ‘자산 변동률’을 홈 화면에 앱처럼 설치할 수 있어요.";
       if(note) note.textContent = "자동으로 넘어가지 않으면 위 버튼을 눌러 주세요.";
+      if(alt){
+        alt.textContent = "그래도 안 되면 다른 브라우저로 열기";
+        alt.addEventListener("click", openExternal);
+      }
 
       var KEY = "assetMonitor.kakaoBridge.v1";
       var done = false;
@@ -642,27 +672,13 @@
 
     /* iOS 카톡: 크롬 intent 가 없으므로 Safari로 열기 → 홈 화면에 추가 안내 */
     if(a){
-      a.setAttribute("href", location.href);
-      a.textContent = "주소 복사";
-      a.style.background = "linear-gradient(180deg,#2A3340 0%,#222A35 100%)";
-      a.style.color = "#E6ECF3";
-      a.addEventListener("click", function(ev){
-        ev.preventDefault();
-        var url = location.href, ok = false;
-        try{
-          if(navigator.clipboard && navigator.clipboard.writeText){
-            navigator.clipboard.writeText(url); ok = true;
-          }
-        }catch(e){}
-        if(!ok){
-          var t = document.createElement("textarea");
-          t.value = url; t.style.cssText = "position:fixed;opacity:0;left:-9999px";
-          document.body.appendChild(t); t.select();
-          try{ ok = document.execCommand("copy"); }catch(e){}
-          document.body.removeChild(t);
-        }
-        a.textContent = ok ? "주소가 복사됐어요. Safari에 붙여넣기" : url;
-      });
+      a.setAttribute("href", "#");
+      a.textContent = "Safari로 열어서 앱 설치하기";
+      a.addEventListener("click", function(ev){ ev.preventDefault(); openExternal(); });
+    }
+    if(alt){
+      alt.textContent = "주소 복사";
+      alt.addEventListener("click", function(){ copyUrl(alt); });
     }
     if(desc) desc.textContent = "Safari로 열면 ‘자산 변동률’을 홈 화면에 앱처럼 설치할 수 있어요.";
     if(note) note.textContent = "Safari에서 열린 뒤 공유 → ‘홈 화면에 추가’를 누르면 앱처럼 설치됩니다.";
