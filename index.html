@@ -3019,20 +3019,21 @@
       out += '<line x1="' + padL + '" y1="' + ky.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + ky.toFixed(1) +
              '" stroke="rgba(255,255,255,.22)" stroke-width="1" stroke-dasharray="3 3"/>';
       out += '<circle cx="' + kx.toFixed(1) + '" cy="' + ky.toFixed(1) + '" r="4.4" fill="#E7EEF7" stroke="#0B0D11" stroke-width="2"/>';
-      var tw = 152, th = 58;
-      var tx = kx + 14; if(tx + tw > W - 3) tx = kx - 14 - tw;
-      if(tx < 3) tx = 3;
+      var tw = 150, th = 58;
+      var tx = kx + 14;
+      if(tx + tw > padL + pw) tx = kx - 14 - tw;     // 오른쪽 끝에서는 왼쪽으로 뒤집어 Y축 라벨을 가리지 않는다
+      if(tx < padL + 2) tx = padL + 2;
       var ty = ky - th - 12; if(ty < padT - 4) ty = ky + 14;
       if(ty + th > H - padB) ty = H - padB - th;
       var dstr = (b.t && b.t[CV.cx] != null) ? cvDay(b.t[CV.cx], CV.tf) : (CV.cx + 1) + "번째 봉";
       var pctv = a.ath > 0 ? (kv - a.ath) / a.ath * 100 : null;
       out += '<rect x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" width="' + tw + '" height="' + th +
-             '" rx="7" fill="#1B222B" stroke="rgba(255,255,255,.24)"/>';
-      out += '<text x="' + (tx + 10) + '" y="' + (ty + 17) + '" font-size="11.5" font-weight="800" fill="#9FB0C4">' + dstr + '</text>';
-      out += '<text x="' + (tx + 10) + '" y="' + (ty + 36) + '" font-size="14" font-weight="800" fill="#FFFFFF">' + (a.cur || "") + nf(kv, dec) + '</text>';
+             '" rx="7" fill="#1B222B" stroke="rgba(255,255,255,.26)"/>';
+      out += '<text x="' + (tx + 11) + '" y="' + (ty + 17) + '" font-size="11.5" font-weight="800" fill="#9FB0C4">' + dstr + '</text>';
+      out += '<text x="' + (tx + 11) + '" y="' + (ty + 36) + '" font-size="14" font-weight="800" fill="#FFFFFF">' + (a.cur || "") + nf(kv, dec) + '</text>';
       if(pctv != null)
-        out += '<text x="' + (tx + 10) + '" y="' + (ty + 51) + '" font-size="10.5" font-weight="700" fill="' +
-               (pctv > 0 ? UP : (pctv < 0 ? DOWN : "#A7AFB9")) + '">3년내 최고 대비 ' + (pctv > 0 ? "+" : "") + pctv.toFixed(2) + '%</text>';
+        out += '<text x="' + (tx + 11) + '" y="' + (ty + 51) + '" font-size="10.5" font-weight="700" fill="' +
+               (pctv > 0 ? UP : (pctv < 0 ? DOWN : "#A7AFB9")) + '">최고 대비 ' + (pctv > 0 ? "+" : "") + pctv.toFixed(2) + '%</text>';
     }
 
     svg.innerHTML = out;
