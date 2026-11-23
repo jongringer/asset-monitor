@@ -3302,6 +3302,7 @@
       return "close";
     }
     card.addEventListener("pointerdown", function(e){
+      window.__amD = (window.__amD || 0) + 1;
       if(e.button != null && e.button > 0) return;
       if(CV.closing) return;
       down[e.pointerId] = {x:e.clientX, y:e.clientY};
@@ -3367,9 +3368,10 @@
     function endG(e, cancel){
       delete down[e.pointerId];
       if(P){ if(Object.keys(down).length < 2) P = null; return; }
-      if(!g || e.pointerId !== g.id) return;
+      if(!g || e.pointerId !== g.id){ window.__amG = {miss:1, m:g ? g.mode : "null"}; return; }
       var s = g; g = null;
       var dx = s.x - s.x0, dy = s.y - s.y0;
+      window.__amG = {m:s.mode, ax:s.axis, dx:+dx.toFixed(1), dy:+dy.toFixed(1), sw:!!s.swiping, sdx:+s.dx.toFixed(1)};
       if(s.mode === "chart"){
         /* 더 옮길 곳이 없는 전체 보기에서만 큰 가로 플릭 = 닫기 */
         if(!cancel && s.axis === "x" && Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy) * 1.5 &&
