@@ -306,10 +306,24 @@
     border-color:#CBD8E7;box-shadow:0 1px 2px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.6)}
   .cvseg button:active{background:#1E262F}
   .cvseg button.on:active{background:linear-gradient(180deg,#D9E3EF 0%,#B0C0D2 100%)}
-  .cvbox{position:relative;flex:1 1 auto;min-height:12em;margin-top:.55em;border-radius:.6em;
+  /* 봉 정보 표: 날짜·시가·고가·저가·종가·거래량을 3열 2행으로 크게 */
+  .cvohlc{display:grid;grid-template-columns:repeat(3,1fr);gap:.16em .4em;margin-top:.55em;
+    padding:.42em .5em;border-radius:.5em;background:#101419;border:1px solid rgba(255,255,255,.07)}
+  .cvo{display:flex;align-items:baseline;gap:.34em;min-width:0;font-variant-numeric:tabular-nums}
+  .cvo span{flex:0 0 auto;font-size:.6em;font-weight:700;color:#7C8591;letter-spacing:.02em}
+  .cvo b{flex:1 1 auto;min-width:0;font-size:.8em;font-weight:800;color:#E8EDF3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em}
+  .cvo b.up{color:var(--up)}
+  .cvo b.down{color:var(--down)}
+  .cvbox{position:relative;flex:1 1 auto;min-height:13em;margin-top:.45em;border-radius:.6em;
     background:linear-gradient(180deg,#0E1319 0%,#0A0D12 100%);
     border:1px solid rgba(255,255,255,.075);overflow:hidden}
   .cvbox svg{display:block;width:100%;height:100%;touch-action:none}
+  .cvzoom{position:absolute;left:6px;top:5px;z-index:2;display:flex;gap:4px}
+  .cvzoom button{all:unset;cursor:pointer;width:1.7em;height:1.7em;display:flex;align-items:center;justify-content:center;
+    border-radius:.42em;border:1px solid rgba(255,255,255,.16);background:rgba(20,26,34,.86);
+    color:#D7E2EE;font-size:.78em;font-weight:800;line-height:1}
+  .cvzoom button:active{background:rgba(40,52,66,.95)}
   .cvload{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
     font-size:.74em;font-weight:800;color:#A7B0BB;background:rgba(10,13,18,.62);letter-spacing:.02em}
   .cvload.on{display:flex}
@@ -453,13 +467,26 @@
         <button type="button" data-tf="1wk">주봉</button>
         <button type="button" data-tf="1mo">월봉</button>
       </div>
+      <div class="cvohlc" id="cvOhlc">
+        <div class="cvo"><span>날짜</span><b id="cvD">—</b></div>
+        <div class="cvo"><span>시가</span><b id="cvO">—</b></div>
+        <div class="cvo"><span>고가</span><b id="cvH">—</b></div>
+        <div class="cvo"><span>저가</span><b id="cvL">—</b></div>
+        <div class="cvo"><span>종가</span><b id="cvC">—</b></div>
+        <div class="cvo"><span>거래량</span><b id="cvV">—</b></div>
+      </div>
       <div class="cvbox" id="cvBox">
         <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="cvzoom">
+          <button type="button" id="cvzi" aria-label="차트 확대">+</button>
+          <button type="button" id="cvzo" aria-label="차트 축소">−</button>
+          <button type="button" id="cvzf" aria-label="전체 보기">⤢</button>
+        </div>
         <div class="cvload" id="cvLoad">불러오는 중…</div>
       </div>
       <div class="cvfoot">
         <span class="cvper" id="cvPer">—</span>
-        <span class="cvhint" id="cvHint">탭하면 그 시점 가격 · 좌우로 밀면 닫기</span>
+        <span class="cvhint" id="cvHint">핀치 확대 · 탭 시점 · 위쪽 밀면 닫기</span>
       </div>
     </div>
   </div>
@@ -1381,10 +1408,7 @@
         }else return;
       }
       var v = histSeries(a, closes);
-      if(v){
-        map[a.id] = v; n++;
-        if(ts && ts.length === closes.length) barsPut(tf, a.id, ts, closes);   // 확대 차트용 원본 봉(시각·종가)
-      }
+      if(v){ map[a.id] = v; n++; }
     });
     if(n){
       HISTS_T[tf] = Date.now(); histSave(tf);
@@ -1395,7 +1419,7 @@
   }
   function histSave(tf){
     tf = tf || TF;
-    try{ localStorage.setItem(histKey(tf), JSON.stringify({t:HISTS_T[tf] || 0, d:HISTS[tf] || {}, b:BARS[tf] || {}})); }catch(e){}
+    try{ localStorage.setItem(histKey(tf), JSON.stringify({t:HISTS_T[tf] || 0, d:HISTS[tf] || {}})); }catch(e){}
   }
   function histRestore(tf){
     tf = tf || TF;
@@ -1405,10 +1429,6 @@
       var map = HISTS[tf] || (HISTS[tf] = {});
       Object.keys(c.d).forEach(function(id){
         if(BY[id] && c.d[id] && c.d[id].length > 1) map[id] = c.d[id];
-      });
-      if(c.b) Object.keys(c.b).forEach(function(id){
-        var bb = c.b[id];
-        if(BY[id] && bb && bb.c && bb.c.length > 1) (BARS[tf] || (BARS[tf] = {}))[id] = {t:bb.t || null, c:bb.c};
       });
       HISTS_T[tf] = c.t || 0;
     }catch(e){}
@@ -1453,20 +1473,24 @@
     if(!BY.csi300 || histBusy[tf + "csi"]) return;
     var m = tfMeta(tf);
     var url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
-      "&fields1=f1,f2,f3&fields2=f51,f53&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
+      "&fields1=f1,f2,f3&fields2=f51,f52,f53,f54,f55,f56&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
     histBusy[tf + "csi"] = 1;
     histGet(url).then(function(d){
       var k = d && d.data && d.data.klines;
       if(!Array.isArray(k) || !k.length) throw new Error("no klines");
-      var rows = k.slice(-m.keep), closes = [], tms = [];
+      var rows = k.slice(-m.keep), closes = [], tms = [], op = [], hi = [], lo = [], vo = [];
       rows.forEach(function(s){
-        var p = String(s).split(",");
-        closes.push(parseFloat(p[1]));
+        var p = String(s).split(",");        // f51 날짜 · f52 시가 · f53 종가 · f54 고가 · f55 저가 · f56 거래량
         tms.push(emTs(p[0]));
+        op.push(parseFloat(p[1]));
+        closes.push(parseFloat(p[2]));
+        hi.push(parseFloat(p[3]));
+        lo.push(parseFloat(p[4]));
+        vo.push(parseFloat(p[5]));
       });
       var v = histSeries(BY.csi300, closes);
       if(!v) throw new Error("no series");
-      barsPut(tf, "csi300", tms, closes);
+      barsPut(tf, "csi300", {t:tms, o:op, h:hi, l:lo, c:closes, v:vo});
       histStored(tf, "csi300", v);
       if(DBG) dg("hist em " + tf + " " + v.length);
     }).catch(function(){ if(DBG) dg("hist em fail"); }).then(function(){ histBusy[tf + "csi"] = 0; });
@@ -1483,12 +1507,17 @@
     var v = parseFloat(String(s==null ? "" : s).replace(/,/g,""));
     return isFinite(v) ? v : null;
   }
-  /* investing.com 행의 날짜·시각 → 초. 날짜만 오면 정오(UTC)로 고정해 표기일이 흔들리지 않게 한다. */
+  /* investing.com 행의 날짜·시각 → 초.
+     응답 필드는 `rowDateRaw`(정수 초) · `rowDateTimestamp`("2026-11-23T00:00:00Z") · `rowDate`("Nov 23, 2026") 세 가지다. */
   function invRowTs(r){
-    if(r.rowDateTimestamp != null && isFinite(Number(r.rowDateTimestamp))) return Math.floor(Number(r.rowDateTimestamp));
+    if(r.rowDateRaw != null && isFinite(Number(r.rowDateRaw)) && Number(r.rowDateRaw) > 0)
+      return Math.floor(Number(r.rowDateRaw));
+    var iso = Date.parse(String(r.rowDateTimestamp || ""));
+    if(isFinite(iso)) return Math.floor(iso / 1000);
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r.rowDate || r.date || ""));
-    if(!m) return null;
-    return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3], 12) / 1000);
+    if(m) return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3], 12) / 1000);
+    var p = Date.parse(String(r.rowDate || ""));          // "Nov 23, 2026"
+    return isFinite(p) ? Math.floor(p / 1000) : null;
   }
   /* 동방재부 kline 날짜("2026-11-21 …") → 초 */
   function emTs(s){
@@ -1514,12 +1543,16 @@
     return invGet(url, ms || 9000).then(function(d){
       var rows = d && d.data;
       if(!Array.isArray(rows) || rows.length < 6) throw new Error("no rows");
-      var c = [], t = [];
+      var c = [], t = [], o = [], hi = [], lo = [], vo = [];
       rows.slice().reverse().slice(-m.keep).forEach(function(r){
-        c.push(invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close));
         t.push(invRowTs(r));
+        o.push(invNum(r.last_openRaw!=null ? r.last_openRaw : r.last_open));
+        hi.push(invNum(r.last_maxRaw!=null ? r.last_maxRaw : r.last_max));
+        lo.push(invNum(r.last_minRaw!=null ? r.last_minRaw : r.last_min));
+        c.push(invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close));
+        vo.push(invNum(r.volumeRaw!=null ? r.volumeRaw : r.volume));
       });
-      return {c:c, t:t};
+      return {c:c, t:t, o:o, h:hi, l:lo, v:vo};
     });
   }
   var tasiHistTry = 0;
@@ -1531,7 +1564,7 @@
     invHistRows(INV_TASI, tf).then(function(r){
       var v = histSeries(BY.tasi, r.c);
       if(!v) throw new Error("no series");
-      barsPut(tf, "tasi", r.t, r.c);
+      barsPut(tf, "tasi", r);
       histStored(tf, "tasi", v);
       if(DBG) dg("hist tasi " + tf + " " + v.length);
       tasiHistTry = 0;
@@ -1570,7 +1603,7 @@
     invHistRows(INV_K200, tf).then(function(r){
       var v = histSeries(BY.k200, r.c);
       if(!v) throw new Error("no series");
-      barsPut(tf, "k200", r.t, r.c);
+      barsPut(tf, "k200", r);
       histStored(tf, "k200", v);
       if(DBG) dg("hist k200 " + tf + " " + v.length);
       k200HistTry = 0;
@@ -1610,7 +1643,6 @@
         var v = histSeries(a, (q && q.close) || []);
         if(!v) throw new Error("no series");
         map[a.id] = v; bad = 0; histOnePass[tf] = 0;
-        barsPut(tf, a.id, r && r.timestamp, (q && q.close) || []);
         HISTS_T[tf] = Date.now(); histSave(tf);
         if(tf === TF){ SPKC[a.id] = null; redrawSparks(); tfUI(); }
       }).catch(function(){ bad++; }).then(function(){
@@ -2136,7 +2168,14 @@
       if(!Array.isArray(d) || d.length < 2) return;
       var v = histSeries(a, d.map(function(c){ return Number(c.c); }));
       if(v){
-        barsPut(tf, a.id, d.map(function(c){ return Math.floor(Number(c.t) / 1000); }), d.map(function(c){ return Number(c.c); }));
+        barsPut(tf, a.id, {
+          t: d.map(function(x){ return Math.floor(Number(x.t) / 1000); }),
+          o: d.map(function(x){ return Number(x.o); }),
+          h: d.map(function(x){ return Number(x.h); }),
+          l: d.map(function(x){ return Number(x.l); }),
+          c: d.map(function(x){ return Number(x.c); }),
+          v: d.map(function(x){ return Number(x.v); })
+        });
         histStored(tf, a.id, v);
       }
     }).catch(function(e){ if(DBG) dg("hlhist:"+((e&&e.message)||e)); });
@@ -2738,15 +2777,21 @@
     if(document.visibilityState === "visible"){ nextAt = Date.now() + 200; tick(); }
   });
 
-  /* ───────── 확대 차트 모달 (미니 그래프 톡 → 일봉·주봉·월봉 크게 보기) ─────────
-     · 열기: 목록의 미니 그래프(.spk) 탭 — 한 번이든 두 번이든 바로 열리고, 이미 열려 있으면 무시
-     · 닫기: ✕ · 딤 바탕 · ESC · 안드로이드 뒤로가기(popstate) · 좌우 스와이프
-     · 차트 위 탭(데스크톱은 마우스 호버) = 그 시점 날짜·가격 / 가로 스와이프는 닫기 전용
-       → 시점 확인과 닫기 제스처가 서로 싸우지 않는다. */
-  var BARS = {"1mo":{}, "1wk":{}, "1d":{}};    // tf → id → {t:[초], c:[종가]} 확대 차트용 원본 봉
-  var CV_SWIPE_MIN = 64;                        // 좌우로 이만큼(px) 밀면 닫는다
+  /* ───────── 확대 차트 모달 (미니 그래프 톡 → 캔들·거래량·확대) ─────────
+     · 열기: 목록의 미니 그래프(.spk) 탭 — 한 번이든 두 번이든 바로, 이미 열려 있으면 무시
+     · 닫기: ✕ · 딤 바탕 · ESC · 안드로이드 뒤로가기(popstate)
+             · 차트 바깥(위쪽 정보 영역) 좌우 스와이프
+             · 차트가 전체 보기라 더 움직일 곳이 없을 때의 큰 가로 플릭
+     · 차트 안: 한 손가락 좌우 = 과거로 이동(패닝) · 두 손가락 = 핀치 확대/축소
+                탭(데스크톱은 호버) = 그 봉의 날짜·시가·고가·저가·종가·거래량
+     → 확대해 옮겨 보는 동안에는 모달이 닫히지 않는다(두 제스처가 섞이지 않음). */
+
+  var BARS = {"1mo":{}, "1wk":{}, "1d":{}};    // tf → id → {t,o,h,l,c,v}  모달을 열 때 그 종목만 받아 캐싱
+  var CV_MINSPAN = 6;                          // 최대 확대: 화면에 6봉
+  var CV_SWIPE_MIN = 64;                       // 스와이프 닫기 임계값(px)
+  var CUP = "#E5484D", CDN = "#3B82F6";        // 양봉 빨강 / 음봉 파랑 (한국 증시식)
   var CV_OPEN = false;
-  var CV = {id:null, tf:"1mo", cx:-1, req:{}, pushed:false, at:0, closing:0, g:null, raf:0};
+  var CV = {id:null, tf:"1mo", sel:-1, vs:0, ve:0, req:{}, pushed:false, at:0, closing:0, g:null, raf:0};
   var GROUP_COL = {us:"#6AA8FF", cme:"#8FA8FF", jp:"#FF9BA3", cn:"#FFC17A", kr:"#7FD6A4",
                    night:"#B79CFF", sa:"#6FD3C8", coin:"#FFB84D", fx:"#A7B4C4", xyz:"#8FB3D6"};
 
@@ -2758,72 +2803,90 @@
     if(tf !== "1mo") s += "." + pad2(d.getDate());
     return s;
   }
-  /* 미니 그래프는 %만 저장하지만 확대 차트는 날짜·가격이 필요하다 → 받은 봉을 그대로 보관 */
-  function barsPut(tf, id, t, c){
-    if(!id || !c || c.length < 2) return;
-    var T = [], C = [], i, v;
-    for(i = 0; i < c.length; i++){
-      v = c[i];
-      if(v == null || !isFinite(v) || v <= 0) continue;
-      C.push(Math.round(Number(v) * 10000) / 10000);
-      T.push((t && t[i] != null && isFinite(t[i])) ? Math.round(Number(t[i])) : null);
+  function cvDayFull(sec){
+    if(!sec) return "—";
+    var d = new Date(sec * 1000);
+    return String(d.getFullYear()).slice(2) + "." + pad2(d.getMonth() + 1) + "." + pad2(d.getDate());
+  }
+  function cvVol(v){
+    if(v == null || !isFinite(v) || v <= 0) return "—";
+    if(v >= 1e9) return (v / 1e9).toFixed(2) + "B";
+    if(v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+    if(v >= 1e3) return (v / 1e3).toFixed(1) + "K";
+    return String(Math.round(v));
+  }
+  /* 봉 원본 보관: 시각·시가·고가·저가·종가·거래량. 빠진 값은 앞 종가로 메워 캔들이 끊기지 않게 한다. */
+  function barsPut(tf, id, b){
+    if(!id || !b || !b.c || b.c.length < 2) return;
+    var T = [], O = [], H = [], L = [], C = [], V = [], i, c, prev = null;
+    for(i = 0; i < b.c.length; i++){
+      c = b.c[i];
+      if(c == null || !isFinite(c) || c <= 0) continue;
+      c = Number(c);
+      var o = (b.o && b.o[i] != null && isFinite(b.o[i])) ? Number(b.o[i]) : (prev == null ? c : prev);
+      var hi = (b.h && b.h[i] != null && isFinite(b.h[i])) ? Number(b.h[i]) : Math.max(o, c);
+      var lo = (b.l && b.l[i] != null && isFinite(b.l[i])) ? Number(b.l[i]) : Math.min(o, c);
+      T.push((b.t && b.t[i] != null && isFinite(b.t[i])) ? Math.round(Number(b.t[i])) : null);
+      O.push(Math.round(o * 10000) / 10000);
+      H.push(Math.round(Math.max(hi, o, c) * 10000) / 10000);
+      L.push(Math.round(Math.min(lo, o, c) * 10000) / 10000);
+      C.push(Math.round(c * 10000) / 10000);
+      V.push((b.v && b.v[i] != null && isFinite(b.v[i])) ? Number(b.v[i]) : null);
+      prev = c;
     }
     if(C.length < 2) return;
-    (BARS[tf] || (BARS[tf] = {}))[id] = {t:T, c:C};
+    (BARS[tf] || (BARS[tf] = {}))[id] = {t:T, o:O, h:H, l:L, c:C, v:V};
   }
 
-  /* ── 봉 원본 받기: 캐시에 없으면 그 종목만 즉시 받아온다(봉 단위별로 한 번만) ── */
+  /* ── 봉 원본(OHLCV) 받기: 그 종목 하나만, 봉 단위별로 한 번 ── */
   function cvYhBars(a, tf){
     var m = tfMeta(tf), sym = a.histSym || a.yahoo;
     if(!sym) return Promise.reject(new Error("no symbol"));
     function one(s){
       return histGet("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(s) +
-        "?range=" + m.range + "&interval=" + m.iv + "&_=" + Date.now()).then(function(d){
+        "?range=" + m.range + "&interval=" + m.iv + "&includePrePost=false&_=" + Date.now()).then(function(d){
         var r = d && d.chart && d.chart.result && d.chart.result[0];
         var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
-        var c = (q && q.close) || [], ts = (r && r.timestamp) || [];
-        if(c.length < 2) throw new Error("no bars");
-        return {t:ts.map(Number), c:c.map(function(x){ return x == null ? null : Number(x); })};
+        if(!r || !q || !q.close || q.close.length < 2) throw new Error("no bars");
+        return {t:(r.timestamp || []).map(Number), o:q.open || [], h:q.high || [], l:q.low || [], c:q.close || [], v:q.volume || []};
       });
     }
     return one(sym).then(function(b){
       if(!a.fxSym) return b;
-      return one(a.fxSym).then(function(f){          // 달러 표시 행: 그 봉 시각의 환율로 나눈다
-        return {t:b.t, c:b.c.map(function(v, k){ var fx = fxAt(f.t, f.c, Number(b.t[k])); return (v != null && fx) ? v / fx : null; })};
+      return one(a.fxSym).then(function(f){          // 달러 표시 행(xyz SK하이닉스): 봉 시각의 환율로 나눈다
+        var O = [], H = [], L = [], C = [];
+        b.c.forEach(function(v, k){
+          var fx = fxAt(f.t, f.c, Number(b.t[k]));
+          function dv(x){ return (x != null && isFinite(x) && fx) ? Number(x) / fx : null; }
+          O.push(dv(b.o[k])); H.push(dv(b.h[k])); L.push(dv(b.l[k])); C.push(dv(v));
+        });
+        return {t:b.t, o:O, h:H, l:L, c:C, v:b.v};
       });
     });
   }
   function cvEmBars(a, tf){
     var m = tfMeta(tf);
     var url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
-      "&fields1=f1,f2,f3&fields2=f51,f53&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
+      "&fields1=f1,f2,f3&fields2=f51,f52,f53,f54,f55,f56&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
     return histGet(url).then(function(d){
       var k = d && d.data && d.data.klines;
       if(!Array.isArray(k) || k.length < 2) throw new Error("no bars");
-      var t = [], c = [];
+      var t = [], o = [], h = [], l = [], c = [], v = [];
       k.slice(-m.keep).forEach(function(s){
         var p = String(s).split(",");
-        t.push(emTs(p[0])); c.push(parseFloat(p[1]));
+        t.push(emTs(p[0]));
+        o.push(parseFloat(p[1]));
+        c.push(parseFloat(p[2]));
+        h.push(parseFloat(p[3]));
+        l.push(parseFloat(p[4]));
+        v.push(parseFloat(p[5]));
       });
-      return {t:t, c:c};
+      return {t:t, o:o, h:h, l:l, c:c, v:v};
     });
   }
   function cvInvBars(a, tf){
-    var m = tfMeta(tf), now = new Date();
-    var from = new Date(now.getFullYear(), now.getMonth() - m.months, 1);
     var base = (a.id === "tasi") ? INV_TASI : INV_K200;
-    var url = base + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
-              "&time-frame=" + m.invTF + "&add-missing-rows=false&_=" + Date.now();
-    return invGet(url, 9000).then(function(d){
-      var rows = d && d.data;
-      if(!Array.isArray(rows) || rows.length < 2) throw new Error("no rows");
-      var t = [], c = [];
-      rows.slice().reverse().slice(-m.keep).forEach(function(r){
-        c.push(invNum(r.last_closeRaw != null ? r.last_closeRaw : r.last_close));
-        t.push(invRowTs(r));
-      });
-      return {t:t, c:c};
-    });
+    return invHistRows(base, tf, 9000);             // {c,t,o,h,l,v} — invHistRows가 OHLCV를 모두 돌려준다
   }
   function cvHlBars(a, tf){
     var m = tfMeta(tf), end = Date.now();
@@ -2832,9 +2895,14 @@
       startTime:end - days*86400000, endTime:end}}), 15000).then(function(txt){
       var d = JSON.parse(txt);
       if(!Array.isArray(d) || d.length < 2) throw new Error("no candles");
-      var t = [], c = [];
-      d.forEach(function(x){ t.push(Math.floor(Number(x.t) / 1000)); c.push(Number(x.c)); });
-      return {t:t, c:c};
+      return {
+        t: d.map(function(x){ return Math.floor(Number(x.t) / 1000); }),
+        o: d.map(function(x){ return Number(x.o); }),
+        h: d.map(function(x){ return Number(x.h); }),
+        l: d.map(function(x){ return Number(x.l); }),
+        c: d.map(function(x){ return Number(x.c); }),
+        v: d.map(function(x){ return Number(x.v); })
+      };
     });
   }
   function cvFetch(a, tf){
@@ -2847,7 +2915,7 @@
     else p = cvYhBars(a, tf);
     CV.req[key] = p.then(function(b){
       delete CV.req[key];
-      if(b) barsPut(tf, a.id, b.t, b.c);
+      if(b) barsPut(tf, a.id, b);
       return b;
     }, function(e){ delete CV.req[key]; throw e; });
     return CV.req[key];
@@ -2864,28 +2932,28 @@
     el.textContent = txt;
     el.classList.toggle("bad", !!bad);
   }
+  function cvSet(id, txt, cls){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = txt;
+    if(cls != null) el.className = cls;
+  }
   function cvHead(){
     var a = BY[CV.id]; if(!a) return;
-    var nm = document.getElementById("cvName");
-    if(nm) nm.textContent = rowName(a);
+    cvSet("cvName", rowName(a));
     var dot = document.getElementById("cvDot");
     if(dot) dot.style.background = cvColor(a);
     var s = priceOf(a);
     var px = (s && s.px != null && isFinite(s.px)) ? Number(s.px) : null;
-    var pex = document.getElementById("cvPx"), pet = document.getElementById("cvPct");
     if(px == null){
-      if(pex) pex.textContent = "—";
-      if(pet){ pet.textContent = "—"; pet.className = "cvchg flat"; }
+      cvSet("cvPx", "—");
+      cvSet("cvPct", "—", "cvchg flat");
     }else{
-      if(pex) pex.textContent = (a.cur || "") + nf(px, a.dec);
+      cvSet("cvPx", (a.cur || "") + nf(px, a.dec));
       var pct = a.ath > 0 ? (px - a.ath) / a.ath * 100 : null;
-      if(pet){
-        if(pct == null){ pet.textContent = "—"; pet.className = "cvchg flat"; }
-        else{
-          pet.textContent = (pct > 0 ? "+" : "") + pct.toFixed(2) + "%";
-          pet.className = "cvchg " + (pct > 0.0001 ? "up" : (pct < -0.0001 ? "down" : "flat"));
-        }
-      }
+      if(pct == null) cvSet("cvPct", "—", "cvchg flat");
+      else cvSet("cvPct", (pct > 0 ? "+" : "") + pct.toFixed(2) + "%",
+                 "cvchg " + (pct > 0.0001 ? "up" : (pct < -0.0001 ? "down" : "flat")));
     }
     var ah = document.getElementById("cvAth");
     if(ah) ah.innerHTML = a.ath > 0
@@ -2913,142 +2981,209 @@
       bs[i].setAttribute("aria-pressed", on ? "true" : "false");
     }
   }
-  function cvIdxAt(relX){
-    var g = CV.g; if(!g) return -1;
-    if(relX <= g.padL) return 0;
-    if(relX >= g.padL + g.pw) return g.n - 1;
-    return Math.round((relX - g.padL) / g.pw * (g.n - 1));
-  }
-  function cvSetCx(k){
-    if(!CV_OPEN) return;
-    var g = CV.g;
-    if(k < 0){ if(CV.cx === -1) return; CV.cx = -1; }
-    else if(g){ CV.cx = Math.max(0, Math.min(g.n - 1, Math.round(k))); }
-    else return;
-    if(CV.raf) return;
-    CV.raf = requestAnimationFrame(function(){ CV.raf = 0; try{ cvDraw(); }catch(e){} });
+  /* 봉 하나의 날짜·시가·고가·저가·종가·거래량을 위쪽 표에 크게 보여 준다 */
+  function cvStrip(){
+    var a = BY[CV.id]; if(!a) return;
+    var b = (BARS[CV.tf] || {})[CV.id];
+    if(!b || !b.c || !b.c.length){
+      cvSet("cvD", "—"); cvSet("cvO", "—"); cvSet("cvH", "—");
+      cvSet("cvL", "—"); cvSet("cvC", "—", ""); cvSet("cvV", "—");
+      return;
+    }
+    var i = (CV.sel >= 0 && CV.sel < b.c.length) ? CV.sel : b.c.length - 1;
+    var dec = (a.dec == null ? 2 : a.dec);
+    var prev = i > 0 ? b.c[i - 1] : null;
+    var cls = "";
+    if(prev != null && b.c[i] != null) cls = b.c[i] > prev ? "up" : (b.c[i] < prev ? "down" : "");
+    cvSet("cvD", cvDayFull(b.t[i]));
+    cvSet("cvO", nf(b.o[i], dec));
+    cvSet("cvH", nf(b.h[i], dec));
+    cvSet("cvL", nf(b.l[i], dec));
+    cvSet("cvC", (a.cur || "") + nf(b.c[i], dec), cls);
+    cvSet("cvV", cvVol(b.v ? b.v[i] : null));
   }
 
-  /* ── 큰 차트 그리기 (상승 빨강 / 하락 파랑 · 끝점 도트 없음) ── */
+  /* ── 보이는 구간(확대·패닝) ── */
+  function cvFit(){
+    var b = (BARS[CV.tf] || {})[CV.id];
+    var n = b ? b.c.length : 0;
+    CV.vs = n; CV.ve = n - 1; CV.sel = -1;
+  }
+  function cvZoomSet(nv, frac, anchor){
+    var b = (BARS[CV.tf] || {})[CV.id];
+    if(!b) return;
+    var n = b.c.length;
+    var minS = Math.min(n, CV_MINSPAN);
+    nv = Math.max(minS, Math.min(n, Math.round(nv)));
+    if(nv === CV.vs) return;
+    var i0 = Math.round(anchor - frac * (nv - 1));
+    i0 = Math.max(0, Math.min(n - nv, i0));
+    CV.vs = nv; CV.ve = i0 + nv - 1; CV.sel = -1;
+    cvDraw();
+  }
+  function cvZoom(dir){
+    var g = CV.g;
+    var anchor = g ? (g.i0 + (g.vs - 1) * 0.5) : (CV.ve - (CV.vs - 1) * 0.5);
+    cvZoomSet(CV.vs * (dir > 0 ? 0.68 : 1.45), 0.5, anchor);
+  }
+
+  /* ── 캔들 + 거래량 그리기 ── */
   function cvDraw(){
     if(!CV_OPEN) return;
     var a = BY[CV.id]; if(!a) return;
-    var box = document.getElementById("cvBox"), svg = document.getElementById("cvSvg");
-    if(!box || !svg) return;
-    var W = Math.round(box.clientWidth), H = Math.round(box.clientHeight);
+    var boxEl = document.getElementById("cvBox"), svg = document.getElementById("cvSvg");
+    if(!boxEl || !svg) return;
+    var W = Math.round(boxEl.clientWidth), H = Math.round(boxEl.clientHeight);
     if(!(W > 40)) W = 320;
-    if(!(H > 40)) H = 240;
+    if(!(H > 60)) H = 260;
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     svg.setAttribute("width", W);
     svg.setAttribute("height", H);
     var b = (BARS[CV.tf] || {})[CV.id];
     if(!b || !b.c || b.c.length < 2){ svg.innerHTML = ""; CV.g = null; return; }
-    var dec = (a.dec == null ? 2 : a.dec);
-    var c = b.c.slice(0), n = c.length, i, v;
+    var n = b.c.length, dec = (a.dec == null ? 2 : a.dec), i, v;
+    if(!CV.vs || CV.vs > n) CV.vs = n;
+    if(CV.vs < Math.min(n, CV_MINSPAN)) CV.vs = Math.min(n, CV_MINSPAN);
+    CV.ve = Math.max(CV.vs - 1, Math.min(n - 1, CV.ve));
+    var vs = CV.vs, i1 = CV.ve, i0 = i1 - vs + 1;
+
     var s0 = priceOf(a);
     var live = (s0 && s0.px != null && isFinite(s0.px)) ? Number(s0.px) : null;
-    if(live != null) c[n - 1] = live;          // 진행 중인 마지막 봉은 현재가로 이어 그린다
-    var mn = Infinity, mx = -Infinity;
-    for(i = 0; i < n; i++){
-      v = c[i];
-      if(v == null || !isFinite(v)) continue;
-      if(v < mn) mn = v;
-      if(v > mx) mx = v;
+    var mn = Infinity, mx = -Infinity, hi, lo;
+    for(i = i0; i <= i1; i++){
+      hi = (b.h[i] != null ? b.h[i] : b.c[i]);
+      lo = (b.l[i] != null ? b.l[i] : b.c[i]);
+      if(hi != null && isFinite(hi) && hi > mx) mx = hi;
+      if(lo != null && isFinite(lo) && lo < mn) mn = lo;
     }
+    if(i1 >= n - 1 && live != null){ if(live > mx) mx = live; if(live < mn) mn = live; }
     if(!isFinite(mn) || !isFinite(mx)){ svg.innerHTML = ""; CV.g = null; return; }
     var span = mx - mn;
     if(!(span > 0)) span = Math.abs(mx) * 0.01 || 1;
-    var top = mx + span * 0.13, bot = mn - span * 0.13;
-    var padL = 7, padR = 86, padT = 16, padB = 28;
-    var pw = Math.max(40, W - padL - padR), ph = Math.max(40, H - padT - padB);
-    var xOf = function(k){ return padL + (n > 1 ? k * pw / (n - 1) : pw / 2); };
-    var yOf = function(val){ return padT + (top - val) / (top - bot) * ph; };
-    CV.g = {n:n, padL:padL, pw:pw, padT:padT, ph:ph, top:top, bot:bot};
+    var top = mx + span * 0.09, bot = mn - span * 0.09;
 
+    var padL = 8, padR = 76, padT = 10, padB = 24;
+    var pw = Math.max(40, W - padL - padR), ph = Math.max(60, H - padT - padB);
+    var hasVol = false;
+    if(b.v) for(i = i0; i <= i1; i++){ if(b.v[i] != null && b.v[i] > 0){ hasVol = true; break; } }
+    var volH = hasVol ? Math.max(26, Math.round(ph * 0.24)) : 22;
+    var gapV = hasVol ? 17 : 14;
+    var phC = Math.max(30, ph - volH - gapV);
+    var vTop = padT + phC + gapV;
+    var step = pw / vs;
+    var xOf = function(k){ return padL + (k - i0 + 0.5) * step; };
+    var yOf = function(val){ return padT + (top - val) / (top - bot) * phC; };
+    var vmax = 0;
+    if(hasVol) for(i = i0; i <= i1; i++){ v = b.v[i]; if(v != null && isFinite(v) && v > vmax) vmax = v; }
+    var volY = function(val){ return vTop + volH - (vmax ? (Number(val) / vmax) * volH : 0); };
+    CV.g = {n:n, i0:i0, i1:i1, vs:vs, padL:padL, pw:pw, padT:padT, phC:phC, step:step, top:top, bot:bot, hasVol:hasVol};
+
+    var cw = Math.max(1.5, Math.min(11, step * 0.66));
+    var ww = Math.max(1, Math.min(2, cw * 0.2));
     var out = "";
-    for(i = 1; i < 4; i++){                     // 가로 그리드
-      var gy = padT + ph * i / 4;
+
+    // 선택 봉 밴드
+    if(CV.sel >= i0 && CV.sel <= i1){
+      out += '<rect x="' + (xOf(CV.sel) - step / 2).toFixed(1) + '" y="' + padT + '" width="' + step.toFixed(1) +
+             '" height="' + (phC + gapV + volH).toFixed(1) + '" fill="rgba(255,255,255,.05)"/>';
+    }
+    for(i = 1; i < 4; i++){                     // 가로 눈금
+      var gy = padT + phC * i / 4;
       out += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + gy.toFixed(1) +
-             '" stroke="rgba(255,255,255,.055)" stroke-width="1"/>';
+             '" stroke="rgba(255,255,255,.05)" stroke-width="1"/>';
     }
+    // 캔들 + 거래량
+    for(i = i0; i <= i1; i++){
+      var c0 = b.c[i];
+      if(c0 == null || !isFinite(c0)) continue;
+      var o0 = (b.o[i] != null ? b.o[i] : c0);
+      hi = (b.h[i] != null ? b.h[i] : Math.max(o0, c0));
+      lo = (b.l[i] != null ? b.l[i] : Math.min(o0, c0));
+      var col = c0 > o0 ? CUP : (c0 < o0 ? CDN : "#8B939D");
+      var xc = xOf(i), yh = yOf(hi), yl = yOf(lo), yo = yOf(o0), yc = yOf(c0);
+      out += '<line x1="' + xc.toFixed(2) + '" y1="' + Math.min(yh, yl).toFixed(2) + '" x2="' + xc.toFixed(2) +
+             '" y2="' + Math.max(yh, yl).toFixed(2) + '" stroke="' + col + '" stroke-width="' + ww.toFixed(2) + '"/>';
+      var yTop = Math.min(yo, yc), bh = Math.max(1.1, Math.abs(yc - yo));
+      out += '<rect x="' + (xc - cw / 2).toFixed(2) + '" y="' + yTop.toFixed(2) + '" width="' + cw.toFixed(2) +
+             '" height="' + bh.toFixed(2) + '" fill="' + col + '"/>';
+      if(hasVol){
+        v = b.v[i];
+        if(v != null && isFinite(v) && v > 0){
+          var yv = volY(v);
+          out += '<rect x="' + (xc - cw / 2).toFixed(2) + '" y="' + yv.toFixed(2) + '" width="' + cw.toFixed(2) +
+                 '" height="' + Math.max(1, (vTop + volH) - yv).toFixed(2) + '" fill="' + col + '" opacity=".5"/>';
+        }
+      }
+    }
+    // 최저/최고 점선
     var dash = ' stroke-width="1" stroke-dasharray="3 4"';
-    out += '<line x1="' + padL + '" y1="' + yOf(mx).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mx).toFixed(1) + '" stroke="rgba(255,255,255,.24)"' + dash + '/>';
-    out += '<line x1="' + padL + '" y1="' + yOf(mn).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mn).toFixed(1) + '" stroke="rgba(255,255,255,.24)"' + dash + '/>';
-    if(live != null && Math.abs(live - mx) > span * 0.001 && Math.abs(live - mn) > span * 0.001)
+    out += '<line x1="' + padL + '" y1="' + yOf(mx).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mx).toFixed(1) + '" stroke="rgba(255,255,255,.2)"' + dash + '/>';
+    out += '<line x1="' + padL + '" y1="' + yOf(mn).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mn).toFixed(1) + '" stroke="rgba(255,255,255,.2)"' + dash + '/>';
+    // 현재가
+    if(i1 >= n - 1 && live != null && live <= top && live >= bot)
       out += '<line x1="' + padL + '" y1="' + yOf(live).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(live).toFixed(1) +
-             '" stroke="rgba(231,238,247,.55)" stroke-width="1.2" stroke-dasharray="5 4"/>';
-
-    var lw = n > 90 ? 1.7 : (n > 50 ? 2.0 : 2.4);
-    for(i = 1; i < n; i++){                     // 상승=빨강 · 하락=파랑
-      var p0 = c[i - 1], p1 = c[i];
-      if(p0 == null || p1 == null) continue;
-      out += '<line x1="' + xOf(i - 1).toFixed(2) + '" y1="' + yOf(p0).toFixed(2) +
-             '" x2="' + xOf(i).toFixed(2) + '" y2="' + yOf(p1).toFixed(2) +
-             '" stroke="' + (p1 >= p0 ? UP : DOWN) + '" stroke-width="' + lw + '" stroke-linecap="round"/>';
+             '" stroke="rgba(231,238,247,.5)" stroke-width="1.1" stroke-dasharray="5 4"/>';
+    // 거래량 구분선 + 라벨
+    out += '<line x1="' + padL + '" y1="' + (vTop - 7).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + (vTop - 7).toFixed(1) +
+           '" stroke="rgba(255,255,255,.09)" stroke-width="1"/>';
+    if(hasVol){
+      out += '<text x="' + (padL + 1) + '" y="' + (vTop + 9) + '" font-size="9.5" font-weight="700" fill="#6A727C">거래량</text>';
+      out += '<text x="' + (W - 4) + '" y="' + (vTop + 9) + '" text-anchor="end" font-size="10" font-weight="700" fill="#7A838E">' + cvVol(vmax) + '</text>';
+    }else{
+      out += '<text x="' + (padL + pw / 2).toFixed(1) + '" y="' + (vTop + 14) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6A727C">거래량 미제공</text>';
     }
-
-    // Y축 라벨(오른쪽 여백): 최고 · 최저 · 현재가
+    // Y축 라벨
     var labX = W - 4;
-    out += '<text x="' + labX + '" y="' + (yOf(mx) + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="#C3CEDB">' + nf(mx, dec) + '</text>';
-    out += '<text x="' + labX + '" y="' + (yOf(mn) + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="#C3CEDB">' + nf(mn, dec) + '</text>';
-    if(live != null){
+    out += '<text x="' + labX + '" y="' + (yOf(mx) + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" font-weight="700" fill="#C3CEDB">' + nf(mx, dec) + '</text>';
+    out += '<text x="' + labX + '" y="' + (yOf(mn) + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" font-weight="700" fill="#C3CEDB">' + nf(mn, dec) + '</text>';
+    if(i1 >= n - 1 && live != null){
       var ly = yOf(live), lstr = nf(live, dec);
-      if(Math.abs(ly - yOf(mx)) < 17) ly = yOf(mx) + 18;
-      else if(Math.abs(ly - yOf(mn)) < 17) ly = yOf(mn) - 18;
-      var lw2 = lstr.length * 7.1 + 13;
-      out += '<rect x="' + (labX - lw2).toFixed(1) + '" y="' + (ly - 9.5).toFixed(1) + '" width="' + lw2.toFixed(1) +
-             '" height="19" rx="4.5" fill="#E7EEF7"/>';
-      out += '<text x="' + (labX - lw2 / 2).toFixed(1) + '" y="' + (ly + 4.6).toFixed(1) +
-             '" text-anchor="middle" font-size="12" font-weight="800" fill="#0B0F14">' + lstr + '</text>';
+      if(Math.abs(ly - yOf(mx)) < 16) ly = yOf(mx) + 17;
+      else if(Math.abs(ly - yOf(mn)) < 16) ly = yOf(mn) - 17;
+      var lw2 = lstr.length * 6.9 + 13;
+      out += '<rect x="' + (labX - lw2).toFixed(1) + '" y="' + (ly - 8.5).toFixed(1) + '" width="' + lw2.toFixed(1) +
+             '" height="17" rx="4" fill="#E7EEF7"/>';
+      out += '<text x="' + (labX - lw2 / 2).toFixed(1) + '" y="' + (ly + 3.8).toFixed(1) +
+             '" text-anchor="middle" font-size="11" font-weight="800" fill="#0B0F14">' + lstr + '</text>';
     }
-
-    // X축 날짜 (시작 · 중간 · 끝)
-    var ticks = [0, Math.round((n - 1) / 2), n - 1], anc = ["start", "middle", "end"];
-    for(i = 0; i < ticks.length; i++){
+    // X축 날짜 (보이는 구간의 시작·중간·끝)
+    var ticks = [i0, i0 + Math.round((vs - 1) / 2), i1], anc = ["start", "middle", "end"];
+    for(i = 0; i < 3; i++){
       var k2 = ticks[i];
       if(!b.t || b.t[k2] == null) continue;
-      out += '<text x="' + xOf(k2).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="' + anc[i] +
-             '" font-size="11.5" font-weight="700" fill="#8B939D">' + cvDay(b.t[k2], CV.tf) + '</text>';
+      out += '<text x="' + xOf(k2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + anc[i] +
+             '" font-size="10.5" font-weight="700" fill="#8B939D">' + cvDay(b.t[k2], CV.tf) + '</text>';
     }
-
-    // 크로스헤어 + 툴팁(탭·호버로 그 시점 확인)
-    if(CV.cx >= 0 && CV.cx < n && c[CV.cx] != null){
-      var kx = xOf(CV.cx), ky = yOf(c[CV.cx]), kv = c[CV.cx];
-      out += '<line x1="' + kx.toFixed(1) + '" y1="' + padT + '" x2="' + kx.toFixed(1) + '" y2="' + (padT + ph).toFixed(1) +
-             '" stroke="rgba(255,255,255,.4)" stroke-width="1" stroke-dasharray="3 3"/>';
-      out += '<line x1="' + padL + '" y1="' + ky.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + ky.toFixed(1) +
-             '" stroke="rgba(255,255,255,.22)" stroke-width="1" stroke-dasharray="3 3"/>';
-      out += '<circle cx="' + kx.toFixed(1) + '" cy="' + ky.toFixed(1) + '" r="4.4" fill="#E7EEF7" stroke="#0B0D11" stroke-width="2"/>';
-      var tw = 150, th = 58;
-      var tx = kx + 14;
-      if(tx + tw > padL + pw) tx = kx - 14 - tw;     // 오른쪽 끝에서는 왼쪽으로 뒤집어 Y축 라벨을 가리지 않는다
-      if(tx < padL + 2) tx = padL + 2;
-      var ty = ky - th - 12; if(ty < padT - 4) ty = ky + 14;
-      if(ty + th > H - padB) ty = H - padB - th;
-      var dstr = (b.t && b.t[CV.cx] != null) ? cvDay(b.t[CV.cx], CV.tf) : (CV.cx + 1) + "번째 봉";
-      var pctv = a.ath > 0 ? (kv - a.ath) / a.ath * 100 : null;
-      out += '<rect x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" width="' + tw + '" height="' + th +
-             '" rx="7" fill="#1B222B" stroke="rgba(255,255,255,.26)"/>';
-      out += '<text x="' + (tx + 11) + '" y="' + (ty + 17) + '" font-size="11.5" font-weight="800" fill="#9FB0C4">' + dstr + '</text>';
-      out += '<text x="' + (tx + 11) + '" y="' + (ty + 36) + '" font-size="14" font-weight="800" fill="#FFFFFF">' + (a.cur || "") + nf(kv, dec) + '</text>';
-      if(pctv != null)
-        out += '<text x="' + (tx + 11) + '" y="' + (ty + 51) + '" font-size="10.5" font-weight="700" fill="' +
-               (pctv > 0 ? UP : (pctv < 0 ? DOWN : "#A7AFB9")) + '">최고 대비 ' + (pctv > 0 ? "+" : "") + pctv.toFixed(2) + '%</text>';
+    // 크로스헤어 + 종가 라벨
+    if(CV.sel >= i0 && CV.sel <= i1 && b.c[CV.sel] != null){
+      var sx = xOf(CV.sel), sy = yOf(b.c[CV.sel]), sv = b.c[CV.sel];
+      out += '<line x1="' + sx.toFixed(1) + '" y1="' + padT + '" x2="' + sx.toFixed(1) + '" y2="' + (padT + phC).toFixed(1) +
+             '" stroke="rgba(255,255,255,.42)" stroke-width="1" stroke-dasharray="3 3"/>';
+      out += '<line x1="' + padL + '" y1="' + sy.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + sy.toFixed(1) +
+             '" stroke="rgba(255,255,255,.2)" stroke-width="1" stroke-dasharray="3 3"/>';
+      out += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="3.4" fill="#E7EEF7" stroke="#0B0D11" stroke-width="1.6"/>';
+      var cs = nf(sv, dec), cw2 = cs.length * 6.9 + 12;
+      out += '<rect x="' + (labX - cw2).toFixed(1) + '" y="' + (sy - 8.5).toFixed(1) + '" width="' + cw2.toFixed(1) +
+             '" height="17" rx="4" fill="#2A3441" stroke="rgba(255,255,255,.3)"/>';
+      out += '<text x="' + (labX - cw2 / 2).toFixed(1) + '" y="' + (sy + 3.8).toFixed(1) +
+             '" text-anchor="middle" font-size="11" font-weight="800" fill="#EAF0F7">' + cs + '</text>';
     }
 
     svg.innerHTML = out;
     var per = document.getElementById("cvPer");
-    if(per) per.textContent = tfMeta(CV.tf).hint + " · " + n + "봉";
+    if(per) per.textContent = tfMeta(CV.tf).hint + " · " + vs + "봉" + (vs < n ? " / " + n : "");
   }
 
   function cvEnsure(){
     var a = BY[CV.id]; if(!a) return;
     var tf = CV.tf, b = (BARS[tf] || {})[CV.id];
-    if(b && b.c && b.c.length > 1){ cvLoad(false); cvDraw(); return; }
+    if(b && b.c && b.c.length > 1){ cvLoad(false); cvFit(); cvStrip(); cvDraw(); return; }
     cvLoad(true);
+    cvStrip();
     cvFetch(a, tf).then(function(){
       if(!CV_OPEN || CV.tf !== tf) return;
-      cvLoad(false); cvDraw();
+      cvLoad(false);
+      cvFit(); cvStrip(); cvDraw();
     }, function(){
       if(!CV_OPEN || CV.tf !== tf) return;
       cvLoad(false);
@@ -3060,13 +3195,16 @@
     var a = BY[id];
     if(!a || CV_OPEN) return;                    // 이미 열려 있으면 중복 열림만 막는다
     CV_OPEN = true;
-    CV.id = id; CV.tf = TF; CV.cx = -1; CV.at = Date.now(); CV.closing = 0;
+    CV.id = id; CV.tf = TF; CV.sel = -1; CV.vs = 0; CV.ve = 0;
+    CV.at = Date.now(); CV.closing = 0;
     var el = document.getElementById("cv");
-    if(!el) { CV_OPEN = false; return; }
+    if(!el){ CV_OPEN = false; return; }
     el.classList.add("on");
     el.style.background = "";
-    cvHead(); cvSegUI(); cvHint("탭하면 그 시점 가격 · 좌우로 밀면 닫기", false);
+    cvHead(); cvSegUI();
+    cvHint("핀치 확대 · 탭 시점 · 위쪽 밀면 닫기", false);
     cvLoad(true);
+    cvStrip();
     cvDraw();
     cvEnsure();
     if(!CV.pushed){
@@ -3077,7 +3215,7 @@
   function cvTeardown(){
     var el = document.getElementById("cv"), card = document.getElementById("cvCard");
     if(CV.closing){ clearTimeout(CV.closing); CV.closing = 0; }
-    CV_OPEN = false; CV.id = null; CV.cx = -1; CV.g = null;
+    CV_OPEN = false; CV.id = null; CV.sel = -1; CV.g = null; CV.vs = 0; CV.ve = 0;
     if(el){ el.classList.remove("on"); el.style.background = ""; }
     if(card){
       card.classList.remove("swiping");
@@ -3106,7 +3244,7 @@
     CV.closing = setTimeout(cvTeardown, 200);
   }
 
-  /* ── 모달 배선: 스와이프 닫기 · 탭 시점 확인 · ✕/딤/ESC/뒤로가기 ── */
+  /* ── 배선: 닫기(상단 스와이프) · 차트 이동/핀치 · 탭 시점 ── */
   (function wireChart(){
     var el = document.getElementById("cv");
     var card = document.getElementById("cvCard");
@@ -3119,7 +3257,6 @@
       card.style.opacity = "";
       el.style.background = "";
     }
-
     el.addEventListener("click", function(e){
       if(e.target === el && Date.now() - CV.at > 380) cvClose(null);   // 딤 바탕
     });
@@ -3132,70 +3269,134 @@
       var tf = b.getAttribute("data-tf");
       if(!TF_META[tf] || tf === CV.tf) return;
       try{ if(navigator.vibrate) navigator.vibrate(8); }catch(err){}
-      CV.tf = tf; CV.cx = -1;
-      cvSegUI(); cvHint("탭하면 그 시점 가격 · 좌우로 밀면 닫기", false);
-      cvLoad(true); cvDraw(); cvEnsure();
+      CV.tf = tf; CV.sel = -1; CV.vs = 0; CV.ve = 0;
+      cvSegUI();
+      cvHint("핀치 확대 · 탭 시점 · 위쪽 밀면 닫기", false);
+      cvLoad(true); cvStrip(); cvDraw(); cvEnsure();
+    });
+    var zi = document.getElementById("cvzi"), zo = document.getElementById("cvzo"), zf = document.getElementById("cvzf");
+    if(zi) zi.addEventListener("click", function(){ cvZoom(1); });
+    if(zo) zo.addEventListener("click", function(){ cvZoom(-1); });
+    if(zf) zf.addEventListener("click", function(){
+      cvFit(); cvStrip(); cvDraw();
     });
 
-    /* 좌우 스와이프 = 닫기 / 세로 = 그대로 / 짧은 탭 = 시점 확인 */
-    var g = null;
+    /* 차트 위 봉 고르기 */
+    function pickAt(clientX){
+      var g2 = CV.g; if(!g2) return;
+      var r = box.getBoundingClientRect();
+      var k = Math.floor((clientX - r.left - g2.padL) / g2.step);
+      k = Math.max(0, Math.min(g2.vs - 1, k));
+      var idx = g2.i0 + k;
+      if(idx === CV.sel) return;
+      CV.sel = idx;
+      cvStrip(); cvDraw();
+    }
+
+    var down = {}, g = null, P = null;
+    function zoneOf(t){
+      if(t && t.closest && t.closest(".cvzoom")) return "none";
+      if(t && t.closest && t.closest(".cvbox")) return "chart";
+      return "close";
+    }
     card.addEventListener("pointerdown", function(e){
       if(e.button != null && e.button > 0) return;
       if(CV.closing) return;
-      g = {x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, id:e.pointerId,
-           t:Date.now(), axis:null, swiping:false, dx:0,
-           chart:!!(e.target && e.target.closest && e.target.closest("#cvBox"))};
+      down[e.pointerId] = {x:e.clientX, y:e.clientY};
+      var ids = Object.keys(down);
+      if(ids.length === 2){                       // 두 손가락 = 핀치 확대
+        var a1 = down[ids[0]], b1 = down[ids[1]];
+        var r = box.getBoundingClientRect();
+        var cx = (a1.x + b1.x) / 2 - r.left, cy = (a1.y + b1.y) / 2 - r.top;
+        if(cx < -60 || cx > r.width + 60 || cy < -60 || cy > r.height + 60){ P = null; return; }
+        var g3 = CV.g;
+        P = {d0: Math.max(24, Math.sqrt(Math.pow(a1.x - b1.x, 2) + Math.pow(a1.y - b1.y, 2))),
+             vs0: CV.vs,
+             frac: g3 ? Math.max(0, Math.min(1, (cx - g3.padL) / g3.pw)) : 0.5,
+             anchor: g3 ? (g3.i0 + Math.max(0, Math.min(1, (cx - g3.padL) / g3.pw)) * (g3.vs - 1)) : 0};
+        if(g && g.swiping){ card.classList.remove("swiping"); resetCard(); }
+        g = null;
+        return;
+      }
+      if(ids.length > 1) return;
+      var z = zoneOf(e.target);
+      g = {id:e.pointerId, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, t:Date.now(),
+           mode:z, axis:null, swiping:false, dx:0, pan0:CV.ve};
     });
     card.addEventListener("pointermove", function(e){
+      if(down[e.pointerId]){ down[e.pointerId].x = e.clientX; down[e.pointerId].y = e.clientY; }
+      var n2 = Object.keys(down).length;
+      if(P && n2 >= 2){                           // 핀치
+        var ids2 = Object.keys(down);
+        var a2 = down[ids2[0]], b2 = down[ids2[1]];
+        var d = Math.max(24, Math.sqrt(Math.pow(a2.x - b2.x, 2) + Math.pow(a2.y - b2.y, 2)));
+        var nv = P.vs0 * (P.d0 / d);
+        if(Math.abs(nv - CV.vs) >= 1) cvZoomSet(nv, P.frac, P.anchor);
+        if(e.cancelable) e.preventDefault();
+        return;
+      }
       if(!g || e.pointerId !== g.id) return;
       g.x = e.clientX; g.y = e.clientY;
       var dx = e.clientX - g.x0, dy = e.clientY - g.y0;
       if(!g.axis){
-        if(Math.abs(dx) < 9 && Math.abs(dy) < 9) return;
+        if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
         g.axis = Math.abs(dx) > Math.abs(dy) * 1.15 ? "x" : "y";
-        if(g.axis === "x"){
-          g.swiping = true;
-          card.classList.add("swiping");
-          CV.cx = -1;                            // 끌기 시작하면 크로스헤어는 걷어낸다
-        }
+        if(g.mode === "close" && g.axis === "x"){ g.swiping = true; card.classList.add("swiping"); }
       }
-      if(!g.swiping) return;
-      var W = card.clientWidth || 340;
-      var dd = Math.max(-W, Math.min(W, dx));
+      if(g.mode === "chart"){                     // 차트 안: 이동만, 닫기 없음
+        if(g.axis === "x" && CV.g && CV.vs < CV.g.n){
+          var step = CV.g.step || 1;
+          var ve = Math.round(g.pan0 - dx / step);
+          ve = Math.max(CV.vs - 1, Math.min(CV.g.n - 1, ve));
+          if(ve !== CV.ve){ CV.ve = ve; CV.sel = -1; cvDraw(); }
+          if(e.cancelable) e.preventDefault();
+        }
+        return;
+      }
+      if(g.mode === "none" || !g.swiping) return;
+      var Wc = card.clientWidth || 340;
+      var dd = Math.max(-Wc, Math.min(Wc, dx));
       g.dx = dd;
       card.style.transform = "translateX(" + dd.toFixed(1) + "px)";
-      card.style.opacity = String(Math.max(.3, 1 - Math.abs(dd) / (W * 1.25)).toFixed(3));
-      el.style.background = "rgba(4,6,9," + (0.76 * Math.max(0, 1 - Math.abs(dd) / (W * 1.1))).toFixed(3) + ")";
+      card.style.opacity = String(Math.max(.3, 1 - Math.abs(dd) / (Wc * 1.25)).toFixed(3));
+      el.style.background = "rgba(4,6,9," + (0.76 * Math.max(0, 1 - Math.abs(dd) / (Wc * 1.1))).toFixed(3) + ")";
       if(e.cancelable) e.preventDefault();
     });
     function endG(e, cancel){
-      if(!g || (e && e.pointerId !== g.id)) return;
+      delete down[e.pointerId];
+      if(P){ if(Object.keys(down).length < 2) P = null; return; }
+      if(!g || e.pointerId !== g.id) return;
       var s = g; g = null;
+      var dx = s.x - s.x0, dy = s.y - s.y0;
+      if(s.mode === "chart"){
+        /* 더 옮길 곳이 없는 전체 보기에서만 큰 가로 플릭 = 닫기 */
+        if(!cancel && s.axis === "x" && Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy) * 1.5 &&
+           CV.g && CV.vs >= CV.g.n){ cvClose(dx > 0 ? 1 : -1); return; }
+        if(!cancel && (!s.axis || (Math.abs(dx) < 10 && Math.abs(dy) < 10)) && Date.now() - s.t < 800)
+          pickAt(s.x0);
+        return;
+      }
+      if(s.mode === "none") return;
       if(s.swiping){
         card.classList.remove("swiping");
         if(cancel){ resetCard(); return; }
-        if(Math.abs(s.dx) >= CV_SWIPE_MIN) cvClose(s.dx > 0 ? 1 : -1);   // 손가락 방향으로 밀려 나가며 닫힘
+        if(Math.abs(s.dx) >= CV_SWIPE_MIN) cvClose(s.dx > 0 ? 1 : -1);
         else resetCard();
-        return;
-      }
-      if(cancel || s.axis === "y") return;
-      if(Math.max(Math.abs(s.x - s.x0), Math.abs(s.y - s.y0)) > 16) return;
-      if(Date.now() - s.t > 700) return;
-      if(s.chart){                               // 탭 = 그 시점 날짜·가격
-        var r = box.getBoundingClientRect();
-        cvSetCx(cvIdxAt(s.x - r.left));
       }
     }
     card.addEventListener("pointerup", function(e){ endG(e, false); });
     card.addEventListener("pointercancel", function(e){ endG(e, true); });
 
-    /* 데스크톱: 차트 위 마우스 호버로 시점 확인 */
+    /* 데스크톱: 호버로 그 봉 보기 / 휠로 확대 */
     box.addEventListener("pointermove", function(e){
-      if(e.pointerType !== "mouse" || g) return;
-      var r = box.getBoundingClientRect();
-      cvSetCx(cvIdxAt(e.clientX - r.left));
+      if(e.pointerType !== "mouse" || g || P || Object.keys(down).length) return;
+      pickAt(e.clientX);
     });
-    box.addEventListener("pointerleave", function(){ if(!g) cvSetCx(-1); });
+    box.addEventListener("wheel", function(e){
+      if(!CV_OPEN) return;
+      e.preventDefault();
+      cvZoom(e.deltaY <= 0 ? 1 : -1);
+    }, {passive:false});
 
     document.addEventListener("keydown", function(e){
       if(e.key === "Escape" && CV_OPEN){ e.preventDefault(); cvClose(null); }
