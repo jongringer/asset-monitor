@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-tf-bars">
+<meta name="build" content="2026-11-24-chart-modal">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -147,10 +147,22 @@
   .dc.down{color:var(--down)}
   .row.newhigh .ath b{color:#FFC663}
 
-  /* ── 3년 월별 추이 미니 그래프 (월별 상승=빨강 · 하락=파랑) ── */
-  .spk{flex:0 0 auto;width:38px;height:18px;display:block;align-self:center;
-    margin:0 .06em 0 .1em;overflow:visible;pointer-events:none}
-  .spk svg{display:block;width:38px;height:18px}
+  /* ── 3년 월별 추이 미니 그래프 (월별 상승=빨강 · 하락=파랑) ──
+     톡 누르면 확대 차트가 열리는 자리 — 은은한 바탕으로 '누를 수 있는 그래프'임을 알리고,
+     ::after 로 위아래 히트박스를 넓혀 손가락으로도 정확히 잡히게 한다. */
+  .spk{flex:0 0 auto;position:relative;width:38px;height:18px;display:block;align-self:center;
+    margin:0 .06em 0 .1em;overflow:visible;pointer-events:auto;cursor:zoom-in;border-radius:4px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+    transition:background .15s ease,box-shadow .15s ease}
+  .spk::after{content:"";position:absolute;inset:-9px -7px;border-radius:8px}   /* 손가락 히트박스 */
+  .spk svg{position:relative;display:block;width:38px;height:18px;pointer-events:none}
+  @media (hover:hover){
+    .spk:hover{background:linear-gradient(180deg,rgba(160,190,225,.28),rgba(120,160,210,.12));
+      box-shadow:inset 0 0 0 1px rgba(150,185,225,.5)}
+  }
+  .spk.tap{background:linear-gradient(180deg,rgba(170,200,235,.38),rgba(120,160,210,.18));
+    box-shadow:inset 0 0 0 1px rgba(175,205,240,.66)}
 
   /* ── 행 드래그 순서 변경 (모바일 롱프레스 · PC 마우스) ── */
   #list{touch-action:pan-y pinch-zoom}            /* 평소엔 세로 스크롤·핀치 확대 허용, 드래그가 붙은 뒤에만 preventDefault */
@@ -247,6 +259,66 @@
   .yadd:active{background:rgba(124,160,220,.32)}
   .msg{font-size:.62em;font-weight:700;color:#8B939D;min-height:1.3em;line-height:1.45}
   .msg.bad{color:#EF8A8C}
+
+  /* ── 확장 차트 모달 (스파크라인 톡 → 일봉·주봉·월봉 크게 보기) ── */
+  .cv{position:absolute;inset:0;z-index:60;display:none;align-items:stretch;justify-content:center;
+    background:rgba(4,6,9,.76);padding:.44em;overscroll-behavior:contain}
+  .cv.on{display:flex;animation:cvIn .16s ease}
+  @keyframes cvIn{from{opacity:0}to{opacity:1}}
+  .cvcard{position:relative;width:100%;display:flex;flex-direction:column;min-height:0;
+    background:#0B0D11;border:1px solid rgba(255,255,255,.11);border-radius:1em;
+    padding:.8em .8em calc(.66em + env(safe-area-inset-bottom,0px));
+    box-shadow:0 26px 64px rgba(0,0,0,.74),inset 0 1px 0 rgba(255,255,255,.04);
+    overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+    touch-action:pan-y;          /* 세로만 브라우저에 맡기고 가로는 스와이프 닫기로 받는다 */
+    transform:translateX(0);will-change:transform;
+    transition:transform .22s cubic-bezier(.2,.7,.25,1),opacity .18s ease}
+  .cvcard.swiping{transition:none}
+  .cvh{display:flex;align-items:flex-start;gap:.5em}
+  .cvtl{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:.1em}
+  .cvtl .dotm{flex:0 0 auto;width:.6em;height:.6em;border-radius:99px !important;
+    background:#9FB0C4;margin-right:.44em;transform:translateY(-.06em)}
+  .cvtl b{font-size:1.08em;font-weight:800;color:#fff;letter-spacing:-.022em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cvx{all:unset;flex:0 0 auto;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    width:2.1em;height:2.1em;border-radius:99px;border:1px solid rgba(255,255,255,.16);
+    background:#171D24;color:#D7DEE7;font-size:.86em;font-weight:800;line-height:1}
+  .cvx:active{background:#252E38}
+  .cvprice{display:flex;align-items:baseline;gap:.5em;flex-wrap:wrap;margin-top:.26em}
+  .cvpx2{font-size:1.86em;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;
+    letter-spacing:-.032em;line-height:1.04}
+  .cvchg{font-size:1.06em;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .cvchg.up{color:var(--up)}
+  .cvchg.down{color:var(--down)}
+  .cvchg.flat{color:#A7AFB9}
+  .cvsub{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;margin-top:.3em;
+    font-size:.66em;font-weight:700;color:#98A2AD;font-variant-numeric:tabular-nums;letter-spacing:.002em}
+  .cvsub > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .cvsub b{color:#C4CDD7;font-weight:800}
+  .cvchg2{flex:0 0 auto;color:#98A2AD}
+  .cvchg2.up{color:var(--up)}
+  .cvchg2.down{color:var(--down)}
+  .cvseg{display:flex;gap:.3em;margin-top:.62em}
+  .cvseg button{all:unset;cursor:pointer;flex:1 1 0;text-align:center;font-size:.84em;font-weight:800;
+    color:#96A0AB;padding:.76em .2em;border-radius:.55em;letter-spacing:.02em;
+    border:1px solid rgba(255,255,255,.11);background:#14171F}
+  .cvseg button.on{color:#0B0F14;background:linear-gradient(180deg,#E9F0F8 0%,#BFCFE1 100%);
+    border-color:#CBD8E7;box-shadow:0 1px 2px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.6)}
+  .cvseg button:active{background:#1E262F}
+  .cvseg button.on:active{background:linear-gradient(180deg,#D9E3EF 0%,#B0C0D2 100%)}
+  .cvbox{position:relative;flex:1 1 auto;min-height:12em;margin-top:.55em;border-radius:.6em;
+    background:linear-gradient(180deg,#0E1319 0%,#0A0D12 100%);
+    border:1px solid rgba(255,255,255,.075);overflow:hidden}
+  .cvbox svg{display:block;width:100%;height:100%;touch-action:none}
+  .cvload{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    font-size:.74em;font-weight:800;color:#A7B0BB;background:rgba(10,13,18,.62);letter-spacing:.02em}
+  .cvload.on{display:flex}
+  .cvfoot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;margin-top:.5em}
+  .cvper{flex:0 0 auto;font-size:.8em;font-weight:800;color:#DDE4EC;letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums}
+  .cvhint{flex:1 1 auto;min-width:0;text-align:right;font-size:.6em;font-weight:700;color:#6A727C;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cvhint.bad{color:#EF8A8C}
 </style>
 </head>
 <body>
@@ -360,6 +432,37 @@
       <span class="src" id="src2">—</span>
     </div>
   </footer>
+
+  <!-- 확장 차트: 목록의 미니 그래프를 톡 누르면 열린다 -->
+  <div class="cv" id="cv" role="dialog" aria-modal="true" aria-labelledby="cvName">
+    <div class="cvcard" id="cvCard">
+      <div class="cvh">
+        <div class="cvtl"><i class="dotm" id="cvDot"></i><b id="cvName">—</b></div>
+        <button class="cvx" id="cvx" type="button" aria-label="확장 차트 닫기">✕</button>
+      </div>
+      <div class="cvprice">
+        <div class="cvpx2" id="cvPx">—</div>
+        <div class="cvchg flat" id="cvPct">—</div>
+      </div>
+      <div class="cvsub">
+        <span id="cvAth">—</span>
+        <span class="cvchg2" id="cvChg">—</span>
+      </div>
+      <div class="cvseg" id="cvSeg" role="group" aria-label="차트 봉 단위">
+        <button type="button" data-tf="1d">일봉</button>
+        <button type="button" data-tf="1wk">주봉</button>
+        <button type="button" data-tf="1mo">월봉</button>
+      </div>
+      <div class="cvbox" id="cvBox">
+        <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <div class="cvload" id="cvLoad">불러오는 중…</div>
+      </div>
+      <div class="cvfoot">
+        <span class="cvper" id="cvPer">—</span>
+        <span class="cvhint" id="cvHint">탭하면 그 시점 가격 · 좌우로 밀면 닫기</span>
+      </div>
+    </div>
+  </div>
 
   <div class="ov" id="ov" role="dialog" aria-modal="true" aria-label="종목 추가">
     <div class="sheet">
@@ -1278,7 +1381,10 @@
         }else return;
       }
       var v = histSeries(a, closes);
-      if(v){ map[a.id] = v; n++; }
+      if(v){
+        map[a.id] = v; n++;
+        if(ts && ts.length === closes.length) barsPut(tf, a.id, ts, closes);   // 확대 차트용 원본 봉(시각·종가)
+      }
     });
     if(n){
       HISTS_T[tf] = Date.now(); histSave(tf);
@@ -1289,7 +1395,7 @@
   }
   function histSave(tf){
     tf = tf || TF;
-    try{ localStorage.setItem(histKey(tf), JSON.stringify({t:HISTS_T[tf] || 0, d:HISTS[tf] || {}})); }catch(e){}
+    try{ localStorage.setItem(histKey(tf), JSON.stringify({t:HISTS_T[tf] || 0, d:HISTS[tf] || {}, b:BARS[tf] || {}})); }catch(e){}
   }
   function histRestore(tf){
     tf = tf || TF;
@@ -1299,6 +1405,10 @@
       var map = HISTS[tf] || (HISTS[tf] = {});
       Object.keys(c.d).forEach(function(id){
         if(BY[id] && c.d[id] && c.d[id].length > 1) map[id] = c.d[id];
+      });
+      if(c.b) Object.keys(c.b).forEach(function(id){
+        var bb = c.b[id];
+        if(BY[id] && bb && bb.c && bb.c.length > 1) (BARS[tf] || (BARS[tf] = {}))[id] = {t:bb.t || null, c:bb.c};
       });
       HISTS_T[tf] = c.t || 0;
     }catch(e){}
@@ -1348,9 +1458,15 @@
     histGet(url).then(function(d){
       var k = d && d.data && d.data.klines;
       if(!Array.isArray(k) || !k.length) throw new Error("no klines");
-      var closes = k.map(function(s){ return parseFloat(String(s).split(",")[1]); }).slice(-m.keep);
+      var rows = k.slice(-m.keep), closes = [], tms = [];
+      rows.forEach(function(s){
+        var p = String(s).split(",");
+        closes.push(parseFloat(p[1]));
+        tms.push(emTs(p[0]));
+      });
       var v = histSeries(BY.csi300, closes);
       if(!v) throw new Error("no series");
+      barsPut(tf, "csi300", tms, closes);
       histStored(tf, "csi300", v);
       if(DBG) dg("hist em " + tf + " " + v.length);
     }).catch(function(){ if(DBG) dg("hist em fail"); }).then(function(){ histBusy[tf + "csi"] = 0; });
@@ -1366,6 +1482,19 @@
   function invNum(s){
     var v = parseFloat(String(s==null ? "" : s).replace(/,/g,""));
     return isFinite(v) ? v : null;
+  }
+  /* investing.com 행의 날짜·시각 → 초. 날짜만 오면 정오(UTC)로 고정해 표기일이 흔들리지 않게 한다. */
+  function invRowTs(r){
+    if(r.rowDateTimestamp != null && isFinite(Number(r.rowDateTimestamp))) return Math.floor(Number(r.rowDateTimestamp));
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r.rowDate || r.date || ""));
+    if(!m) return null;
+    return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3], 12) / 1000);
+  }
+  /* 동방재부 kline 날짜("2026-11-21 …") → 초 */
+  function emTs(s){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
+    if(!m) return null;
+    return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3], 7) / 1000);   // 중국장 마감 무렵(15:00 CST)
   }
   function invGet(url, ms){
     var ctl = new AbortController();
@@ -1385,9 +1514,12 @@
     return invGet(url, ms || 9000).then(function(d){
       var rows = d && d.data;
       if(!Array.isArray(rows) || rows.length < 6) throw new Error("no rows");
-      return rows.slice().reverse().map(function(r){
-        return invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close);
-      }).slice(-m.keep);
+      var c = [], t = [];
+      rows.slice().reverse().slice(-m.keep).forEach(function(r){
+        c.push(invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close));
+        t.push(invRowTs(r));
+      });
+      return {c:c, t:t};
     });
   }
   var tasiHistTry = 0;
@@ -1396,9 +1528,10 @@
     if(!BY.tasi || histBusy[tf + "tasi"]) return;
     if(HISTS[tf].tasi && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
     histBusy[tf + "tasi"] = 1;
-    invHistRows(INV_TASI, tf).then(function(closes){
-      var v = histSeries(BY.tasi, closes);
+    invHistRows(INV_TASI, tf).then(function(r){
+      var v = histSeries(BY.tasi, r.c);
       if(!v) throw new Error("no series");
+      barsPut(tf, "tasi", r.t, r.c);
       histStored(tf, "tasi", v);
       if(DBG) dg("hist tasi " + tf + " " + v.length);
       tasiHistTry = 0;
@@ -1434,9 +1567,10 @@
     if(!BY.k200 || histBusy[tf + "k200"]) return;
     if(HISTS[tf].k200 && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
     histBusy[tf + "k200"] = 1;
-    invHistRows(INV_K200, tf).then(function(closes){
-      var v = histSeries(BY.k200, closes);
+    invHistRows(INV_K200, tf).then(function(r){
+      var v = histSeries(BY.k200, r.c);
       if(!v) throw new Error("no series");
+      barsPut(tf, "k200", r.t, r.c);
       histStored(tf, "k200", v);
       if(DBG) dg("hist k200 " + tf + " " + v.length);
       k200HistTry = 0;
@@ -1475,7 +1609,9 @@
         var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
         var v = histSeries(a, (q && q.close) || []);
         if(!v) throw new Error("no series");
-        map[a.id] = v; bad = 0; histOnePass[tf] = 0; HISTS_T[tf] = Date.now(); histSave(tf);
+        map[a.id] = v; bad = 0; histOnePass[tf] = 0;
+        barsPut(tf, a.id, r && r.timestamp, (q && q.close) || []);
+        HISTS_T[tf] = Date.now(); histSave(tf);
         if(tf === TF){ SPKC[a.id] = null; redrawSparks(); tfUI(); }
       }).catch(function(){ bad++; }).then(function(){
         if(i >= list.length || bad >= 2) return finish();
@@ -1640,7 +1776,7 @@
         '<div class="rc">'+
         '<div class="top">'+
           '<div class="nm"><span class="nl">'+rowName(a)+'</span>'+(a.tag?'<span class="tag">'+a.tag+'</span>':'')+'</div>'+
-          '<span class="spk" id="spk-'+a.id+'" aria-hidden="true"></span>'+
+          '<span class="spk" id="spk-'+a.id+'" role="button" tabindex="0" aria-label="확대 차트 보기"></span>'+
           '<div class="px">—</div>'+
           '<div class="pct flat">—</div>'+
         '</div>'+
@@ -1779,6 +1915,16 @@
   }
   var drag = null, settleT = 0, settleEl = null, settleTo = 0;
   var lp = {el:null, t:0, y0:0, x0:0};     // 롱프레스 대기 상태
+  var spkTap = null, spkGuard = 0;         // 미니 그래프 탭(← 확대 차트 열기) 추적
+  function spkMark(on){
+    var el = document.querySelector(".spk.tap");
+    if(el) el.classList.remove("tap");
+    if(on && spkTap){
+      var r = document.getElementById("spk-" + spkTap.id);
+      if(r) r.classList.add("tap");
+    }
+  }
+  function spkClear(){ spkTap = null; spkMark(false); }
   function cancelLp(){ if(lp.t){ clearTimeout(lp.t); lp.t = 0; } lp.el = null; }
   function beginPinch(){ pinchSeen = true; gestureLockUntil = Date.now() + PINCH_LOCK_MS; }
 
@@ -1989,7 +2135,10 @@
       var d = JSON.parse(t);
       if(!Array.isArray(d) || d.length < 2) return;
       var v = histSeries(a, d.map(function(c){ return Number(c.c); }));
-      if(v) histStored(tf, a.id, v);
+      if(v){
+        barsPut(tf, a.id, d.map(function(c){ return Math.floor(Number(c.t) / 1000); }), d.map(function(c){ return Number(c.c); }));
+        histStored(tf, a.id, v);
+      }
     }).catch(function(e){ if(DBG) dg("hlhist:"+((e&&e.message)||e)); });
   }
 
@@ -2212,13 +2361,18 @@
     L.addEventListener("touchstart", function(e){
       var n = e.touches ? e.touches.length : 0;
       if(n > 1){                                  // 두 손가락 = 핀치 시작: 손 뗄 때까지 잠금
-        beginPinch(); zoomAbort(); return;
+        beginPinch(); spkClear(); zoomAbort(); return;
       }
       if(gestureBlocked()){ zoomAbort(); return; }  // 확대 중·핀치 직후: 제스처 시작 금지(자유 패닝)
       if(n !== 1) return;
       var el = dragPick(e);
       if(!el) return;
       var t0 = e.touches[0];
+      /* 미니 그래프 위에서 시작한 한 손가락은 '탭 = 확대 차트' 후보로 잡아 둔다.
+         조금이라도 움직이면(스크롤·스와이프·드래그) 후보를 버린다. */
+      spkClear();
+      var sp = e.target && e.target.closest ? e.target.closest(".spk") : null;
+      if(sp){ spkTap = {id: el.getAttribute("data-id"), x: t0.clientX, y: t0.clientY, t: Date.now()}; spkMark(true); }
       swBegin(el, t0.clientX, t0.clientY);
       lp.el = el; lp.y0 = t0.clientY; lp.x0 = t0.clientX;
       if(lp.t) clearTimeout(lp.t);
@@ -2227,6 +2381,7 @@
         var el2 = lp.el;
         if(!el2) return;
         if(gestureBlocked()) return;              // 450ms 사이에 확대됐다면 붙지 않는다
+        spkClear();                               // 롱프레스가 붙으면 탭이 아니다
         if(swNow){ swNow = null; }                // 롱프레스가 붙으면 스와이프는 포기
         closeSwipeOpen();
         var d = dragStart("touch", el2, lp.x0, lp.y0);
@@ -2238,7 +2393,7 @@
     L.addEventListener("touchmove", function(e){
       var n = e.touches ? e.touches.length : 0;
       if(n > 1){                                  // 핀치 중: 진행 제스처 폐기, preventDefault 없음
-        beginPinch(); zoomAbort(); return;
+        beginPinch(); zoomAbort(); spkClear(); return;
       }
       if(gestureBlocked()){                       // 확대 중·핀치 직후: 브라우저가 사방으로 패닝
         if(drag || swNow || lp.t) zoomAbort();
@@ -2255,6 +2410,7 @@
       if(lp.el){
         if(Math.abs(t1.clientY - lp.y0) > TOUCH_SLOP || Math.abs(t1.clientX - lp.x0) > TOUCH_SLOP){
           cancelLp();                                // 4px 넘게 움직임 = 훑어보는 손짓 → 롱프레스 취소
+          if(spkTap && (Math.abs(t1.clientY - spkTap.y) > 9 || Math.abs(t1.clientX - spkTap.x) > 9)) spkClear();
         }
       }
     }, {passive:false});
@@ -2275,7 +2431,18 @@
         if(e.cancelable) e.preventDefault();
         dragDrop(drag, true);
         swNow = null;
+        spkClear();
         return;
+      }
+      /* 미니 그래프를 톡 누른 것 → 확대 차트(한 번이든 두 번이든 바로, 중복 열림만 막는다) */
+      if(spkTap){
+        var st = spkTap; spkClear();
+        if(Date.now() - st.t < 700){
+          spkGuard = Date.now();
+          cvOpenById(st.id);
+          if(e.cancelable) e.preventDefault();
+          return;
+        }
       }
       if(swEnd() && e.cancelable) e.preventDefault();
     }
@@ -2328,6 +2495,16 @@
       peakZoom = 1;                                  // 마우스 제스처 종료 → 관측 배율 초기화
     });
     L.addEventListener("contextmenu", function(e){ if(drag) e.preventDefault(); });
+    /* 키보드: 미니 그래프에 포커스한 뒤 Enter/Space 로도 확대 차트를 연다 */
+    L.addEventListener("keydown", function(e){
+      if(e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      var t = e.target;
+      if(!t || !t.classList || !t.classList.contains("spk")) return;
+      var r = t.closest(".row");
+      if(!r) return;
+      e.preventDefault();
+      cvOpenById(r.getAttribute("data-id"));
+    });
     document.addEventListener("selectstart", function(e){ if(drag && drag.active) e.preventDefault(); });
     document.addEventListener("dragstart", function(e){
       var t2 = e.target;
@@ -2336,6 +2513,15 @@
 
     /* ── 탭: 드러난 휴지통을 누르면 삭제, 다른 곳을 누르면 닫기 ── */
     L.addEventListener("click", function(e){
+      var t = e.target;
+      /* 미니 그래프 클릭(데스크톱·키보드) = 확대 차트. 터치로 열린 직후의 합성 클릭은 건너뛴다. */
+      var sp = t && t.closest ? t.closest(".spk") : null;
+      if(sp && !zoomWriteBlocked() && Date.now() - swGuard > 350){
+        var srow = sp.closest(".row");
+        if(swOpen) swClose();
+        if(srow && Date.now() - spkGuard > 700) cvOpenById(srow.getAttribute("data-id"));
+        return;
+      }
       if(zoomWriteBlocked()) return;                 // 확대 중에는 휴지통 클릭으로도 삭제되지 않는다
       if(Date.now() - swGuard < 350) return;         // 스와이프 직후의 합성 클릭은 무시
       var t = e.target;
@@ -2370,6 +2556,7 @@
     }
     function zoomAbort(){
       cancelLp();
+      spkClear();
       if(swNow){
         if(swNow.active && swNow.el){ swNow.el.classList.remove("swiping"); swSet(swNow.el, 0); }
         swNow = null;
@@ -2524,6 +2711,7 @@
       computeMarkets();
       renderMarket();
       ORDER.forEach(function(id){ renderRow(BY[id]); });   // 장중/마감 색 자동 전환
+      if(CV_OPEN){ try{ cvHead(); cvDraw(); }catch(e){} }   // 열린 확대 차트도 같은 초에 갱신
     }
     if(left <= 0 && !busy) refresh();
   }
@@ -2549,6 +2737,477 @@
   document.addEventListener("visibilitychange", function(){
     if(document.visibilityState === "visible"){ nextAt = Date.now() + 200; tick(); }
   });
+
+  /* ───────── 확대 차트 모달 (미니 그래프 톡 → 일봉·주봉·월봉 크게 보기) ─────────
+     · 열기: 목록의 미니 그래프(.spk) 탭 — 한 번이든 두 번이든 바로 열리고, 이미 열려 있으면 무시
+     · 닫기: ✕ · 딤 바탕 · ESC · 안드로이드 뒤로가기(popstate) · 좌우 스와이프
+     · 차트 위 탭(데스크톱은 마우스 호버) = 그 시점 날짜·가격 / 가로 스와이프는 닫기 전용
+       → 시점 확인과 닫기 제스처가 서로 싸우지 않는다. */
+  var BARS = {"1mo":{}, "1wk":{}, "1d":{}};    // tf → id → {t:[초], c:[종가]} 확대 차트용 원본 봉
+  var CV_SWIPE_MIN = 64;                        // 좌우로 이만큼(px) 밀면 닫는다
+  var CV_OPEN = false;
+  var CV = {id:null, tf:"1mo", cx:-1, req:{}, pushed:false, at:0, closing:0, g:null, raf:0};
+  var GROUP_COL = {us:"#6AA8FF", cme:"#8FA8FF", jp:"#FF9BA3", cn:"#FFC17A", kr:"#7FD6A4",
+                   night:"#B79CFF", sa:"#6FD3C8", coin:"#FFB84D", fx:"#A7B4C4", xyz:"#8FB3D6"};
+
+  function cvColor(a){ return GROUP_COL[(a && a.mkt) || ""] || "#9FB0C4"; }
+  function cvDay(sec, tf){
+    if(!sec) return "";
+    var d = new Date(sec * 1000);
+    var s = String(d.getFullYear()).slice(2) + "." + pad2(d.getMonth() + 1);
+    if(tf !== "1mo") s += "." + pad2(d.getDate());
+    return s;
+  }
+  /* 미니 그래프는 %만 저장하지만 확대 차트는 날짜·가격이 필요하다 → 받은 봉을 그대로 보관 */
+  function barsPut(tf, id, t, c){
+    if(!id || !c || c.length < 2) return;
+    var T = [], C = [], i, v;
+    for(i = 0; i < c.length; i++){
+      v = c[i];
+      if(v == null || !isFinite(v) || v <= 0) continue;
+      C.push(Math.round(Number(v) * 10000) / 10000);
+      T.push((t && t[i] != null && isFinite(t[i])) ? Math.round(Number(t[i])) : null);
+    }
+    if(C.length < 2) return;
+    (BARS[tf] || (BARS[tf] = {}))[id] = {t:T, c:C};
+  }
+
+  /* ── 봉 원본 받기: 캐시에 없으면 그 종목만 즉시 받아온다(봉 단위별로 한 번만) ── */
+  function cvYhBars(a, tf){
+    var m = tfMeta(tf), sym = a.histSym || a.yahoo;
+    if(!sym) return Promise.reject(new Error("no symbol"));
+    function one(s){
+      return histGet("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(s) +
+        "?range=" + m.range + "&interval=" + m.iv + "&_=" + Date.now()).then(function(d){
+        var r = d && d.chart && d.chart.result && d.chart.result[0];
+        var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
+        var c = (q && q.close) || [], ts = (r && r.timestamp) || [];
+        if(c.length < 2) throw new Error("no bars");
+        return {t:ts.map(Number), c:c.map(function(x){ return x == null ? null : Number(x); })};
+      });
+    }
+    return one(sym).then(function(b){
+      if(!a.fxSym) return b;
+      return one(a.fxSym).then(function(f){          // 달러 표시 행: 그 봉 시각의 환율로 나눈다
+        return {t:b.t, c:b.c.map(function(v, k){ var fx = fxAt(f.t, f.c, Number(b.t[k])); return (v != null && fx) ? v / fx : null; })};
+      });
+    });
+  }
+  function cvEmBars(a, tf){
+    var m = tfMeta(tf);
+    var url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
+      "&fields1=f1,f2,f3&fields2=f51,f53&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
+    return histGet(url).then(function(d){
+      var k = d && d.data && d.data.klines;
+      if(!Array.isArray(k) || k.length < 2) throw new Error("no bars");
+      var t = [], c = [];
+      k.slice(-m.keep).forEach(function(s){
+        var p = String(s).split(",");
+        t.push(emTs(p[0])); c.push(parseFloat(p[1]));
+      });
+      return {t:t, c:c};
+    });
+  }
+  function cvInvBars(a, tf){
+    var m = tfMeta(tf), now = new Date();
+    var from = new Date(now.getFullYear(), now.getMonth() - m.months, 1);
+    var base = (a.id === "tasi") ? INV_TASI : INV_K200;
+    var url = base + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
+              "&time-frame=" + m.invTF + "&add-missing-rows=false&_=" + Date.now();
+    return invGet(url, 9000).then(function(d){
+      var rows = d && d.data;
+      if(!Array.isArray(rows) || rows.length < 2) throw new Error("no rows");
+      var t = [], c = [];
+      rows.slice().reverse().slice(-m.keep).forEach(function(r){
+        c.push(invNum(r.last_closeRaw != null ? r.last_closeRaw : r.last_close));
+        t.push(invRowTs(r));
+      });
+      return {t:t, c:c};
+    });
+  }
+  function cvHlBars(a, tf){
+    var m = tfMeta(tf), end = Date.now();
+    var days = tf === "1mo" ? 3*365 + 10 : tf === "1wk" ? 400 : 100;
+    return postText(HL_URL, JSON.stringify({type:"candleSnapshot", req:{coin:a.hl, interval:m.hlIv,
+      startTime:end - days*86400000, endTime:end}}), 15000).then(function(txt){
+      var d = JSON.parse(txt);
+      if(!Array.isArray(d) || d.length < 2) throw new Error("no candles");
+      var t = [], c = [];
+      d.forEach(function(x){ t.push(Math.floor(Number(x.t) / 1000)); c.push(Number(x.c)); });
+      return {t:t, c:c};
+    });
+  }
+  function cvFetch(a, tf){
+    var key = tf + "|" + a.id;
+    if(CV.req[key]) return CV.req[key];
+    var p;
+    if(a.hl) p = cvHlBars(a, tf);
+    else if(a.id === "csi300") p = cvEmBars(a, tf);
+    else if(a.id === "tasi" || a.id === "k200") p = cvInvBars(a, tf);
+    else p = cvYhBars(a, tf);
+    CV.req[key] = p.then(function(b){
+      delete CV.req[key];
+      if(b) barsPut(tf, a.id, b.t, b.c);
+      return b;
+    }, function(e){ delete CV.req[key]; throw e; });
+    return CV.req[key];
+  }
+
+  /* ── 모달 UI ── */
+  function cvLoad(on){
+    var el = document.getElementById("cvLoad");
+    if(el) el.classList.toggle("on", !!on);
+  }
+  function cvHint(txt, bad){
+    var el = document.getElementById("cvHint");
+    if(!el) return;
+    el.textContent = txt;
+    el.classList.toggle("bad", !!bad);
+  }
+  function cvHead(){
+    var a = BY[CV.id]; if(!a) return;
+    var nm = document.getElementById("cvName");
+    if(nm) nm.textContent = rowName(a);
+    var dot = document.getElementById("cvDot");
+    if(dot) dot.style.background = cvColor(a);
+    var s = priceOf(a);
+    var px = (s && s.px != null && isFinite(s.px)) ? Number(s.px) : null;
+    var pex = document.getElementById("cvPx"), pet = document.getElementById("cvPct");
+    if(px == null){
+      if(pex) pex.textContent = "—";
+      if(pet){ pet.textContent = "—"; pet.className = "cvchg flat"; }
+    }else{
+      if(pex) pex.textContent = (a.cur || "") + nf(px, a.dec);
+      var pct = a.ath > 0 ? (px - a.ath) / a.ath * 100 : null;
+      if(pet){
+        if(pct == null){ pet.textContent = "—"; pet.className = "cvchg flat"; }
+        else{
+          pet.textContent = (pct > 0 ? "+" : "") + pct.toFixed(2) + "%";
+          pet.className = "cvchg " + (pct > 0.0001 ? "up" : (pct < -0.0001 ? "down" : "flat"));
+        }
+      }
+    }
+    var ah = document.getElementById("cvAth");
+    if(ah) ah.innerHTML = a.ath > 0
+      ? ("3년내 최고 <b>" + nf(a.ath, a.dec) + "</b> · " + escHtml(a.athDate))
+      : "3년내 최고점 조회 중…";
+    var ce = document.getElementById("cvChg");
+    if(ce){
+      if(s && s.chg != null && isFinite(s.chg)){
+        var v = Number(s.chg);
+        ce.textContent = a.chgLabel + " " + (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+        ce.className = "cvchg2 " + (v > 0.001 ? "up" : (v < -0.001 ? "down" : ""));
+      }else{
+        ce.textContent = a.chgLabel + " —";
+        ce.className = "cvchg2";
+      }
+    }
+  }
+  function cvSegUI(){
+    var box = document.getElementById("cvSeg");
+    if(!box) return;
+    var bs = box.querySelectorAll("button[data-tf]");
+    for(var i = 0; i < bs.length; i++){
+      var on = bs[i].getAttribute("data-tf") === CV.tf;
+      bs[i].classList.toggle("on", on);
+      bs[i].setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  }
+  function cvIdxAt(relX){
+    var g = CV.g; if(!g) return -1;
+    if(relX <= g.padL) return 0;
+    if(relX >= g.padL + g.pw) return g.n - 1;
+    return Math.round((relX - g.padL) / g.pw * (g.n - 1));
+  }
+  function cvSetCx(k){
+    if(!CV_OPEN) return;
+    var g = CV.g;
+    if(k < 0){ if(CV.cx === -1) return; CV.cx = -1; }
+    else if(g){ CV.cx = Math.max(0, Math.min(g.n - 1, Math.round(k))); }
+    else return;
+    if(CV.raf) return;
+    CV.raf = requestAnimationFrame(function(){ CV.raf = 0; try{ cvDraw(); }catch(e){} });
+  }
+
+  /* ── 큰 차트 그리기 (상승 빨강 / 하락 파랑 · 끝점 도트 없음) ── */
+  function cvDraw(){
+    if(!CV_OPEN) return;
+    var a = BY[CV.id]; if(!a) return;
+    var box = document.getElementById("cvBox"), svg = document.getElementById("cvSvg");
+    if(!box || !svg) return;
+    var W = Math.round(box.clientWidth), H = Math.round(box.clientHeight);
+    if(!(W > 40)) W = 320;
+    if(!(H > 40)) H = 240;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+    var b = (BARS[CV.tf] || {})[CV.id];
+    if(!b || !b.c || b.c.length < 2){ svg.innerHTML = ""; CV.g = null; return; }
+    var dec = (a.dec == null ? 2 : a.dec);
+    var c = b.c.slice(0), n = c.length, i, v;
+    var s0 = priceOf(a);
+    var live = (s0 && s0.px != null && isFinite(s0.px)) ? Number(s0.px) : null;
+    if(live != null) c[n - 1] = live;          // 진행 중인 마지막 봉은 현재가로 이어 그린다
+    var mn = Infinity, mx = -Infinity;
+    for(i = 0; i < n; i++){
+      v = c[i];
+      if(v == null || !isFinite(v)) continue;
+      if(v < mn) mn = v;
+      if(v > mx) mx = v;
+    }
+    if(!isFinite(mn) || !isFinite(mx)){ svg.innerHTML = ""; CV.g = null; return; }
+    var span = mx - mn;
+    if(!(span > 0)) span = Math.abs(mx) * 0.01 || 1;
+    var top = mx + span * 0.13, bot = mn - span * 0.13;
+    var padL = 7, padR = 86, padT = 16, padB = 28;
+    var pw = Math.max(40, W - padL - padR), ph = Math.max(40, H - padT - padB);
+    var xOf = function(k){ return padL + (n > 1 ? k * pw / (n - 1) : pw / 2); };
+    var yOf = function(val){ return padT + (top - val) / (top - bot) * ph; };
+    CV.g = {n:n, padL:padL, pw:pw, padT:padT, ph:ph, top:top, bot:bot};
+
+    var out = "";
+    for(i = 1; i < 4; i++){                     // 가로 그리드
+      var gy = padT + ph * i / 4;
+      out += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + gy.toFixed(1) +
+             '" stroke="rgba(255,255,255,.055)" stroke-width="1"/>';
+    }
+    var dash = ' stroke-width="1" stroke-dasharray="3 4"';
+    out += '<line x1="' + padL + '" y1="' + yOf(mx).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mx).toFixed(1) + '" stroke="rgba(255,255,255,.24)"' + dash + '/>';
+    out += '<line x1="' + padL + '" y1="' + yOf(mn).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(mn).toFixed(1) + '" stroke="rgba(255,255,255,.24)"' + dash + '/>';
+    if(live != null && Math.abs(live - mx) > span * 0.001 && Math.abs(live - mn) > span * 0.001)
+      out += '<line x1="' + padL + '" y1="' + yOf(live).toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + yOf(live).toFixed(1) +
+             '" stroke="rgba(231,238,247,.55)" stroke-width="1.2" stroke-dasharray="5 4"/>';
+
+    var lw = n > 90 ? 1.7 : (n > 50 ? 2.0 : 2.4);
+    for(i = 1; i < n; i++){                     // 상승=빨강 · 하락=파랑
+      var p0 = c[i - 1], p1 = c[i];
+      if(p0 == null || p1 == null) continue;
+      out += '<line x1="' + xOf(i - 1).toFixed(2) + '" y1="' + yOf(p0).toFixed(2) +
+             '" x2="' + xOf(i).toFixed(2) + '" y2="' + yOf(p1).toFixed(2) +
+             '" stroke="' + (p1 >= p0 ? UP : DOWN) + '" stroke-width="' + lw + '" stroke-linecap="round"/>';
+    }
+
+    // Y축 라벨(오른쪽 여백): 최고 · 최저 · 현재가
+    var labX = W - 4;
+    out += '<text x="' + labX + '" y="' + (yOf(mx) + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="#C3CEDB">' + nf(mx, dec) + '</text>';
+    out += '<text x="' + labX + '" y="' + (yOf(mn) + 4).toFixed(1) + '" text-anchor="end" font-size="12" font-weight="700" fill="#C3CEDB">' + nf(mn, dec) + '</text>';
+    if(live != null){
+      var ly = yOf(live), lstr = nf(live, dec);
+      if(Math.abs(ly - yOf(mx)) < 17) ly = yOf(mx) + 18;
+      else if(Math.abs(ly - yOf(mn)) < 17) ly = yOf(mn) - 18;
+      var lw2 = lstr.length * 7.1 + 13;
+      out += '<rect x="' + (labX - lw2).toFixed(1) + '" y="' + (ly - 9.5).toFixed(1) + '" width="' + lw2.toFixed(1) +
+             '" height="19" rx="4.5" fill="#E7EEF7"/>';
+      out += '<text x="' + (labX - lw2 / 2).toFixed(1) + '" y="' + (ly + 4.6).toFixed(1) +
+             '" text-anchor="middle" font-size="12" font-weight="800" fill="#0B0F14">' + lstr + '</text>';
+    }
+
+    // X축 날짜 (시작 · 중간 · 끝)
+    var ticks = [0, Math.round((n - 1) / 2), n - 1], anc = ["start", "middle", "end"];
+    for(i = 0; i < ticks.length; i++){
+      var k2 = ticks[i];
+      if(!b.t || b.t[k2] == null) continue;
+      out += '<text x="' + xOf(k2).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="' + anc[i] +
+             '" font-size="11.5" font-weight="700" fill="#8B939D">' + cvDay(b.t[k2], CV.tf) + '</text>';
+    }
+
+    // 크로스헤어 + 툴팁(탭·호버로 그 시점 확인)
+    if(CV.cx >= 0 && CV.cx < n && c[CV.cx] != null){
+      var kx = xOf(CV.cx), ky = yOf(c[CV.cx]), kv = c[CV.cx];
+      out += '<line x1="' + kx.toFixed(1) + '" y1="' + padT + '" x2="' + kx.toFixed(1) + '" y2="' + (padT + ph).toFixed(1) +
+             '" stroke="rgba(255,255,255,.4)" stroke-width="1" stroke-dasharray="3 3"/>';
+      out += '<line x1="' + padL + '" y1="' + ky.toFixed(1) + '" x2="' + (padL + pw) + '" y2="' + ky.toFixed(1) +
+             '" stroke="rgba(255,255,255,.22)" stroke-width="1" stroke-dasharray="3 3"/>';
+      out += '<circle cx="' + kx.toFixed(1) + '" cy="' + ky.toFixed(1) + '" r="4.4" fill="#E7EEF7" stroke="#0B0D11" stroke-width="2"/>';
+      var tw = 152, th = 58;
+      var tx = kx + 14; if(tx + tw > W - 3) tx = kx - 14 - tw;
+      if(tx < 3) tx = 3;
+      var ty = ky - th - 12; if(ty < padT - 4) ty = ky + 14;
+      if(ty + th > H - padB) ty = H - padB - th;
+      var dstr = (b.t && b.t[CV.cx] != null) ? cvDay(b.t[CV.cx], CV.tf) : (CV.cx + 1) + "번째 봉";
+      var pctv = a.ath > 0 ? (kv - a.ath) / a.ath * 100 : null;
+      out += '<rect x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" width="' + tw + '" height="' + th +
+             '" rx="7" fill="#1B222B" stroke="rgba(255,255,255,.24)"/>';
+      out += '<text x="' + (tx + 10) + '" y="' + (ty + 17) + '" font-size="11.5" font-weight="800" fill="#9FB0C4">' + dstr + '</text>';
+      out += '<text x="' + (tx + 10) + '" y="' + (ty + 36) + '" font-size="14" font-weight="800" fill="#FFFFFF">' + (a.cur || "") + nf(kv, dec) + '</text>';
+      if(pctv != null)
+        out += '<text x="' + (tx + 10) + '" y="' + (ty + 51) + '" font-size="10.5" font-weight="700" fill="' +
+               (pctv > 0 ? UP : (pctv < 0 ? DOWN : "#A7AFB9")) + '">3년내 최고 대비 ' + (pctv > 0 ? "+" : "") + pctv.toFixed(2) + '%</text>';
+    }
+
+    svg.innerHTML = out;
+    var per = document.getElementById("cvPer");
+    if(per) per.textContent = tfMeta(CV.tf).hint + " · " + n + "봉";
+  }
+
+  function cvEnsure(){
+    var a = BY[CV.id]; if(!a) return;
+    var tf = CV.tf, b = (BARS[tf] || {})[CV.id];
+    if(b && b.c && b.c.length > 1){ cvLoad(false); cvDraw(); return; }
+    cvLoad(true);
+    cvFetch(a, tf).then(function(){
+      if(!CV_OPEN || CV.tf !== tf) return;
+      cvLoad(false); cvDraw();
+    }, function(){
+      if(!CV_OPEN || CV.tf !== tf) return;
+      cvLoad(false);
+      cvHint("차트를 불러오지 못했습니다 · 잠시 뒤 다시 열어 주세요", true);
+    });
+  }
+
+  function cvOpenById(id){
+    var a = BY[id];
+    if(!a || CV_OPEN) return;                    // 이미 열려 있으면 중복 열림만 막는다
+    CV_OPEN = true;
+    CV.id = id; CV.tf = TF; CV.cx = -1; CV.at = Date.now(); CV.closing = 0;
+    var el = document.getElementById("cv");
+    if(!el) { CV_OPEN = false; return; }
+    el.classList.add("on");
+    el.style.background = "";
+    cvHead(); cvSegUI(); cvHint("탭하면 그 시점 가격 · 좌우로 밀면 닫기", false);
+    cvLoad(true);
+    cvDraw();
+    cvEnsure();
+    if(!CV.pushed){
+      CV.pushed = true;
+      try{ history.pushState({amCv:1}, ""); }catch(e){ CV.pushed = false; }
+    }
+  }
+  function cvTeardown(){
+    var el = document.getElementById("cv"), card = document.getElementById("cvCard");
+    if(CV.closing){ clearTimeout(CV.closing); CV.closing = 0; }
+    CV_OPEN = false; CV.id = null; CV.cx = -1; CV.g = null;
+    if(el){ el.classList.remove("on"); el.style.background = ""; }
+    if(card){
+      card.classList.remove("swiping");
+      card.style.transition = ""; card.style.transform = ""; card.style.opacity = "";
+    }
+    var svg = document.getElementById("cvSvg"); if(svg) svg.innerHTML = "";
+    if(CV.pushed){ CV.pushed = false; try{ history.back(); }catch(e){} }
+  }
+  /* dir: null = 제자리에서 사라짐 · -1/1 = 민 방향으로 밀려 나가며 닫힘 */
+  function cvClose(dir){
+    if(!CV_OPEN || CV.closing) return;
+    var card = document.getElementById("cvCard"), el = document.getElementById("cv");
+    if(!card || !el){ cvTeardown(); return; }
+    if(dir){
+      var W = card.clientWidth || 340;
+      card.classList.remove("swiping");
+      card.style.transition = "transform .2s cubic-bezier(.4,0,.7,1),opacity .2s ease";
+      card.style.transform = "translateX(" + (dir * W * 1.02).toFixed(0) + "px)";
+      card.style.opacity = "0";
+      el.style.background = "rgba(4,6,9,0)";
+    }else{
+      card.style.transition = "transform .16s ease,opacity .16s ease";
+      card.style.transform = "translateY(14px) scale(.985)";
+      card.style.opacity = "0";
+    }
+    CV.closing = setTimeout(cvTeardown, 200);
+  }
+
+  /* ── 모달 배선: 스와이프 닫기 · 탭 시점 확인 · ✕/딤/ESC/뒤로가기 ── */
+  (function wireChart(){
+    var el = document.getElementById("cv");
+    var card = document.getElementById("cvCard");
+    var box = document.getElementById("cvBox");
+    if(!el || !card || !box) return;
+
+    function resetCard(){
+      card.style.transition = "";
+      card.style.transform = "";
+      card.style.opacity = "";
+      el.style.background = "";
+    }
+
+    el.addEventListener("click", function(e){
+      if(e.target === el && Date.now() - CV.at > 380) cvClose(null);   // 딤 바탕
+    });
+    var xb = document.getElementById("cvx");
+    if(xb) xb.addEventListener("click", function(){ cvClose(null); });
+    var sb = document.getElementById("cvSeg");
+    if(sb) sb.addEventListener("click", function(e){
+      var b = e.target && e.target.closest ? e.target.closest("button[data-tf]") : null;
+      if(!b) return;
+      var tf = b.getAttribute("data-tf");
+      if(!TF_META[tf] || tf === CV.tf) return;
+      try{ if(navigator.vibrate) navigator.vibrate(8); }catch(err){}
+      CV.tf = tf; CV.cx = -1;
+      cvSegUI(); cvHint("탭하면 그 시점 가격 · 좌우로 밀면 닫기", false);
+      cvLoad(true); cvDraw(); cvEnsure();
+    });
+
+    /* 좌우 스와이프 = 닫기 / 세로 = 그대로 / 짧은 탭 = 시점 확인 */
+    var g = null;
+    card.addEventListener("pointerdown", function(e){
+      if(e.button != null && e.button > 0) return;
+      if(CV.closing) return;
+      g = {x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, id:e.pointerId,
+           t:Date.now(), axis:null, swiping:false, dx:0,
+           chart:!!(e.target && e.target.closest && e.target.closest("#cvBox"))};
+    });
+    card.addEventListener("pointermove", function(e){
+      if(!g || e.pointerId !== g.id) return;
+      g.x = e.clientX; g.y = e.clientY;
+      var dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+      if(!g.axis){
+        if(Math.abs(dx) < 9 && Math.abs(dy) < 9) return;
+        g.axis = Math.abs(dx) > Math.abs(dy) * 1.15 ? "x" : "y";
+        if(g.axis === "x"){
+          g.swiping = true;
+          card.classList.add("swiping");
+          CV.cx = -1;                            // 끌기 시작하면 크로스헤어는 걷어낸다
+        }
+      }
+      if(!g.swiping) return;
+      var W = card.clientWidth || 340;
+      var dd = Math.max(-W, Math.min(W, dx));
+      g.dx = dd;
+      card.style.transform = "translateX(" + dd.toFixed(1) + "px)";
+      card.style.opacity = String(Math.max(.3, 1 - Math.abs(dd) / (W * 1.25)).toFixed(3));
+      el.style.background = "rgba(4,6,9," + (0.76 * Math.max(0, 1 - Math.abs(dd) / (W * 1.1))).toFixed(3) + ")";
+      if(e.cancelable) e.preventDefault();
+    });
+    function endG(e, cancel){
+      if(!g || (e && e.pointerId !== g.id)) return;
+      var s = g; g = null;
+      if(s.swiping){
+        card.classList.remove("swiping");
+        if(cancel){ resetCard(); return; }
+        if(Math.abs(s.dx) >= CV_SWIPE_MIN) cvClose(s.dx > 0 ? 1 : -1);   // 손가락 방향으로 밀려 나가며 닫힘
+        else resetCard();
+        return;
+      }
+      if(cancel || s.axis === "y") return;
+      if(Math.max(Math.abs(s.x - s.x0), Math.abs(s.y - s.y0)) > 16) return;
+      if(Date.now() - s.t > 700) return;
+      if(s.chart){                               // 탭 = 그 시점 날짜·가격
+        var r = box.getBoundingClientRect();
+        cvSetCx(cvIdxAt(s.x - r.left));
+      }
+    }
+    card.addEventListener("pointerup", function(e){ endG(e, false); });
+    card.addEventListener("pointercancel", function(e){ endG(e, true); });
+
+    /* 데스크톱: 차트 위 마우스 호버로 시점 확인 */
+    box.addEventListener("pointermove", function(e){
+      if(e.pointerType !== "mouse" || g) return;
+      var r = box.getBoundingClientRect();
+      cvSetCx(cvIdxAt(e.clientX - r.left));
+    });
+    box.addEventListener("pointerleave", function(){ if(!g) cvSetCx(-1); });
+
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape" && CV_OPEN){ e.preventDefault(); cvClose(null); }
+    });
+    window.addEventListener("popstate", function(){
+      if(!CV_OPEN) return;
+      CV.pushed = false;                          // 이 뒤로가기가 우리가 건 상태를 되돌린 것
+      cvTeardown();
+    });
+    function redraw(){ if(CV_OPEN) try{ cvDraw(); }catch(e){} }
+    window.addEventListener("resize", redraw);
+    if(window.visualViewport) window.visualViewport.addEventListener("resize", redraw);
+  })();
 
   /* ───────── 시작 ───────── */
   loadPrefs();                     // 삭제한 종목 · 사용자가 추가한 종목
