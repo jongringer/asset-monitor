@@ -59,15 +59,15 @@
   .tfs{display:flex;flex:0 0 auto;gap:.14em;padding:.15em;border-radius:99px;
     background:#12181E;border:1px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
   .tfs button{all:unset;cursor:pointer;flex:0 0 auto;min-width:2.9em;text-align:center;
-    font-size:.66em;font-weight:800;letter-spacing:.01em;color:#8B939D;
-    padding:.56em .82em;border-radius:99px;line-height:1.2;
+    font-size:.68em;font-weight:800;letter-spacing:.01em;color:#8B939D;
+    padding:.85em .95em;border-radius:99px;line-height:1.2;
     transition:background .16s ease,color .16s ease,box-shadow .16s ease}
   .tfs button.on{color:#0B0F14;background:linear-gradient(180deg,#E7EEF7 0%,#BCCCDF 100%);
     box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.65)}
   .tfs button:active{background:rgba(255,255,255,.12)}
   .tfs button.on:active{background:linear-gradient(180deg,#D8E2EE 0%,#AEBECF 100%)}
   .tfh{flex:1 1 auto;min-width:0;text-align:right;font-size:.58em;font-weight:700;letter-spacing:.02em;
-    color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+    color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
   .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
   /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
@@ -1439,13 +1439,27 @@
       if(tf === TF && k200HistTry++ < 2) setTimeout(function(){ loadHistK200(tf); }, 15000);
     });
   }
+  var histOnePass = {"1mo":0, "1wk":0, "1d":0};
   function loadHistOne(tf){
     tf = tf || TF;
     var m = tfMeta(tf), map = HISTS[tf] || (HISTS[tf] = {});
     var list = ASSETS.filter(function(a){ return histSym(a) && !a.fxSym && !map[a.id]; });   // 환율 환산 행은 단일 심볼 폴백에서 뺀다
-    var i = 0, bad = 0;
+    var i = 0, bad = 0, ended = false;
+    function finish(){
+      if(ended) return; ended = true;
+      HISTS_T[tf] = HISTS_T[tf] || Date.now(); histSave(tf);
+      // 한 번 쓰러진 심볼(프록시 응답 실패)이 그래프에서 빠진 채 남지 않게 20초 뒤 두 번까지만 다시 시도한다
+      if(histOnePass[tf] < 2){
+        var left = ASSETS.some(function(a){ return histSym(a) && !map[a.id]; });
+        if(left){
+          histOnePass[tf]++;
+          if(DBG) dg("hist retry " + tf + " " + histOnePass[tf]);
+          setTimeout(function(){ loadHistOne(tf); }, 20000);
+        }else histOnePass[tf] = 0;
+      }
+    }
     function step(){
-      if(i >= list.length || bad >= 2) return;
+      if(i >= list.length || bad >= 2) return finish();
       var a = list[i++];
       var u = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(histSym(a)) +
         "?range=" + m.range + "&interval=" + m.iv + "&_=" + Date.now();
@@ -1454,11 +1468,11 @@
         var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
         var v = histSeries(a, (q && q.close) || []);
         if(!v) throw new Error("no series");
-        map[a.id] = v; bad = 0; HISTS_T[tf] = Date.now(); histSave(tf);
+        map[a.id] = v; bad = 0; histOnePass[tf] = 0; HISTS_T[tf] = Date.now(); histSave(tf);
         if(tf === TF){ SPKC[a.id] = null; redrawSparks(); tfUI(); }
       }).catch(function(){ bad++; }).then(function(){
-        if(i >= list.length || bad >= 2){ HISTS_T[tf] = HISTS_T[tf] || Date.now(); histSave(tf); }
-        else setTimeout(step, 250);
+        if(i >= list.length || bad >= 2) return finish();
+        setTimeout(step, 250);
       });
     }
     step();
