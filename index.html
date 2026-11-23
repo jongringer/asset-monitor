@@ -1456,7 +1456,7 @@
       if(ended) return; ended = true;
       HISTS_T[tf] = HISTS_T[tf] || Date.now(); histSave(tf);
       // 한 번 쓰러진 심볼(프록시 응답 실패)이 그래프에서 빠진 채 남지 않게 20초 뒤 두 번까지만 다시 시도한다
-      if(histOnePass[tf] < 2){
+      if(histOnePass[tf] < 4){
         var left = ASSETS.some(function(a){ return histSym(a) && !map[a.id]; });
         if(left){
           histOnePass[tf]++;
