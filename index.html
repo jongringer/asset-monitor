@@ -1608,11 +1608,10 @@
             '" stroke="rgba(255,255,255,.16)" stroke-width=".8" stroke-dasharray="2 2.4"/>' +
           segs +
           '<line class="lv" x1="0" y1="0" x2="0" y2="0" stroke="'+DOWN+'" stroke-width="1.35" stroke-linecap="round"/>' +
-          '<circle class="dt" cx="0" cy="0" r="1.75" fill="'+DOWN+'"/>' +
         '</svg>';
       c = SPKC[a.id] = {
         arr:v, n:n, step:step, xf:xf, yf:yf,
-        lv:box.querySelector(".lv"), dt:box.querySelector(".dt")
+        lv:box.querySelector(".lv")
       };
     }
     // 10초마다 갱신되는 현재가로 마지막 구간만 다시 긋는다
@@ -1627,7 +1626,6 @@
       c.lv.setAttribute("y2", ly);
       c.lv.setAttribute("stroke", col);
     }
-    if(c.dt){ c.dt.setAttribute("cx", lx); c.dt.setAttribute("cy", ly); c.dt.setAttribute("fill", col); }
   }
 
   /* ───────── 렌더 ───────── */
