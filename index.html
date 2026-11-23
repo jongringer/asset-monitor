@@ -1318,8 +1318,11 @@
     var map = HISTS[tf] || (HISTS[tf] = {});
     var miss = ASSETS.some(function(a){ return histSym(a) && !map[a.id]; });
     if(!miss && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
+    if(histBusy[tf]) return;                       // 같은 봉 단위를 두 번 부르지 않는다
+    histBusy[tf] = 1;
     var batches = histBatches(), bi = 0, n = 0;
     function done(){
+      histBusy[tf] = 0;
       if(!n){ if(DBG) dg("hist fail"); loadHistOne(tf); return; }
       var rest = ASSETS.some(function(a){ return histSym(a) && !a.fxSym && !map[a.id]; });
       if(rest) loadHistOne(tf);      // 못 받은 심볼은 하나씩 chart로 보충
@@ -1337,10 +1340,11 @@
      동방재부(Eastmoney) 봉(klt 103=월·102=주·101=일)을 받아 최근 구간만 쓴다. */
   function loadHistCSI(tf){
     tf = tf || TF;
-    if(!BY.csi300) return;
+    if(!BY.csi300 || histBusy[tf + "csi"]) return;
     var m = tfMeta(tf);
     var url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
       "&fields1=f1,f2,f3&fields2=f51,f53&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
+    histBusy[tf + "csi"] = 1;
     histGet(url).then(function(d){
       var k = d && d.data && d.data.klines;
       if(!Array.isArray(k) || !k.length) throw new Error("no klines");
@@ -1349,7 +1353,7 @@
       if(!v) throw new Error("no series");
       histStored(tf, "csi300", v);
       if(DBG) dg("hist em " + tf + " " + v.length);
-    }).catch(function(){ if(DBG) dg("hist em fail"); });
+    }).catch(function(){ if(DBG) dg("hist em fail"); }).then(function(){ histBusy[tf + "csi"] = 0; });
   }
   /* 사우디 TASI: Yahoo ^TASI.SR은 range=3y·interval=1mo에도 봉을 1개만 준다(장중 시세만 유효).
      그래서 봉별 종가는 investing.com 히스토리 API에서 받는다. 이 API는 CORS를 열어 주지만
@@ -1389,8 +1393,9 @@
   var tasiHistTry = 0;
   function loadHistTASI(tf){
     tf = tf || TF;
-    if(!BY.tasi) return;
+    if(!BY.tasi || histBusy[tf + "tasi"]) return;
     if(HISTS[tf].tasi && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
+    histBusy[tf + "tasi"] = 1;
     invHistRows(INV_TASI, tf).then(function(closes){
       var v = histSeries(BY.tasi, closes);
       if(!v) throw new Error("no series");
@@ -1400,7 +1405,7 @@
     }).catch(function(e){
       if(DBG) dg("hist tasi fail:" + ((e&&e.message)||e));
       if(tf === TF && tasiHistTry++ < 2) setTimeout(function(){ loadHistTASI(tf); }, 15000);
-    });
+    }).then(function(){ histBusy[tf + "tasi"] = 0; });
   }
   /* Yahoo가 TASI를 90초 넘게 못 줄 때: investing.com 일별 종가로 현재가·전일 대비를 대신한다 */
   function tasiInvesting(){
@@ -1426,8 +1431,9 @@
   var k200HistTry = 0;
   function loadHistK200(tf){
     tf = tf || TF;
-    if(!BY.k200) return;
+    if(!BY.k200 || histBusy[tf + "k200"]) return;
     if(HISTS[tf].k200 && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
+    histBusy[tf + "k200"] = 1;
     invHistRows(INV_K200, tf).then(function(closes){
       var v = histSeries(BY.k200, closes);
       if(!v) throw new Error("no series");
@@ -1437,8 +1443,9 @@
     }).catch(function(e){
       if(DBG) dg("hist k200 fail:" + ((e&&e.message)||e));
       if(tf === TF && k200HistTry++ < 2) setTimeout(function(){ loadHistK200(tf); }, 15000);
-    });
+    }).then(function(){ histBusy[tf + "k200"] = 0; });
   }
+  var histBusy = {"1mo":0, "1wk":0, "1d":0};
   var histOnePass = {"1mo":0, "1wk":0, "1d":0};
   function loadHistOne(tf){
     tf = tf || TF;
@@ -1486,6 +1493,18 @@
     loadHistK200(tf);
     custom.forEach(function(c, k){
       if(c.hl && !HISTS[tf][c.id]) setTimeout(function(){ loadHLHist(c, tf); }, k*250);
+    });
+  }
+
+  /* 지금 보지 않는 봉 단위도 미리 받아 둔다(탭이 보일 때만 · 캐시가 없거나 6시간 지났을 때만) */
+  function prefetchHist(){
+    if(document.visibilityState !== "visible") return;
+    ["1mo","1wk","1d"].forEach(function(tf){
+      if(tf === TF) return;
+      var map = HISTS[tf] || {};
+      var need = !HISTS_T[tf] || (Date.now() - HISTS_T[tf]) > HIST_TTL ||
+        ASSETS.some(function(a){ return (histSym(a) || a.hl) && !map[a.id]; });
+      if(need) loadHistFor(tf);
     });
   }
 
@@ -1538,10 +1557,26 @@
 
   /* 미니 그래프: 3년 월별 흐름. 전월 대비 오른 구간 = 빨강, 내린 구간 = 파랑.
      마지막 구간(직전 월 → 현재가)도 같은 규칙으로 색이 바뀐다. */
+  /* 다른 봉 단위에 미리 받아 둔 계열 — 새 봉 단위 데이터가 도착하기 전까지 흐리게 대신 보여 준다 */
+  function histGhost(id){
+    var order = ["1mo","1wk","1d"];
+    for(var i=0;i<order.length;i++){
+      var tf = order[i];
+      if(tf === TF) continue;
+      var v = (HISTS[tf] || {})[id];
+      if(v && v.length > 1) return v;
+    }
+    return null;
+  }
   function drawSpark(a, live){
     var box = document.getElementById("spk-" + a.id);
     if(!box) return;
-    var v = HIST[a.id];
+    var v = HIST[a.id], ghost = false;
+    if(!v || v.length < 2){
+      v = histGhost(a.id);
+      ghost = !!(v && v.length > 1);
+    }
+    box.style.opacity = ghost ? ".34" : "";
     if(!v || v.length < 2){
       var c0 = SPKC[a.id];
       if(!c0 || !c0.empty){
@@ -2536,6 +2571,8 @@
   renderMarket();
   refresh();
   setTimeout(function(){ loadHistFor(TF); }, 600);   // 봉 단위 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
+  setTimeout(function(){ prefetchHist(); }, 15000);   // 다른 봉 단위도 조용히 미리 받아 두어 전환이 즉시 되게
+  setTimeout(function(){ prefetchHist(); }, 45000);
   // 사용자가 추가한 하이퍼리퀴드 xyz 종목: 히스토리·최고점을 다시 채운다(캐시가 없거나 상장후 고점이 비었을 때)
   custom.forEach(function(c, k){
     if(c.hl && (!(c.ath > 0) || !HISTS[TF][c.id])) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
