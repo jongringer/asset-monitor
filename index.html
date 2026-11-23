@@ -2990,7 +2990,8 @@
       cvSet("cvL", "—"); cvSet("cvC", "—", ""); cvSet("cvV", "—");
       return;
     }
-    var i = (CV.sel >= 0 && CV.sel < b.c.length) ? CV.sel : b.c.length - 1;
+    var i = (CV.sel >= 0 && CV.sel < b.c.length) ? CV.sel
+          : ((CV.g && CV.g.i1 < b.c.length) ? CV.g.i1 : b.c.length - 1);   // 고른 봉이 없으면 '보이는 마지막 봉'
     var dec = (a.dec == null ? 2 : a.dec);
     var prev = i > 0 ? b.c[i - 1] : null;
     var cls = "";
@@ -3172,6 +3173,7 @@
     svg.innerHTML = out;
     var per = document.getElementById("cvPer");
     if(per) per.textContent = tfMeta(CV.tf).hint + " · " + vs + "봉" + (vs < n ? " / " + n : "");
+    try{ cvStrip(); }catch(e){}                 // 확대·이동해도 위쪽 봉 정보가 보이는 구간을 따라간다
   }
 
   function cvEnsure(){
@@ -3390,6 +3392,7 @@
     /* 데스크톱: 호버로 그 봉 보기 / 휠로 확대 */
     box.addEventListener("pointermove", function(e){
       if(e.pointerType !== "mouse" || g || P || Object.keys(down).length) return;
+      if(e.target && e.target.closest && e.target.closest(".cvzoom")) return;   // 확대 버튼 위는 건드리지 않음
       pickAt(e.clientX);
     });
     box.addEventListener("wheel", function(e){
@@ -3398,8 +3401,21 @@
       cvZoom(e.deltaY <= 0 ? 1 : -1);
     }, {passive:false});
 
+    /* 키보드: ESC 닫기 · ←/→ 과거·최근 이동 · +/- 확대·축소 */
     document.addEventListener("keydown", function(e){
-      if(e.key === "Escape" && CV_OPEN){ e.preventDefault(); cvClose(null); }
+      if(!CV_OPEN) return;
+      if(e.key === "Escape"){ e.preventDefault(); cvClose(null); return; }
+      if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+        if(!CV.g) return;
+        e.preventDefault();
+        var d = (e.key === "ArrowLeft" ? -1 : 1);
+        CV.ve = Math.max(CV.vs - 1, Math.min(CV.g.n - 1, CV.ve + d));
+        CV.sel = -1;
+        cvDraw();
+        return;
+      }
+      if(e.key === "+" || e.key === "="){ e.preventDefault(); cvZoom(1); return; }
+      if(e.key === "-" || e.key === "_"){ e.preventDefault(); cvZoom(-1); }
     });
     window.addEventListener("popstate", function(){
       if(!CV_OPEN) return;
