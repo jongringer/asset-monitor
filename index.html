@@ -270,6 +270,7 @@
     padding:.8em .8em calc(.66em + env(safe-area-inset-bottom,0px));
     box-shadow:0 26px 64px rgba(0,0,0,.74),inset 0 1px 0 rgba(255,255,255,.04);
     overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;   /* 드래그가 텍스트 선택·네이티브 드래그로 새지 않게 */
     touch-action:pan-y;          /* 세로만 브라우저에 맡기고 가로는 스와이프 닫기로 받는다 */
     transform:translateX(0);will-change:transform;
     transition:transform .22s cubic-bezier(.2,.7,.25,1),opacity .18s ease}
@@ -3302,7 +3303,6 @@
       return "close";
     }
     card.addEventListener("pointerdown", function(e){
-      window.__amD = (window.__amD || 0) + 1;
       if(e.button != null && e.button > 0) return;
       if(CV.closing) return;
       down[e.pointerId] = {x:e.clientX, y:e.clientY};
@@ -3368,10 +3368,9 @@
     function endG(e, cancel){
       delete down[e.pointerId];
       if(P){ if(Object.keys(down).length < 2) P = null; return; }
-      if(!g || e.pointerId !== g.id){ window.__amG = {miss:1, m:g ? g.mode : "null"}; return; }
+      if(!g || e.pointerId !== g.id) return;
       var s = g; g = null;
       var dx = s.x - s.x0, dy = s.y - s.y0;
-      window.__amG = {m:s.mode, ax:s.axis, dx:+dx.toFixed(1), dy:+dy.toFixed(1), sw:!!s.swiping, sdx:+s.dx.toFixed(1)};
       if(s.mode === "chart"){
         /* 더 옮길 곳이 없는 전체 보기에서만 큰 가로 플릭 = 닫기 */
         if(!cancel && s.axis === "x" && Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy) * 1.5 &&
