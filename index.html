@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-23-zoompan-2">
+<meta name="build" content="2026-11-23-tf-bars">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 3년 월별 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -54,6 +54,20 @@
 
   /* ── 헤더 ── */
   header{flex:0 0 auto;padding:0 .4em}
+  /* 봉 단위 전환(월봉·주봉·일봉): 헤더 맨 위 세그먼트 */
+  .tfb{display:flex;align-items:center;justify-content:space-between;gap:.45em;margin:0 0 .36em}
+  .tfs{display:flex;flex:0 0 auto;gap:.14em;padding:.15em;border-radius:99px;
+    background:#12181E;border:1px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+  .tfs button{all:unset;cursor:pointer;flex:0 0 auto;min-width:2.9em;text-align:center;
+    font-size:.66em;font-weight:800;letter-spacing:.01em;color:#8B939D;
+    padding:.56em .82em;border-radius:99px;line-height:1.2;
+    transition:background .16s ease,color .16s ease,box-shadow .16s ease}
+  .tfs button.on{color:#0B0F14;background:linear-gradient(180deg,#E7EEF7 0%,#BCCCDF 100%);
+    box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.65)}
+  .tfs button:active{background:rgba(255,255,255,.12)}
+  .tfs button.on:active{background:linear-gradient(180deg,#D8E2EE 0%,#AEBECF 100%)}
+  .tfh{flex:1 1 auto;min-width:0;text-align:right;font-size:.58em;font-weight:700;letter-spacing:.02em;
+    color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
   .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
   /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
@@ -239,6 +253,14 @@
 <div id="app">
 
   <header>
+    <div class="tfb">
+      <div class="tfs" id="tfs" role="group" aria-label="차트 봉 단위">
+        <button type="button" data-tf="1mo" class="on" aria-pressed="true">월봉</button>
+        <button type="button" data-tf="1wk" aria-pressed="false">주봉</button>
+        <button type="button" data-tf="1d" aria-pressed="false">일봉</button>
+      </div>
+      <span class="tfh" id="tfh">최근 3년</span>
+    </div>
     <div class="hrow">
       <div class="hleft">
         <div class="ttl">주요 자산 현황 · <span id="cnt">28</span></div>
@@ -1144,12 +1166,26 @@
     return histGet(KP_URL);     // jina → codetabs → allorigins → cors.lol → 직접
   }
 
-  /* ───────── 3년 월별(약 36개월) 히스토리 → 자산명 옆 미니 스파크라인 ───────── */
+  /* ───────── 봉 단위별 히스토리 → 자산명 옆 미니 스파크라인 ─────────
+     월봉 = 최근 3년(약 36개월) · 주봉 = 최근 1년(약 52주) · 일봉 = 최근 3개월(약 63거래일).
+     왼쪽이 과거, 오른쪽 끝이 가장 최근 봉. 마지막 봉은 아직 진행 중이라 현재가로 이어 그린다. */
   var SPK_W = 38, SPK_H = 18, SPK_PAD = 2.2;
-  var HIST_KEY = "apm.hist.v4", HIST_TTL = 6*3600*1000;
-  var HIST = {}, histAt = 0, SPKC = {};
+  var HIST_KEY = "apm.hist.v4.";        // 뒤에 봉 단위를 붙여 캐시를 분리한다(apm.hist.v4.1mo · .1wk · .1d)
+  var HIST_TTL = 6*3600*1000;
+  var TF_KEY = "apm.tf.v1";
+  var TF_META = {                       // keep = 마지막(진행 중) 봉까지 포함해 남길 봉 개수
+    "1mo": {label:"월봉", hint:"최근 3년",   range:"3y",  iv:"1mo", emKlt:103, emLmt:40, invTF:"Monthly", months:36, keep:37, hlIv:"1M"},
+    "1wk": {label:"주봉", hint:"최근 1년",   range:"1y",  iv:"1wk", emKlt:102, emLmt:55, invTF:"Weekly",  months:14, keep:53, hlIv:"1w"},
+    "1d":  {label:"일봉", hint:"최근 3개월", range:"3mo", iv:"1d",  emKlt:101, emLmt:66, invTF:"Daily",   months:4,  keep:64, hlIv:"1d"}
+  };
+  var TF = "1mo";                        // 현재 봉 단위(기본 월봉)
+  var HISTS = {"1mo":{}, "1wk":{}, "1d":{}};     // 봉 단위별 히스토리 — 전환해도 서로 섞이지 않는다
+  var HISTS_T = {"1mo":0, "1wk":0, "1d":0};      // 봉 단위별 마지막 수신 시각
+  var HIST = HISTS["1mo"], histAt = 0, SPKC = {};
+  function tfMeta(tf){ return TF_META[tf] || TF_META["1mo"]; }
+  function histKey(tf){ return HIST_KEY + tf; }
 
-  function histSym(a){ if(a.id==="csi300"||a.id==="tasi"||a.id==="k200") return null; return a.histSym || a.yahoo; }   // CSI300은 동방재부, TASI·코스피200 야간선물은 investing.com 월봉으로 채운다
+  function histSym(a){ if(a.id==="csi300"||a.id==="tasi"||a.id==="k200") return null; return a.histSym || a.yahoo; }   // CSI300은 동방재부, TASI·코스피200 야간선물은 investing.com에서 채운다
 
   // Yahoo spark는 한 요청에 심볼을 **최대 20개**까지만 받는다(초과하면 400 Bad Request).
   // 28종이 된 지금은 21개라 20개씩 나눠 부르되, 환율 환산 쌍(SK하이닉스·KRW=X)은 같은 배치에 넣는다.
@@ -1170,9 +1206,10 @@
     if(cur.length) batches.push(cur);
     return batches;
   }
-  function histURL(syms){
+  function histURL(syms, tf){
+    var m = tfMeta(tf);
     return "https://query1.finance.yahoo.com/v8/finance/spark?symbols=" +
-      encodeURIComponent(syms.join(",")) + "&range=3y&interval=1mo&_=" + Date.now();
+      encodeURIComponent(syms.join(",")) + "&range=" + m.range + "&interval=" + m.iv + "&_=" + Date.now();
   }
 
   // 히스토리는 프록시를 한 번에 하나씩만(부하 최소화) 시도
@@ -1196,9 +1233,10 @@
     return next();
   }
 
-  // 월 종가 → ((종가 - 3년내 최고점) / 최고점) * 100
-  // 마지막 봉은 진행 중인 이번 달이라 현재가(10초 갱신)로 이어 그리므로 뺀다.
+  // 봉 종가 → ((종가 - 3년내 최고점) / 최고점) * 100  (그래프의 0% 기준선과 같은 좌표)
+  // 마지막 봉은 진행 중인 이번 달/주/일이라 현재가(10초 갱신)로 이어 그리므로 뺀다.
   function histSeries(a, closes){
+    if(!(a.ath > 0)) return null;
     var v = [];
     for(var i=0;i<closes.length;i++){
       var c = closes[i];
@@ -1208,83 +1246,113 @@
     if(v.length > 3) v.pop();
     return v.length >= 2 ? v : null;
   }
-  /* 두 월봉 계열을 달(UTC) 단위로 맞추기 위한 열쇠 */
-  function monKey(sec){ var d = new Date(sec*1000); return d.getUTCFullYear()+"-"+d.getUTCMonth(); }
-  function histApply(d){
-    var n = 0;
+  /* 환율 환산 행(xyz SK하이닉스 ← KRW=X): 봉 시각에 맞는 환율을 고른다.
+     일봉·주봉은 두 심볼의 봉 개수가 달라(휴장일 차이) 순번으로 맞출 수 없으므로
+     '그 봉 시각과 같거나 그 직전' 환율 종가를 이분 탐색으로 찾는다. */
+  function fxAt(fts, fxs, t){
+    var lo = 0, hi = fts.length - 1, at = -1, mid;
+    while(lo <= hi){
+      mid = (lo + hi) >> 1;
+      if(Number(fts[mid]) <= t){ at = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    if(at < 0) return null;
+    var f = fxs[at];
+    return (f!=null && isFinite(f) && f > 0) ? f : null;
+  }
+  function histApply(d, tf){
+    var map = HISTS[tf] || (HISTS[tf] = {}), n = 0;
     ASSETS.forEach(function(a){
-      var node = d && d[histSym(a)];
+      var s = histSym(a), node = s && d && d[s];
       if(!node) return;
       var closes = node.close || node.c || [];
-      if(a.fxSym){                     // 달러 표시 자산(하이퍼리퀴드 SK하이닉스): 월별 원화 종가를 그달 환율로 나눈 달러 계열
+      var ts = node.timestamp || node.t || [];
+      if(a.fxSym){                     // 달러 표시 자산(하이퍼리퀴드 SK하이닉스): 봉별 원화 종가를 그 봉의 환율로 나눈 달러 계열
         var fnode = d[a.fxSym];
         var fxs = fnode && (fnode.close || fnode.c);
-        if(!fxs) return;
-        var map = {}, ft = fnode.timestamp || [], mt = node.timestamp || [], i;
-        if(ft.length === fxs.length && mt.length === closes.length){
-          for(i=0;i<ft.length;i++) map[monKey(ft[i])] = fxs[i];      // 달(UTC) 단위로 맞춰 나눈다
-          closes = closes.map(function(c,k){
-            var f = map[monKey(mt[k])];
-            return (c!=null && f) ? c/f : null;
-          });
+        var fts = fnode && (fnode.timestamp || fnode.t || []);
+        if(!fxs || !fts.length) return;
+        if(ts.length === closes.length){
+          closes = closes.map(function(c, k){ var f = fxAt(fts, fxs, Number(ts[k])); return (c!=null && f) ? c/f : null; });
         }else if(fxs.length === closes.length){
-          closes = closes.map(function(c,k){ return (c!=null && fxs[k]) ? c/fxs[k] : null; });
+          closes = closes.map(function(c, k){ return (c!=null && fxs[k]) ? c/fxs[k] : null; });
         }else return;
       }
       var v = histSeries(a, closes);
-      if(v){ HIST[a.id] = v; n++; }
+      if(v){ map[a.id] = v; n++; }
     });
+    if(n){
+      HISTS_T[tf] = Date.now(); histSave(tf);
+      if(tf === TF){ redrawSparks(); tfUI(); }
+      if(DBG) dg("hist " + tf + " " + n);
+    }
     return n;
   }
-  function histSave(){
-    try{ localStorage.setItem(HIST_KEY, JSON.stringify({t:histAt, d:HIST})); }catch(e){}
+  function histSave(tf){
+    tf = tf || TF;
+    try{ localStorage.setItem(histKey(tf), JSON.stringify({t:HISTS_T[tf] || 0, d:HISTS[tf] || {}})); }catch(e){}
   }
-  function histRestore(){
+  function histRestore(tf){
+    tf = tf || TF;
     try{
-      var c = JSON.parse(localStorage.getItem(HIST_KEY) || "null");
+      var c = JSON.parse(localStorage.getItem(histKey(tf)) || "null");
       if(!c || !c.d) return;
-      ORDER.forEach(function(id){ if(c.d[id] && c.d[id].length>1) HIST[id] = c.d[id]; });
-      histAt = c.t || 0;
+      var map = HISTS[tf] || (HISTS[tf] = {});
+      Object.keys(c.d).forEach(function(id){
+        if(BY[id] && c.d[id] && c.d[id].length > 1) map[id] = c.d[id];
+      });
+      HISTS_T[tf] = c.t || 0;
     }catch(e){}
   }
+  /* 한 봉만 새로 받았을 때: 그 봉 단위 캐시에 넣고, 지금 보고 있는 단위일 때만 다시 그린다 */
+  function histStored(tf, id, v){
+    HISTS[tf][id] = v; HISTS_T[tf] = Date.now(); histSave(tf);
+    if(tf === TF){
+      SPKC[id] = null;
+      try{ drawSpark(BY[id], pctOf(BY[id], state[id] && state[id].px)); }catch(e){}
+      tfUI();
+    }
+  }
 
-  function loadHist(){
-    var miss = ASSETS.some(function(a){ return histSym(a) && !HIST[a.id]; });
-    if(!miss && histAt && (Date.now() - histAt) < HIST_TTL) return;
+  function loadHist(tf){
+    tf = tf || TF;
+    var map = HISTS[tf] || (HISTS[tf] = {});
+    var miss = ASSETS.some(function(a){ return histSym(a) && !map[a.id]; });
+    if(!miss && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
     var batches = histBatches(), bi = 0, n = 0;
     function done(){
-      if(n){ histAt = Date.now(); histSave(); redrawSparks(); if(DBG) dg("hist " + n); }
-      else { if(DBG) dg("hist fail"); loadHistOne(); return; }
-      var rest = ASSETS.some(function(a){ return histSym(a) && !a.fxSym && !HIST[a.id]; });
-      if(rest) loadHistOne();      // 못 받은 심볼은 하나씩 chart로 보충
+      if(!n){ if(DBG) dg("hist fail"); loadHistOne(tf); return; }
+      var rest = ASSETS.some(function(a){ return histSym(a) && !a.fxSym && !map[a.id]; });
+      if(rest) loadHistOne(tf);      // 못 받은 심볼은 하나씩 chart로 보충
     }
     function step(){
       if(bi >= batches.length) return done();
-      var u = histURL(batches[bi++]);
-      histGet(u).then(function(d){ n += histApply(d); }, function(){
+      var u = histURL(batches[bi++], tf);
+      histGet(u).then(function(d){ n += histApply(d, tf); }, function(){
         if(DBG) dg("hist b" + bi + " fail");
       }).then(step);
     }
     step();
   }
   /* CSI 300: Yahoo `000300.SS`는 range=3y·interval=1mo에도 봉을 1개만 준다.
-     동방재부(Eastmoney) 월봉(klt=103) 40개월을 받아 3년(36개월)만 쓴다. */
-  var EM_CSI_URL = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
-    "&fields1=f1,f2,f3&fields2=f51,f53&klt=103&fqt=1&end=20500101&lmt=40";
-  function loadHistCSI(){
-    histGet(EM_CSI_URL).then(function(d){
+     동방재부(Eastmoney) 봉(klt 103=월·102=주·101=일)을 받아 최근 구간만 쓴다. */
+  function loadHistCSI(tf){
+    tf = tf || TF;
+    if(!BY.csi300) return;
+    var m = tfMeta(tf);
+    var url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300" +
+      "&fields1=f1,f2,f3&fields2=f51,f53&klt=" + m.emKlt + "&fqt=1&end=20500101&lmt=" + m.emLmt;
+    histGet(url).then(function(d){
       var k = d && d.data && d.data.klines;
       if(!Array.isArray(k) || !k.length) throw new Error("no klines");
-      var closes = k.map(function(s){ return parseFloat(String(s).split(",")[1]); }).slice(-37);
+      var closes = k.map(function(s){ return parseFloat(String(s).split(",")[1]); }).slice(-m.keep);
       var v = histSeries(BY.csi300, closes);
       if(!v) throw new Error("no series");
-      HIST.csi300 = v; histAt = Date.now(); histSave();
-      drawSpark(BY.csi300, pctOf(BY.csi300, state.csi300 && state.csi300.px));
-      if(DBG) dg("hist em " + v.length);
+      histStored(tf, "csi300", v);
+      if(DBG) dg("hist em " + tf + " " + v.length);
     }).catch(function(){ if(DBG) dg("hist em fail"); });
   }
   /* 사우디 TASI: Yahoo ^TASI.SR은 range=3y·interval=1mo에도 봉을 1개만 준다(장중 시세만 유효).
-     그래서 3년 월별 종가는 investing.com 히스토리 API에서 받는다. 이 API는 CORS를 열어 주지만
+     그래서 봉별 종가는 investing.com 히스토리 API에서 받는다. 이 API는 CORS를 열어 주지만
      `domain-id: www` 헤더가 없으면 403/챌린지(Just a moment)가 뜨므로 헤더를 붙여 직접 호출한다. */
   var INV_TASI = "https://api.investing.com/api/financialdata/historical/11319";   // 11319 = Tadawul All Share (TASI)
   function invDate(d){
@@ -1304,26 +1372,34 @@
       .then(function(t){ clearTimeout(timer); return jsonLoose(t); },
             function(e){ clearTimeout(timer); throw e; });
   }
-  var tasiHistTry = 0;
-  function loadHistTASI(){
-    if(HIST.tasi && histAt && (Date.now() - histAt) < HIST_TTL) return;
-    var now = new Date();
-    var from = new Date(now.getFullYear(), now.getMonth()-36, 1);
-    var url = INV_TASI + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
-              "&time-frame=Monthly&add-missing-rows=false&_=" + Date.now();
-    invGet(url, 9000).then(function(d){
+  /* investing.com 히스토리: 봉 단위별 기간을 넉넉히 잡아 받은 뒤 최근 봉만 남긴다(내림차순 응답 → 뒤집어 오름차순) */
+  function invHistRows(base, tf, ms){
+    var m = tfMeta(tf), now = new Date();
+    var from = new Date(now.getFullYear(), now.getMonth() - m.months, 1);
+    var url = base + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
+              "&time-frame=" + m.invTF + "&add-missing-rows=false&_=" + Date.now();
+    return invGet(url, ms || 9000).then(function(d){
       var rows = d && d.data;
       if(!Array.isArray(rows) || rows.length < 6) throw new Error("no rows");
-      var closes = rows.slice().reverse().map(function(r){ return invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close); });
+      return rows.slice().reverse().map(function(r){
+        return invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close);
+      }).slice(-m.keep);
+    });
+  }
+  var tasiHistTry = 0;
+  function loadHistTASI(tf){
+    tf = tf || TF;
+    if(!BY.tasi) return;
+    if(HISTS[tf].tasi && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
+    invHistRows(INV_TASI, tf).then(function(closes){
       var v = histSeries(BY.tasi, closes);
       if(!v) throw new Error("no series");
-      HIST.tasi = v; histAt = Date.now(); histSave();
-      drawSpark(BY.tasi, pctOf(BY.tasi, state.tasi && state.tasi.px));
-      if(DBG) dg("hist tasi " + v.length);
+      histStored(tf, "tasi", v);
+      if(DBG) dg("hist tasi " + tf + " " + v.length);
       tasiHistTry = 0;
     }).catch(function(e){
       if(DBG) dg("hist tasi fail:" + ((e&&e.message)||e));
-      if(tasiHistTry++ < 2) setTimeout(loadHistTASI, 15000);
+      if(tf === TF && tasiHistTry++ < 2) setTimeout(function(){ loadHistTASI(tf); }, 15000);
     });
   }
   /* Yahoo가 TASI를 90초 넘게 못 줄 때: investing.com 일별 종가로 현재가·전일 대비를 대신한다 */
@@ -1344,51 +1420,89 @@
       });
   }
 
-  /* 코스피200 야간선물: Yahoo에 선물 심볼이 없어 investing.com 월봉(최근월물 연속 8987)으로 3년 월별 종가를 채운다.
+  /* 코스피200 야간선물: Yahoo에 선물 심볼이 없어 investing.com 히스토리(최근월물 연속 8987)로 봉을 채운다.
      3년내 최고점(1,535.00)도 같은 API의 일별 고가 최대값(747거래일, 2026-06-18)에서 확정했다. */
   var INV_K200 = "https://api.investing.com/api/financialdata/historical/8987";
   var k200HistTry = 0;
-  function loadHistK200(){
-    if(HIST.k200 && histAt && (Date.now() - histAt) < HIST_TTL) return;
-    var now = new Date();
-    var from = new Date(now.getFullYear(), now.getMonth()-36, 1);
-    var url = INV_K200 + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
-              "&time-frame=Monthly&add-missing-rows=false&_=" + Date.now();
-    invGet(url, 9000).then(function(d){
-      var rows = d && d.data;
-      if(!Array.isArray(rows) || rows.length < 6) throw new Error("no rows");
-      var closes = rows.slice().reverse().map(function(r){ return invNum(r.last_closeRaw!=null ? r.last_closeRaw : r.last_close); });
+  function loadHistK200(tf){
+    tf = tf || TF;
+    if(!BY.k200) return;
+    if(HISTS[tf].k200 && HISTS_T[tf] && (Date.now() - HISTS_T[tf]) < HIST_TTL) return;
+    invHistRows(INV_K200, tf).then(function(closes){
       var v = histSeries(BY.k200, closes);
       if(!v) throw new Error("no series");
-      HIST.k200 = v; histAt = Date.now(); histSave();
-      drawSpark(BY.k200, pctOf(BY.k200, state.k200 && state.k200.px));
-      if(DBG) dg("hist k200 " + v.length);
+      histStored(tf, "k200", v);
+      if(DBG) dg("hist k200 " + tf + " " + v.length);
       k200HistTry = 0;
     }).catch(function(e){
       if(DBG) dg("hist k200 fail:" + ((e&&e.message)||e));
-      if(k200HistTry++ < 2) setTimeout(loadHistK200, 15000);
+      if(tf === TF && k200HistTry++ < 2) setTimeout(function(){ loadHistK200(tf); }, 15000);
     });
   }
-  function loadHistOne(){
-    var list = ASSETS.filter(function(a){ return histSym(a) && !a.fxSym && !HIST[a.id]; });   // 환율 환산 행은 단일 심볼 폴백에서 뺀다
+  function loadHistOne(tf){
+    tf = tf || TF;
+    var m = tfMeta(tf), map = HISTS[tf] || (HISTS[tf] = {});
+    var list = ASSETS.filter(function(a){ return histSym(a) && !a.fxSym && !map[a.id]; });   // 환율 환산 행은 단일 심볼 폴백에서 뺀다
     var i = 0, bad = 0;
     function step(){
       if(i >= list.length || bad >= 2) return;
       var a = list[i++];
       var u = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(histSym(a)) +
-        "?range=3y&interval=1mo&_=" + Date.now();
+        "?range=" + m.range + "&interval=" + m.iv + "&_=" + Date.now();
       histGet(u).then(function(d){
         var r = d && d.chart && d.chart.result && d.chart.result[0];
         var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
         var v = histSeries(a, (q && q.close) || []);
         if(!v) throw new Error("no series");
-        HIST[a.id] = v; bad = 0; histAt = Date.now(); redrawSparks();
+        map[a.id] = v; bad = 0; HISTS_T[tf] = Date.now(); histSave(tf);
+        if(tf === TF){ SPKC[a.id] = null; redrawSparks(); tfUI(); }
       }).catch(function(){ bad++; }).then(function(){
-        if(i >= list.length || bad >= 2){ histAt = Date.now(); histSave(); }
+        if(i >= list.length || bad >= 2){ HISTS_T[tf] = HISTS_T[tf] || Date.now(); histSave(tf); }
         else setTimeout(step, 250);
       });
     }
     step();
+  }
+  /* 지금 보고 있는 봉 단위의 히스토리를 빠짐없이 채운다 */
+  function loadHistFor(tf){
+    tf = tf || TF;
+    loadHist(tf);
+    loadHistCSI(tf);
+    loadHistTASI(tf);
+    loadHistK200(tf);
+    custom.forEach(function(c, k){
+      if(c.hl && !HISTS[tf][c.id]) setTimeout(function(){ loadHLHist(c, tf); }, k*250);
+    });
+  }
+
+  /* ── 봉 단위 버튼(월봉·주봉·일봉) ── */
+  function tfUI(){
+    var box = document.getElementById("tfs");
+    if(box){
+      var bs = box.querySelectorAll("button[data-tf]");
+      for(var i=0;i<bs.length;i++){
+        var on = bs[i].getAttribute("data-tf") === TF;
+        bs[i].classList.toggle("on", on);
+        bs[i].setAttribute("aria-pressed", on ? "true" : "false");
+      }
+    }
+    var h = document.getElementById("tfh");
+    if(h){
+      var n = 0, map = HISTS[TF] || {};
+      ORDER.some(function(id){ var v = map[id]; if(v && v.length > 1){ n = v.length; return true; } return false; });
+      h.textContent = tfMeta(TF).hint + (n ? " · " + n + "봉" : " · " + tfMeta(TF).label);
+    }
+  }
+  function setTF(tf){
+    if(!TF_META[tf] || tf === TF) return;
+    TF = tf;
+    try{ localStorage.setItem(TF_KEY, tf); }catch(e){}
+    HIST = HISTS[tf];                        // 그 봉 단위 캐시로 갈아탄다
+    histAt = HISTS_T[tf] || 0;
+    SPKC = {};                               // 캐시가 없던 봉은 이 자리에서 다시 그린다
+    ORDER.forEach(function(id){ try{ drawSpark(BY[id], pctOf(BY[id], state[id] && state[id].px)); }catch(e){} });
+    tfUI();
+    loadHistFor(tf);
   }
 
   function sparkDomain(v){
@@ -1430,12 +1544,13 @@
         return Math.max(1, Math.min(SPK_H-1, yy));
       };
       var n = v.length, step = (SPK_W - 3.4)/n, i;
+      var lw = n > 44 ? 0.95 : 1.25;        // 일봉·주봉처럼 봉이 많으면 선을 가늘게(몽개짐 방지)
       var xf = function(k){ return (1.2 + k*step); };
       var segs = "";
       for(i=1;i<n;i++){
         var rise = v[i] >= v[i-1];
         segs += '<line x1="'+xf(i-1).toFixed(2)+'" y1="'+yf(v[i-1]).toFixed(2)+'" x2="'+xf(i).toFixed(2)+'" y2="'+yf(v[i]).toFixed(2)+
-                '" stroke="'+(rise?UP:DOWN)+'" stroke-width="1.25" stroke-linecap="round"/>';
+                '" stroke="'+(rise?UP:DOWN)+'" stroke-width="'+lw+'" stroke-linecap="round"/>';
       }
       var y0 = yf(0);
       box.innerHTML =
@@ -1675,7 +1790,7 @@
     var cnt = document.getElementById("cnt");
     if(cnt) cnt.textContent = ASSETS.length;
     buildList(); renderAll(); ordSave(); ordSetUI();
-    setTimeout(loadHist, 400);          // 새로 추가된 종목의 3년 월별 히스토리
+    setTimeout(function(){ loadHistFor(TF); }, 400);   // 새로 추가된 종목의 봉 단위 히스토리
     try{ cache(); }catch(e){}
   }
   function delAsset(id){
@@ -1811,13 +1926,24 @@
       if(!(best > 0)) throw new Error("bad candles");
       a.ath = best; a.athDate = ymd2(bt/1000) + " 장중";
       savePrefs(); renderAll();
-      return postText(HL_URL, body("1M"), 15000);
-    }).then(function(t){
-      var m = JSON.parse(t);
-      if(!Array.isArray(m) || m.length < 2) return;
-      var v = histSeries(a, m.map(function(c){ return Number(c.c); }));
-      if(v){ HIST[a.id] = v; histAt = Date.now(); histSave(); drawSpark(a, pctOf(a, state[a.id] && state[a.id].px)); }
+      loadHLHist(a, TF);            // 지금 보고 있는 봉 단위로 미니 그래프를 채운다
+      return 1;
     }).catch(function(e){ if(DBG) dg("hlmeta:"+((e&&e.message)||e)); });
+  }
+  /* 사용자가 추가한 하이퍼리퀴드 xyz 종목의 봉별 히스토리(1M=월봉 · 1w=주봉 · 1d=일봉) */
+  function loadHLHist(a, tf){
+    tf = tf || TF;
+    var m = tfMeta(tf);
+    var end = Date.now();
+    var days = tf==="1mo" ? 3*365+10 : tf==="1wk" ? 400 : 100;
+    var body = JSON.stringify({type:"candleSnapshot", req:{coin:a.hl, interval:m.hlIv,
+                 startTime:end - days*86400000, endTime:end}});
+    postText(HL_URL, body, 15000).then(function(t){
+      var d = JSON.parse(t);
+      if(!Array.isArray(d) || d.length < 2) return;
+      var v = histSeries(a, d.map(function(c){ return Number(c.c); }));
+      if(v) histStored(tf, a.id, v);
+    }).catch(function(e){ if(DBG) dg("hlhist:"+((e&&e.message)||e)); });
   }
 
   function chart3y(sym){
@@ -2360,6 +2486,19 @@
     nextAt = Date.now() + CYCLE;
     if(!busy) refresh();
   });
+  /* 봉 단위 버튼: 월봉 · 주봉 · 일봉 */
+  (function wireTF(){
+    var box = document.getElementById("tfs");
+    if(!box) return;
+    box.addEventListener("click", function(e){
+      var t = e.target, b = (t && t.closest) ? t.closest("button[data-tf]") : null;
+      if(!b) return;
+      var tf = b.getAttribute("data-tf");
+      if(tf === TF) return;
+      try{ if(navigator.vibrate) navigator.vibrate(8); }catch(err){}
+      setTF(tf);
+    });
+  })();
   document.addEventListener("visibilitychange", function(){
     if(document.visibilityState === "visible"){ nextAt = Date.now() + 200; tick(); }
   });
@@ -2369,7 +2508,11 @@
   applyAssets();
   ORDER = ASSETS.map(function(a){ return a.id; });
   computeMarkets();
-  histRestore();                   // 저장된 히스토리 캐시를 먼저
+  try{ var _tf = localStorage.getItem(TF_KEY); if(_tf && TF_META[_tf]) TF = _tf; }catch(e){}   // 마지막에 고른 봉 단위
+  HIST = HISTS[TF];
+  histRestore(TF);                 // 그 봉 단위의 저장된 히스토리 캐시를 먼저
+  histAt = HISTS_T[TF] || 0;
+  tfUI();
   ordRestore();                    // 저장된 사용자 순서가 있으면 먼저 되살리고 그 순서로 그린다
   buildList();
   ordSetUI();
@@ -2378,13 +2521,10 @@
   $("#clock").textContent = kstTime();
   renderMarket();
   refresh();
-  setTimeout(loadHist, 600);       // 3년 월별 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
-  setTimeout(loadHistCSI, 1200);   // CSI 300 월봉은 동방재부에서 따로
-  setTimeout(loadHistTASI, 1400);  // 사우디 TASI 월봉은 investing.com에서 따로
-  setTimeout(loadHistK200, 1700);   // 코스피200 야간선물 월봉도 investing.com에서 따로
+  setTimeout(function(){ loadHistFor(TF); }, 600);   // 봉 단위 히스토리는 첫 실시간 조회 뒤 백그라운드로 1회
   // 사용자가 추가한 하이퍼리퀴드 xyz 종목: 히스토리·최고점을 다시 채운다(캐시가 없거나 상장후 고점이 비었을 때)
   custom.forEach(function(c, k){
-    if(c.hl && (!HIST[c.id] || !(c.ath > 0))) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
+    if(c.hl && (!(c.ath > 0) || !HISTS[TF][c.id])) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
   });
 
   /* ───────── 종목 추가 모달 배선 ───────── */
