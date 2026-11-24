@@ -3202,13 +3202,17 @@
       });
     });
   }
+  /* 네이버는 봉 단위별 시세(timeframe=day|week|month)를 직접 주고 라벨도 정확하다.
+     주·월봉은 네이버가 묶은 값을 그대로 쓰고, 없으면 cvAgg가 안전한 값으로 다듬는다. */
   function cvNvBars(a, tf){
     var sym = nvKlineSym(a), now = new Date();
     if(!sym) return Promise.reject(new Error("no nv symbol"));
     var months = (tf === "1mo") ? 40 : (tf === "1wk" ? 18 : 6);
+    var ntf = (tf === "1mo") ? "month" : (tf === "1wk" ? "week" : "day");
     var from = new Date(now.getFullYear(), now.getMonth() - months, 1);
     var url = "https://api.finance.naver.com/siseJson.naver?symbol=" + encodeURIComponent(sym) +
-      "&requestType=1&startTime=" + nvYmd(from) + "&endTime=" + nvYmd(now) + "&timeframe=day&_=" + Date.now();
+      "&requestType=1&startTime=" + nvYmd(from) + "&endTime=" + nvYmd(now) +
+      "&timeframe=" + ntf + "&_=" + Date.now();
     return nvKlineGet(url).then(function(b){ return cvAgg(b, tf, a); });
   }
   function cvEmBars(a, tf){
@@ -3261,7 +3265,7 @@
     if(a.hl) p = cvHlBars(a, tf);
     else if(a.id === "csi300") p = cvEmBars(a, tf);
     else if(a.id === "tasi" || a.id === "k200") p = cvInvBars(a, tf);
-    else if(nvKlineSym(a)) p = cvNvBars(a, tf);
+    else if(nvKlineSym(a)) p = cvNvBars(a, tf).catch(function(){ return cvYhBars(a, tf); });   // 네이버가 막히면 Yahoo 봉으로
     else p = cvYhBars(a, tf);
     CV.req[key] = p.then(function(b){
       delete CV.req[key];
