@@ -3025,36 +3025,127 @@
     if(v >= 1e3) return (v / 1e3).toFixed(1) + "K";
     return String(Math.round(v));
   }
+  /* ── 봉 다듬기: 들어온 OHLC를 그대로 그리지 않는다 ─────────────────────────
+     확인된 함정들(2026-11-24 실측):
+       · 코스피·코스닥·한국 주식: Yahoo 주봉·월봉의 진행 중 봉이 `시가=고가=저가=0`으로 온다
+         → 시가 0짜리 기둥이 화면을 다 채우고 저가 0 때문에 Y축까지 0으로 내려간다.
+       · 미국·일본 지수: 같은 달 봉이 두 줄로 갈라져 온다(월중 누적 봉 + 마지막 하루 봉).
+       · 한국·일본 시장: 주봉·월봉 라벨이 한 칸 밀려 오고(9월 봉에 10월 값) 당일 봉은 비어 온다.
+     그래서 ① 0·null·NaN은 직전 종가로 메우고 고·저가가 시·종가를 감싸게 맞춘 뒤
+     ② 1주·1개월 봉은 같은 기간 일봉을 묶어 직접 만들고(라벨 밀림·중복 봉 해소)
+     ③ 마지막(진행 중) 봉은 그릴 때만 실시간 현재가를 얹는다. */
+  function barNum(x){
+    var v = (x == null ? NaN : Number(x));
+    return (isFinite(v) && v > 0) ? v : null;
+  }
+  /* 봉이 속한 기간: 월=연.월 · 일=연.월.일 · 주=월요일 시작 주(UTC 기준) */
+  function cvPeriod(sec, tf){
+    if(sec == null || !isFinite(sec)) return null;
+    var d = new Date(Number(sec) * 1000);
+    var y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    if(tf === "1mo") return y + "." + (m + 1);
+    if(tf === "1d") return y + "." + (m + 1) + "." + day;
+    var t0 = Date.UTC(y, m, day), wd = (new Date(t0).getUTCDay() + 6) % 7;
+    return "W" + ((t0 - wd * 86400000) / 86400000);
+  }
+  /* 지금이 속한 기간의 시작 시각 — 진행 중인 봉을 새로 붙일 때 라벨로 쓴다 */
+  function cvNowStart(tf){
+    var d = new Date(), t0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    if(tf === "1mo") return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) / 1000;
+    if(tf === "1wk") return (t0 - ((new Date(t0).getUTCDay() + 6) % 7) * 86400000) / 1000;
+    return t0 / 1000;
+  }
+  /* 일봉 계열 → 보고 있는 봉 단위. 1d는 그대로 쓰고 1wk·1mo는 같은 기간 일봉을 하나로 묶는다.
+     a를 넘기면 '이번 기간 봉'이 아직 없을 때 직전 종가를 시가로 삼아 붙인다(일봉은 장중일 때만). */
+  function cvAgg(b, tf, a){
+    var rows = [], i, c, o, hi, lo, vv, p, last, r;
+    var out = {t:[], o:[], h:[], l:[], c:[], v:[]};
+    if(!b || !b.c) return out;
+    for(i = 0; i < b.c.length; i++){
+      c = barNum(b.c[i]);
+      if(c == null) continue;
+      o = barNum(b.o && b.o[i]); if(o == null) o = c;
+      hi = barNum(b.h && b.h[i]); if(hi == null) hi = Math.max(o, c);
+      lo = barNum(b.l && b.l[i]); if(lo == null) lo = Math.min(o, c);
+      p = cvPeriod(b.t && b.t[i], tf);
+      if(!p) continue;
+      vv = (b.v && b.v[i] != null && isFinite(b.v[i]) && b.v[i] >= 0) ? Number(b.v[i]) : null;
+      last = rows.length ? rows[rows.length - 1] : null;
+      if(!last || last.p !== p){                    // 새 기간 → 새 봉
+        rows.push({p:p, t:(b.t && b.t[i] != null && isFinite(b.t[i])) ? Math.round(Number(b.t[i])) : null,
+                   o:o, h:Math.max(hi, o, c), l:Math.min(lo, o, c), c:c, v:vv});
+      }else{                                        // 같은 기간이 두 줄로 갈라져 온 경우 → 한 봉으로
+        last.h = Math.max(last.h, hi, o, c);
+        last.l = Math.min(last.l, lo, o, c);
+        last.c = c;
+        last.v = (last.v == null && vv == null) ? null : (last.v || 0) + (vv || 0);
+      }
+    }
+    if(rows.length && a){                            // 진행 중인 기간의 봉이 없으면 안전한 값으로 붙인다
+      var nowP = cvPeriod(Date.now() / 1000, tf);
+      last = rows[rows.length - 1];
+      if(((tf !== "1d") || !!MK[a.mkt]) && last.p !== nowP){
+        var base = last.c;
+        rows.push({p:nowP, t:cvNowStart(tf), o:base, h:base, l:base, c:base, v:null});
+      }
+    }
+    rows = rows.slice(-tfMeta(tf).keep);
+    for(i = 0; i < rows.length; i++){
+      r = rows[i];
+      out.t.push(r.t); out.o.push(r.o); out.h.push(r.h); out.l.push(r.l); out.c.push(r.c); out.v.push(r.v);
+    }
+    return out;
+  }
   /* 봉 원본 보관: 시각·시가·고가·저가·종가·거래량. 빠진 값은 앞 종가로 메워 캔들이 끊기지 않게 한다. */
   function barsPut(tf, id, b){
     if(!id || !b || !b.c || b.c.length < 2) return;
     var T = [], O = [], H = [], L = [], C = [], V = [], i, c, prev = null;
     for(i = 0; i < b.c.length; i++){
-      c = b.c[i];
-      if(c == null || !isFinite(c) || c <= 0) continue;
-      c = Number(c);
-      var o = (b.o && b.o[i] != null && isFinite(b.o[i])) ? Number(b.o[i]) : (prev == null ? c : prev);
-      var hi = (b.h && b.h[i] != null && isFinite(b.h[i])) ? Number(b.h[i]) : Math.max(o, c);
-      var lo = (b.l && b.l[i] != null && isFinite(b.l[i])) ? Number(b.l[i]) : Math.min(o, c);
+      c = barNum(b.c[i]);
+      if(c == null) continue;
+      var o = barNum(b.o && b.o[i]);
+      if(o == null) o = (prev == null ? c : prev);          // 0·null 시가는 직전 종가로
+      var hi = barNum(b.h && b.h[i]); if(hi == null) hi = Math.max(o, c);
+      var lo = barNum(b.l && b.l[i]); if(lo == null) lo = Math.min(o, c);
       T.push((b.t && b.t[i] != null && isFinite(b.t[i])) ? Math.round(Number(b.t[i])) : null);
       O.push(Math.round(o * 10000) / 10000);
       H.push(Math.round(Math.max(hi, o, c) * 10000) / 10000);
       L.push(Math.round(Math.min(lo, o, c) * 10000) / 10000);
       C.push(Math.round(c * 10000) / 10000);
-      V.push((b.v && b.v[i] != null && isFinite(b.v[i])) ? Number(b.v[i]) : null);
+      V.push((b.v && b.v[i] != null && isFinite(b.v[i]) && b.v[i] >= 0) ? Number(b.v[i]) : null);
       prev = c;
     }
     if(C.length < 2) return;
     (BARS[tf] || (BARS[tf] = {}))[id] = {t:T, o:O, h:H, l:L, c:C, v:V};
   }
+  /* 그릴 때 쓰는 봉: 마지막 봉이 '이번 기간' 봉이면 실시간 현재가를 얹는다.
+     시가는 그대로 두고 종가만 현재가로, 고·저가는 넓히기만 한다(시가를 0으로 덮지 않는다). */
+  function cvView(a, tf){
+    var src = (BARS[tf] || {})[a.id];
+    if(!src || !src.c || !src.c.length) return src;
+    var s = priceOf(a);
+    var live = (s && s.px != null && isFinite(s.px) && Number(s.px) > 0) ? Number(s.px) : null;
+    if(live == null) return src;
+    var i = src.c.length - 1;
+    if(cvPeriod(src.t[i], tf) !== cvPeriod(Date.now() / 1000, tf)) return src;   // 지난 기간 봉은 손대지 않는다
+    var o = barNum(src.o[i]) || live, c = src.c.slice(), h = src.h.slice(), l = src.l.slice();
+    c[i] = live;
+    h[i] = Math.max(barNum(h[i]) || live, live, o);
+    l[i] = Math.min(barNum(l[i]) || live, live, o);
+    return {t:src.t, o:src.o, h:h, l:l, c:c, v:src.v};
+  }
 
   /* ── 봉 원본(OHLCV) 받기: 그 종목 하나만, 봉 단위별로 한 번 ── */
+  /* Yahoo 일봉(range 1d=3개월·1주=1년·1개월=3년)을 받아 봉 단위별로 묶는다.
+     Yahoo의 주봉·월봉 원본을 그대로 쓰면 한국·일본은 라벨이 한 칸 밀리고 0 시가가 섞이며,
+     미국 지수는 같은 달 봉이 두 줄로 갈라진다 — 일봉에서 직접 만들면 셋 다 사라진다. */
   function cvYhBars(a, tf){
-    var m = tfMeta(tf), sym = a.histSym || a.yahoo;
+    var sym = a.histSym || a.yahoo;
     if(!sym) return Promise.reject(new Error("no symbol"));
+    var range = (tf === "1d") ? "3mo" : (tf === "1wk" ? "1y" : "3y");
     function one(s){
       return histGet("https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(s) +
-        "?range=" + m.range + "&interval=" + m.iv + "&includePrePost=false&_=" + Date.now()).then(function(d){
+        "?range=" + range + "&interval=1d&includePrePost=false&_=" + Date.now()).then(function(d){
         var r = d && d.chart && d.chart.result && d.chart.result[0];
         var q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
         if(!r || !q || !q.close || q.close.length < 2) throw new Error("no bars");
@@ -3062,7 +3153,7 @@
       });
     }
     return one(sym).then(function(b){
-      if(!a.fxSym) return b;
+      if(!a.fxSym) return cvAgg(b, tf, a);
       return one(a.fxSym).then(function(f){          // 달러 표시 행(xyz SK하이닉스): 봉 시각의 환율로 나눈다
         var O = [], H = [], L = [], C = [];
         b.c.forEach(function(v, k){
@@ -3070,9 +3161,51 @@
           function dv(x){ return (x != null && isFinite(x) && fx) ? Number(x) / fx : null; }
           O.push(dv(b.o[k])); H.push(dv(b.h[k])); L.push(dv(b.l[k])); C.push(dv(v));
         });
-        return {t:b.t, o:O, h:H, l:L, c:C, v:b.v};
+        return cvAgg({t:b.t, o:O, h:H, l:L, c:C, v:b.v}, tf, a);
       });
     });
+  }
+  /* 한국 지수·주식: 네이버 일별 시세(siseJson.naver) → 봉 단위별 봉.
+     네이버는 장중 당일 봉의 시·고·저·종가를 그대로 주고 라벨도 정확하다(CORS 미허용 → 프록시 경유). */
+  var NV_KLINE = {kospi:"KOSPI", kosdaq:"KOSDAQ", sec:"005930", hynix:"000660"};
+  function nvKlineSym(a){ return (a && NV_KLINE[a.id]) || null; }
+  function nvYmd(d){
+    var m = d.getMonth() + 1, dd = d.getDate();
+    return String(d.getFullYear()) + (m < 10 ? "0" : "") + m + (dd < 10 ? "0" : "") + dd;
+  }
+  function nvKlineRows(txt){
+    var out = {t:[], o:[], h:[], l:[], c:[], v:[]};
+    var re = /\[\s*"(\d{8})"\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)/g, m;
+    while((m = re.exec(String(txt || "")))){
+      out.t.push(Date.UTC(+m[1].slice(0, 4), +m[1].slice(4, 6) - 1, +m[1].slice(6, 8)) / 1000);
+      out.o.push(Number(m[2])); out.h.push(Number(m[3])); out.l.push(Number(m[4]));
+      out.c.push(Number(m[5])); out.v.push(Number(m[6]));
+    }
+    if(out.c.length < 2) throw new Error("no nv bars");
+    return out;
+  }
+  function nvKlineGet(url){
+    // 프록시는 한 곳이 막혀도 다른 곳은 살아 있다 — 동시에 걸어 두고 가장 빨리 온 값을 쓴다
+    return new Promise(function(resolve, reject){
+      var left = NV_ROUTES.length, done = false;
+      NV_ROUTES.forEach(function(r){
+        getText(r.f(url), r.ms + 5000).then(nvKlineRows).then(function(b){
+          if(done) return;
+          done = true; resolve(b);
+        }, function(){
+          if(--left <= 0 && !done) reject(new Error("all nv kline routes failed"));
+        });
+      });
+    });
+  }
+  function cvNvBars(a, tf){
+    var sym = nvKlineSym(a), now = new Date();
+    if(!sym) return Promise.reject(new Error("no nv symbol"));
+    var months = (tf === "1mo") ? 40 : (tf === "1wk" ? 18 : 6);
+    var from = new Date(now.getFullYear(), now.getMonth() - months, 1);
+    var url = "https://api.finance.naver.com/siseJson.naver?symbol=" + encodeURIComponent(sym) +
+      "&requestType=1&startTime=" + nvYmd(from) + "&endTime=" + nvYmd(now) + "&timeframe=day&_=" + Date.now();
+    return nvKlineGet(url).then(function(b){ return cvAgg(b, tf, a); });
   }
   function cvEmBars(a, tf){
     var m = tfMeta(tf);
@@ -3091,12 +3224,14 @@
         l.push(parseFloat(p[4]));
         v.push(parseFloat(p[5]));
       });
-      return {t:t, o:o, h:h, l:l, c:c, v:v};
+      return cvAgg({t:t, o:o, h:h, l:l, c:c, v:v}, tf, a);
     });
   }
   function cvInvBars(a, tf){
     var base = (a.id === "tasi") ? INV_TASI : INV_K200;
-    return invHistRows(base, tf, 9000);             // {c,t,o,h,l,v} — invHistRows가 OHLCV를 모두 돌려준다
+    return invHistRows(base, tf, 9000).then(function(b){   // {c,t,o,h,l,v} — invHistRows가 OHLCV를 모두 돌려준다
+      return cvAgg(b, tf, a);
+    });
   }
   function cvHlBars(a, tf){
     var m = tfMeta(tf), end = Date.now();
@@ -3105,14 +3240,14 @@
       startTime:end - days*86400000, endTime:end}}), 15000).then(function(txt){
       var d = JSON.parse(txt);
       if(!Array.isArray(d) || d.length < 2) throw new Error("no candles");
-      return {
+      return cvAgg({
         t: d.map(function(x){ return Math.floor(Number(x.t) / 1000); }),
         o: d.map(function(x){ return Number(x.o); }),
         h: d.map(function(x){ return Number(x.h); }),
         l: d.map(function(x){ return Number(x.l); }),
         c: d.map(function(x){ return Number(x.c); }),
         v: d.map(function(x){ return Number(x.v); })
-      };
+      }, tf, a);
     });
   }
   function cvFetch(a, tf){
@@ -3122,6 +3257,7 @@
     if(a.hl) p = cvHlBars(a, tf);
     else if(a.id === "csi300") p = cvEmBars(a, tf);
     else if(a.id === "tasi" || a.id === "k200") p = cvInvBars(a, tf);
+    else if(nvKlineSym(a)) p = cvNvBars(a, tf);
     else p = cvYhBars(a, tf);
     CV.req[key] = p.then(function(b){
       delete CV.req[key];
@@ -3194,7 +3330,7 @@
   /* 봉 하나의 날짜·시가·고가·저가·종가·거래량을 위쪽 표에 크게 보여 준다 */
   function cvStrip(){
     var a = BY[CV.id]; if(!a) return;
-    var b = (BARS[CV.tf] || {})[CV.id];
+    var b = cvView(a, CV.tf);            // 마지막 봉은 화면에 그린 값(현재가 반영) 그대로 보여 준다
     if(!b || !b.c || !b.c.length){
       cvSet("cvD", "—"); cvSet("cvO", "—"); cvSet("cvH", "—");
       cvSet("cvL", "—"); cvSet("cvC", "—", ""); cvSet("cvV", "—");
@@ -3216,12 +3352,12 @@
 
   /* ── 보이는 구간(확대·패닝) ── */
   function cvFit(){
-    var b = (BARS[CV.tf] || {})[CV.id];
+    var a = BY[CV.id], b = a ? cvView(a, CV.tf) : null;
     var n = b ? b.c.length : 0;
     CV.vs = n; CV.ve = n - 1; CV.sel = -1;
   }
   function cvZoomSet(nv, frac, anchor){
-    var b = (BARS[CV.tf] || {})[CV.id];
+    var a = BY[CV.id], b = a ? cvView(a, CV.tf) : null;
     if(!b) return;
     var n = b.c.length;
     var minS = Math.min(n, CV_MINSPAN);
@@ -3250,7 +3386,7 @@
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     svg.setAttribute("width", W);
     svg.setAttribute("height", H);
-    var b = (BARS[CV.tf] || {})[CV.id];
+    var b = cvView(a, CV.tf);
     if(!b || !b.c || b.c.length < 2){ svg.innerHTML = ""; CV.g = null; return; }
     var n = b.c.length, dec = (a.dec == null ? 2 : a.dec), i, v;
     if(!CV.vs || CV.vs > n) CV.vs = n;
