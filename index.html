@@ -2675,8 +2675,8 @@
       invApplyRows(def, rows);
       custom.push(def); ORDER.push(def.id);
       savePrefs(); rebuild();
-      invMsg(def.name + " 추가됨" + (def.ath>0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
       renderInvList(); renderInvQuick();
+      invMsg(def.name + " 추가됨" + (def.ath>0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
       loadInvHist(def, TF);
     }).catch(function(e){
       invMsg("추가하지 못했습니다: " + ((e && e.message) || e) + " — URL·ID를 확인해 주세요.", true);
@@ -2802,7 +2802,7 @@
         (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
     });
     box.innerHTML = html || '<div class="empty">검색 결과가 없습니다 · Investing.com URL이나 pair ID를 붙여넣어 보세요</div>';
-    invMsg(q ? ("카탈로그 " + list.length + "건 중 " + shown + "건 표시") : "검색하거나 위 추천에서 고르세요 · Investing.com URL·pair ID 붙여넣기 가능");
+    invMsg(q ? (direct && !list.length ? "URL·ID로 추가할 수 있습니다 · 위 '추가'를 탭하거나 Enter" : ("카탈로그 " + list.length + "건 중 " + shown + "건 표시")) : "검색하거나 위 추천에서 고르세요 · Investing.com URL·pair ID 붙여넣기 가능");
   }
   function pickInvRow(i){
     var r = IV_ROWS[i];
@@ -2913,8 +2913,8 @@
       savePrefs(); rebuild();
       nvMsg(def.name + " · 3년 최고점을 조회하는 중…");
       loadNvMeta(def).then(function(){
-        nvMsg(def.name + " 추가됨" + (def.ath > 0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
         renderNvList(); renderNvQuick();
+        nvMsg(def.name + " 추가됨" + (def.ath > 0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
       }).catch(function(e){
         nvMsg(def.name + " 추가됨 · 3년 최고점은 잠시 뒤 다시 시도합니다.");
         if(DBG) dg("nvm x");
