@@ -234,12 +234,17 @@
   .shh{display:flex;align-items:center;justify-content:space-between;gap:.6em;margin-bottom:.55em}
   .shh b{font-size:.9em;font-weight:800;color:#fff;letter-spacing:-.015em}
   .shh .x{all:unset;cursor:pointer;font-size:.62em;font-weight:700;color:var(--dim);padding:.45em .8em;border-radius:99px;border:1px solid var(--edge)}
-  .tabs{display:flex;gap:.3em;margin-bottom:.6em}
-  .tabs button{all:unset;cursor:pointer;flex:1 1 0;text-align:center;font-size:.6em;font-weight:800;color:var(--dim);
-    padding:.62em .2em;border-radius:.5em;border:1px solid var(--edge);background:#171D24}
+  .tabs{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.5em}
+  .tabs button{all:unset;cursor:pointer;flex:1 1 28%;text-align:center;font-size:.66em;font-weight:800;color:var(--dim);
+    padding:.62em .2em;border-radius:.5em;border:1px solid var(--edge);background:#171D24;white-space:nowrap}
   .tabs button.on{color:#fff;background:rgba(124,160,220,.2);border-color:rgba(124,160,220,.46)}
   .pane{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:.42em}
   .pane.on{display:flex}
+  .chips{display:flex;flex-wrap:wrap;gap:.28em;max-height:5.4em;overflow-y:auto;overscroll-behavior:contain}
+  .chips button{all:unset;cursor:pointer;flex:0 0 auto;font-size:.63em;font-weight:800;color:#CFDCEA;
+    padding:.5em .72em;border-radius:99px;border:1px solid var(--edge);background:#1A2027}
+  .chips button.off{color:#5E6773;background:transparent;border-color:rgba(255,255,255,.1);cursor:default}
+  .chips button.adding{color:#F2C14E;border-color:rgba(242,193,78,.5)}
   .fld{width:100%;font-size:.68em;font-weight:700;color:#E8EDF3;background:#0F141A;
     border:1px solid var(--edge);border-radius:.5em;padding:.72em .8em;outline:none}
   .fld::placeholder{color:#5E6773;font-weight:600}
@@ -562,11 +567,25 @@
     <div class="sheet">
       <div class="shh"><b>종목 추가</b><button class="x" id="ovx" type="button">닫기</button></div>
       <div class="tabs" id="tabs">
-        <button type="button" data-tab="back" class="on">삭제한 종목</button>
-        <button type="button" data-tab="xyz">하이퍼리퀴드 xyz</button>
-        <button type="button" data-tab="yahoo">Yahoo 티커</button>
+        <button type="button" data-tab="inv" class="on">인베스팅닷컴</button>
+        <button type="button" data-tab="nv">네이버 증권</button>
+        <button type="button" data-tab="back">삭제한 종목</button>
+        <button type="button" data-tab="xyz">하이퍼리퀴드</button>
+        <button type="button" data-tab="yahoo">Yahoo</button>
       </div>
-      <div class="pane on" id="pane-back">
+      <div class="pane on" id="pane-inv">
+        <input class="fld" id="ivq" type="search" placeholder="종목 검색 또는 URL·pair ID (예: 달러인덱스, US10Y, 상해종합)" autocomplete="off">
+        <div class="chips" id="ivQuick"></div>
+        <div class="lst" id="lstIV"></div>
+        <div class="msg" id="msgIV"></div>
+      </div>
+      <div class="pane" id="pane-nv">
+        <input class="fld" id="nq" type="search" placeholder="종목명·6자리 코드·네이버 URL (예: 현대차, 005380, 069500)" autocomplete="off">
+        <div class="chips" id="nvQuick"></div>
+        <div class="lst" id="lstNV"></div>
+        <div class="msg" id="msgNV"></div>
+      </div>
+      <div class="pane" id="pane-back">
         <div class="lst" id="lstBack"></div>
         <div class="msg" id="msgBack"></div>
       </div>
@@ -1008,6 +1027,8 @@
     return krPhaseNow() !== "closed";
   }
   function isLive(a){
+    if(a.inv) return invTradedToday(a);            // investing: 오늘 자 일봉이 있으면 그 시장이 오늘 거래했다
+    if(a.nxt) return krLiveNow();                  // 네이버 증권 종목: 프리·정규·애프터 모두 장중(초록)
     if(a.dual){
       if(krLiveNow()) return true;           // 프리·정규·애프터는 모두 장중(초록)
       return KP_OK_AT > 0 && (Date.now() - KP_OK_AT) < KP_FRESH;
@@ -1026,6 +1047,13 @@
     return a.name;
   }
   function priceOf(a){
+    if(a.nvCode){                                  // 네이버 증권에서 추가한 종목·지수
+      if(a.nxt && (krPhaseNow() === "pre" || krPhaseNow() === "after")){
+        var on = overFor(a);
+        if(on) return {px:on.px, chg:on.chg, t:on.t};      // NXT 프리/애프터 시세가 있으면 그것
+      }
+      return STK[a.id] || state[a.id] || null;
+    }
     if(a.dual){
       var ph = krPhaseNow();
       if(ph === "pre" || ph === "after"){
@@ -1147,8 +1175,20 @@
      Yahoo ^KS11·^KQ11은 장중에 오늘 봉을 만들지 않아 직전 거래일 종가/등락률이 그대로 남는다.
      네이버 polling API(7초 갱신)는 closePrice·compareToPreviousClosePrice·fluctuationsRatio·marketStatus를 준다.
      CORS 헤더가 없고 Origin을 실으면 403이라 프록시를 거쳐 읽고, 프록시 캐시를 피해 매회 캐시버스터를 붙인다. */
-  var NV_URL = "https://polling.finance.naver.com/api/realtime/domestic/index/KOSPI,KOSDAQ";
+  var NV_URL = "https://polling.finance.naver.com/api/realtime/domestic/index/";
   var NV_GROUPS = [[0,1],[2,3],[4]];
+  /* 사용자가 추가한 네이버 증권 지수(KPI200 등)도 같이 받는다 */
+  function krIdxTarget(){
+    var codes = ["KOSPI","KOSDAQ"];
+    ASSETS.forEach(function(a){ if(a.nvIdx && a.nvCode && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode); });
+    return NV_URL + codes.join(",");
+  }
+  function nvIdxId(code){
+    for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].nvIdx && ASSETS[i].nvCode === code) return ASSETS[i].id; }
+    if(code === "KOSPI") return "kospi";
+    if(code === "KOSDAQ") return "kosdaq";
+    return null;
+  }
   var NV_ROUTES = [
     {n:"allorigins", f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, ms:6500},
     {n:"jina",       f:function(u){ return "https://r.jina.ai/" + u; },                                    ms:6500},
@@ -1176,7 +1216,7 @@
   }
   function getKorea(){
     var t0 = Date.now();
-    var target = NV_URL + "?_=" + Date.now();
+    var target = krIdxTarget() + "?_=" + Date.now();
     var gi = 0, prefG = 0;
     function attempt(){
       if(gi >= NV_GROUPS.length) return Promise.reject(new Error("all nv routes failed"));
@@ -1189,7 +1229,7 @@
         arr.forEach(function(row){
           if(!row) return;
           var code = String(row.itemCode || "").toUpperCase();
-          var id = (code==="KOSPI") ? "kospi" : (code==="KOSDAQ" ? "kosdaq" : null);
+          var id = nvIdxId(code);
           if(!id) return;
           var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
           if(px==null || px<=0) return;
@@ -1291,13 +1331,25 @@
   /* ───────── 삼성전자·SK하이닉스: 정규장 장중에는 네이버 증권 실시간 현재가 ─────────
      같은 polling API의 종목 응답에서 closePrice(현재가)·fluctuationsRatio(전일 종가 대비)·marketStatus를 읽는다.
      코스피·코스닥과 같은 프록시 체인을 쓰되, 분당 호출 제한이 있는 jina는 뒤로 민다. */
-  var STK_URL = "https://polling.finance.naver.com/api/realtime/domestic/stock/005930,000660";
+  var STK_URL = "https://polling.finance.naver.com/api/realtime/domestic/stock/";
   var STK = {}, STK_OVER = {}, STK_AT = 0, STK_STATUS = "";
   var STK_GROUPS = [[0,2],[3,1],[4]];    // allorigins+codetabs → cors.lol+jina → 직접
   var stkPref = 0;
+  /* 사용자가 네이버 증권에서 추가한 종목까지 같은 요청에 묶어 받는다 */
+  function stkTarget(){
+    var codes = ["005930","000660"];
+    ASSETS.forEach(function(a){ if(a.nvCode && !a.nvIdx && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode); });
+    return STK_URL + codes.join(",");
+  }
+  function nvRowId(code){
+    for(var i=0;i<ASSETS.length;i++){ if(!ASSETS[i].nvIdx && ASSETS[i].nvCode === code) return ASSETS[i].id; }
+    if(code === "005930") return "sec";
+    if(code === "000660") return "hynix";
+    return null;
+  }
   function getStocks(){
     var t0 = Date.now();
-    var target = STK_URL + "?_=" + Date.now();
+    var target = stkTarget() + "?_=" + Date.now();
     var gi = 0;
     function attempt(){
       if(gi >= STK_GROUPS.length) return Promise.reject(new Error("all stk routes failed"));
@@ -1310,7 +1362,7 @@
         arr.forEach(function(row){
           if(!row) return;
           var code = String(row.itemCode || "");
-          var id = (code==="005930") ? "sec" : (code==="000660" ? "hynix" : null);
+          var id = nvRowId(code);
           if(!id) return;
           var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
           if(px==null || px<=0) return;
@@ -1871,6 +1923,8 @@
     loadHistK200(tf);
     custom.forEach(function(c, k){
       if(c.hl && !HISTS[tf][c.id]) setTimeout(function(){ loadHLHist(c, tf); }, k*250);
+      if(c.inv && !HISTS[tf][c.id]) setTimeout(function(){ loadInvHist(c, tf); }, 300 + k*250);
+      if(c.nvCode && !HISTS[tf][c.id]) setTimeout(function(){ loadNvHist(c, tf); }, 600 + k*250);
     });
   }
 
@@ -1881,7 +1935,7 @@
       if(tf === TF) return;
       var map = HISTS[tf] || {};
       var need = !HISTS_T[tf] || (Date.now() - HISTS_T[tf]) > HIST_TTL ||
-        ASSETS.some(function(a){ return (histSym(a) || a.hl) && !map[a.id]; });
+        ASSETS.some(function(a){ return (histSym(a) || a.hl || a.inv || a.nvCode) && !map[a.id]; });
       if(need) loadHistFor(tf);
     });
   }
@@ -2273,13 +2327,17 @@
   function hlDisp(sym){ return String(sym||"").replace(/^xyz:/, ""); }
 
   var ovEl = document.getElementById("ov");
+  var LAST_TAB = "inv";
   function setTab(t){
     var tabs = document.querySelectorAll("#tabs button");
     for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].getAttribute("data-tab") === t);
-    ["back","xyz","yahoo"].forEach(function(k){
+    ["back","inv","nv","xyz","yahoo"].forEach(function(k){
       var p = document.getElementById("pane-"+k); if(p) p.classList.toggle("on", k === t);
     });
+    LAST_TAB = t;
     if(t === "back") renderBackList();
+    if(t === "inv"){ renderInvQuick(); renderInvList(); }
+    if(t === "nv"){ renderNvQuick(); renderNvList(NV_ROWS); }
     if(t === "xyz"){ renderHLList(); if(!HL_ALL) fetchHLList(); }
   }
   function openModal(){
@@ -2287,7 +2345,7 @@
     closeSwipeOpen();
     ovEl.classList.add("on");
     var q = document.getElementById("hlq"); if(q) q.value = "";
-    setTab("back");
+    setTab(LAST_TAB || "inv");
   }
   function closeModal(){ if(ovEl) ovEl.classList.remove("on"); }
 
@@ -2427,6 +2485,519 @@
       msg.className = "msg bad";
       msg.textContent = "추가하지 못했습니다: " + ((e && e.message) || e) + " — 티커를 확인해 주세요.";
     });
+  }
+
+
+  /* ───────── Investing.com 종목 추가 ─────────
+     검색은 이 앱에 실어 둔 카탈로그(77종 · 영어/한글 이름과 별칭) 안에서 하고,
+     Investing.com URL이나 pair ID를 붙여넣으면 그 종목을 바로 조회해 추가한다.
+     시세·3년 최고점·봉 차트는 모두 investing.com 히스토리 API(historical/{pairId}) 하나에서 받는다 —
+     일별 응답의 첫 행이 진행 중인 오늘 봉이라 현재가와 전일 대비도 같은 응답에서 나온다. */
+  var INV_CAT = [
+{p:166,s:"US500",n:"S&P 500",k:"S&P 500",x:"에스앤피 미국지수 sp500 us500",d:2,c:"$"},
+{p:20,s:"NDX",n:"Nasdaq 100",k:"나스닥 100",x:"나스닥 ndx",d:2,c:"$"},
+{p:169,s:"DJI",n:"Dow Jones Industrial Average",k:"다우존스",x:"다우 dji",d:2,c:"$"},
+{p:44336,s:"VIX",n:"CBOE Volatility Index",k:"VIX 변동성",x:"빅스 공포지수 vix",d:2,c:""},
+{p:172,s:"DE40",n:"DAX",k:"독일 DAX",x:"독일 닥스 dax de40",d:2,c:""},
+{p:175,s:"STOXX50",n:"Euro Stoxx 50",k:"유로스톡스50",x:"유로스톡스 유럽 stoxx",d:2,c:""},
+{p:27,s:"UK100",n:"FTSE 100",k:"영국 FTSE100",x:"영국 런던 ftse uk100",d:2,c:""},
+{p:167,s:"FCHI",n:"CAC 40",k:"프랑스 CAC40",x:"프랑스 파리 cac",d:2,c:""},
+{p:174,s:"ES35",n:"IBEX 35",k:"스페인 IBEX35",x:"스페인 ibex",d:2,c:""},
+{p:177,s:"IT40",n:"FTSE MIB",k:"이탈리아 FTSE MIB",x:"이탈리아 밀라노 mib",d:2,c:""},
+{p:176,s:"SWI20",n:"SMI",k:"스위스 SMI",x:"스위스 smi",d:2,c:""},
+{p:168,s:"AEX",n:"AEX",k:"네덜란드 AEX",x:"네덜란드 aex",d:2,c:""},
+{p:178,s:"JP225",n:"Nikkei 225",k:"닛케이 225",x:"일본 니케이 nikkei jp225",d:2,c:""},
+{p:41042,s:"TOPX",n:"TOPIX",k:"토픽스 TOPIX",x:"일본 토픽스 topix",d:2,c:""},
+{p:179,s:"HK50",n:"Hang Seng",k:"항셍",x:"홍콩 항셍 hang seng hk50",d:2,c:""},
+{p:38012,s:"HSCE",n:"Hang Seng China Enterprise (CEI)",k:"항셍 중국기업",x:"홍콩 H주 CEI hsce",d:2,c:""},
+{p:40820,s:"SSEC",n:"Shanghai Composite",k:"상해종합",x:"중국 상하이 상해 sse ssec",d:2,c:""},
+{p:37426,s:"KS11",n:"KOSPI",k:"코스피",x:"한국 종합주가지수 ks11",d:2,c:""},
+{p:38016,s:"KQ11",n:"KOSDAQ",k:"코스닥",x:"한국 코스닥 kq11",d:2,c:""},
+{p:37427,s:"KS200",n:"KOSPI 200",k:"코스피200",x:"한국 코스피200 ks200",d:2,c:""},
+{p:11319,s:"TASI",n:"Tadawul All Share",k:"사우디 TASI",x:"사우디 타다울 tasi",d:2,c:""},
+{p:39929,s:"BSESN",n:"BSE Sensex 30",k:"인도 센섹스",x:"인도 센섹스 sensex bse",d:2,c:""},
+{p:17940,s:"NSEI",n:"Nifty 50",k:"인도 니프티50",x:"인도 니프티 nifty nse",d:2,c:""},
+{p:17920,s:"IBOV",n:"Bovespa",k:"브라질 보베스파",x:"브라질 보베스파 ibov",d:2,c:""},
+{p:24441,s:"GSPTSE",n:"S&P/TSX Composite",k:"캐나다 TSX",x:"캐나다 토론토 tsx",d:2,c:""},
+{p:171,s:"AXJO",n:"S&P/ASX 200",k:"호주 ASX200",x:"호주 asx",d:2,c:""},
+{p:38017,s:"TWII",n:"Taiwan Weighted",k:"대만 가권",x:"대만 가권지수 twse twii",d:2,c:""},
+{p:29049,s:"JKSE",n:"Jakarta Stock Exchange Composite Index",k:"인도네시아 종합",x:"인도네시아 자카르타 jkse",d:2,c:""},
+{p:41063,s:"VNI",n:"VN Index",k:"베트남 VN지수",x:"베트남 호치민 vnindex",d:2,c:""},
+{p:38015,s:"SETI",n:"SET Index",k:"태국 SET",x:"태국 set",d:2,c:""},
+{p:49692,s:"PSI",n:"PSEi Composite",k:"필리핀 PSEi",x:"필리핀 psei",d:2,c:""},
+{p:23705,s:"US10YT",n:"United States 10-Year",k:"미국 10년물 금리",x:"미국채 10년 국채금리 us10y treasury",d:3,c:""},
+{p:23901,s:"JP10YT",n:"Japan 10-Year",k:"일본 10년물 금리",x:"일본국채 10년 jgb",d:3,c:""},
+{p:23693,s:"DE10YT",n:"Germany 10-Year",k:"독일 10년물 금리",x:"독일국채 분트 bund",d:3,c:""},
+{p:29292,s:"KR10YT",n:"South Korea 10-Year",k:"국고 10년물 금리",x:"한국 국고채 10년 ktb",d:3,c:""},
+{p:1224074,s:"DXY",n:"US Dollar Index",k:"달러인덱스 DXY",x:"달러 인덱스 달러지수 dxy",d:3,c:""},
+{p:1,s:"EUR/USD",n:"Euro US Dollar",k:"유로/달러",x:"유로 달러 환율 eurusd",d:4,c:""},
+{p:3,s:"USD/JPY",n:"US Dollar Japanese Yen",k:"달러/엔",x:"엔화 엔달러 usdjpy",d:3,c:""},
+{p:650,s:"USD/KRW",n:"US Dollar Korean Won",k:"달러/원",x:"원달러 환율 원화 usdkrw",d:2,c:""},
+{p:2,s:"GBP/USD",n:"British Pound US Dollar",k:"파운드/달러",x:"영국 파운드 gbpusd",d:4,c:""},
+{p:5,s:"AUD/USD",n:"Australian Dollar US Dollar",k:"호주달러/달러",x:"호주 달러 audusd",d:4,c:""},
+{p:8830,s:"GC",n:"Gold Futures",k:"금 선물",x:"금 골드 gold comex",d:2,c:"$"},
+{p:68,s:"XAU/USD",n:"Gold Spot US Dollar",k:"금 현물",x:"금 현물 골드 스팟 xau",d:2,c:"$"},
+{p:8836,s:"SI",n:"Silver Futures",k:"은 선물",x:"은 실버 silver",d:2,c:"$"},
+{p:8910,s:"PL",n:"Platinum Futures",k:"백금 선물",x:"백금 플래티넘 platinum",d:2,c:"$"},
+{p:8831,s:"HG",n:"Copper Futures",k:"구리 선물",x:"구리 동 copper",d:2,c:"$"},
+{p:8862,s:"NG",n:"Natural Gas Futures",k:"천연가스",x:"천연가스 가스 ngas",d:3,c:"$"},
+{p:8849,s:"CL",n:"Crude Oil WTI Futures",k:"WTI 원유",x:"원유 기름 wti crudecil",d:2,c:"$"},
+{p:8833,s:"LCO",n:"Brent Oil Futures",k:"브렌트유",x:"브렌트 원유 brent",d:2,c:"$"},
+{p:8916,s:"ZS",n:"US Soybeans Futures",k:"대두",x:"대두 콩 soybean",d:2,c:"$"},
+{p:8917,s:"ZW",n:"US Wheat Futures",k:"밀",x:"밀 소맥 wheat",d:2,c:"$"},
+{p:8832,s:"KC",n:"US Coffee C Futures",k:"커피",x:"커피 coffee",d:2,c:"$"},
+{p:8869,s:"SB",n:"US Sugar #11 Futures",k:"설탕",x:"설탕 sugar",d:2,c:"$"},
+{p:8894,s:"CC",n:"US Cocoa Futures",k:"코코아",x:"코코아 cocoa",d:2,c:"$"},
+{p:961729,s:"TIOc1",n:"Iron ore fines 62% Fe CFR Futures",k:"철광석",x:"철광석 아이언오어 ironore",d:2,c:"$"},
+{p:1057391,s:"BTC/USD",n:"Bitcoin",k:"비트코인",x:"비트코인 btc bitcoin",d:1,c:"$"},
+{p:1061443,s:"ETH/USD",n:"Ethereum",k:"이더리움",x:"이더리움 eth ethereum",d:2,c:"$"},
+{p:1177183,s:"SOL/USD",n:"Solana",k:"솔라나",x:"솔라나 sol",d:2,c:"$"},
+{p:1057392,s:"XRP/USD",n:"XRP",k:"리플 XRP",x:"리플 엑스알피 xrp",d:2,c:"$"},
+{p:6497,s:"NVDA",n:"NVIDIA Corporation",k:"엔비디아",x:"엔비디아 nvidia nvda",d:2,c:"$"},
+{p:13994,s:"TSLA",n:"Tesla Inc",k:"테슬라",x:"테슬라 tesla tsla",d:2,c:"$"},
+{p:6408,s:"AAPL",n:"Apple Inc",k:"애플",x:"애플 apple aapl",d:2,c:"$"},
+{p:252,s:"MSFT",n:"Microsoft Corporation",k:"마이크로소프트",x:"마이크로소프트 msft",d:2,c:"$"},
+{p:6369,s:"GOOGL",n:"Alphabet Inc Class A",k:"알파벳",x:"구글 알파벳 googl",d:2,c:"$"},
+{p:6435,s:"AMZN",n:"Amazon.com Inc",k:"아마존",x:"아마존 amzn",d:2,c:"$"},
+{p:26490,s:"META",n:"Meta Platforms Inc",k:"메타",x:"메타 페이스북 meta",d:2,c:"$"},
+{p:8274,s:"AMD",n:"Advanced Micro Devices Inc",k:"AMD",x:"에이엠디 amd",d:2,c:"$"},
+{p:8092,s:"MU",n:"Micron Technology Inc",k:"마이크론",x:"마이크론 mu",d:2,c:"$"},
+{p:32306,s:"TSM",n:"Taiwan Semiconductor Manufacturing ADR",k:"TSMC ADR",x:"티에스엠씨 대만반도체 tsm",d:2,c:"$"},
+{p:13969,s:"AVGO",n:"Broadcom Inc",k:"브로드컴",x:"브로드컴 avgo",d:2,c:"$"},
+{p:1166239,s:"PLTR",n:"Palantir Technologies Inc",k:"팔란티어",x:"팔란티어 pltr",d:2,c:"$"},
+{p:941155,s:"BABA",n:"Alibaba Group Holdings Ltd ADR",k:"알리바바",x:"알리바바 baba",d:2,c:"$"},
+{p:102047,s:"0700",n:"Tencent Holdings Ltd",k:"텐센트",x:"텐센트 tencent",d:2,c:""},
+{p:651,s:"QQQ",n:"Invesco QQQ Trust",k:"QQQ",x:"나스닥 qqq",d:2,c:"$"},
+{p:525,s:"SPY",n:"SPDR® S&P 500® ETF Trust",k:"SPY",x:"에스앤피 spy",d:2,c:"$"},
+{p:45073,s:"SOXL",n:"Direxion Daily Semiconductor Bull 3X Shares",k:"SOXL",x:"반도체 3배 soxl",d:2,c:"$"},
+{p:511,s:"EWY",n:"iShares MSCI South Korea ETF",k:"EWY 한국ETF",x:"한국 etf ewy",d:2,c:"$"}
+  ];
+  var INV_HOME = "https://api.investing.com/api/financialdata/historical/";
+  var INV_TTL = 30000;                       // investing.com 행은 30초 간격으로 갱신(호출 부담 최소화)
+  function invCat(p){
+    for(var i=0;i<INV_CAT.length;i++) if(INV_CAT[i].p === p) return INV_CAT[i];
+    return null;
+  }
+  function invBase(a){ return INV_HOME + a.inv; }
+  /* 입력에서 pair ID 뽑기: 숫자 · investing.com URL 끝의 -12345 · ?pairId= / ?cid= */
+  function invParsePair(txt){
+    var s = String(txt||"").trim();
+    if(!s) return null;
+    if(/^\d{2,8}$/.test(s)) return Number(s);
+    if(/investing\.com/i.test(s)){
+      var q = /(?:pair_?id|cid)=(\d{2,8})/i.exec(s);
+      if(q) return Number(q[1]);
+      var t = /-(\d{2,8})(?:[/?#]|$)/.exec(s);
+      if(t) return Number(t[1]);
+    }
+    return null;
+  }
+  /* URL의 마지막 말줄기를 읽을 만한 이름으로: /indices/us-10y-t-note-23705 → "Us 10y T Note" */
+  function invSlugName(txt){
+    var m = /investing\.com\/(?:[a-z]{2}\/)?([a-z0-9%._-]+)/i.exec(String(txt||""));
+    if(!m) return "";
+    var slug = m[1].replace(/-\d{2,8}$/, "").replace(/[?#].*$/, "");
+    if(!slug || slug.length > 42) return "";
+    return slug.replace(/-/g," ").replace(/\b[a-z]/g, function(c){ return c.toUpperCase(); });
+  }
+  function invFindBySymbol(txt){
+    var s = String(txt||"").trim().toUpperCase();
+    if(!s) return null;
+    for(var i=0;i<INV_CAT.length;i++) if(String(INV_CAT[i].s).toUpperCase() === s) return INV_CAT[i];
+    return null;
+  }
+  /* 일별 종가 문자열에서 소수 자리수 추정: "4.906"→3 · "1.0910"→4 · "5,052.69"→2 · "60,354.8"→1 */
+  function invDecOf(rows){
+    var d = 0;
+    for(var i=0;i<Math.min(4, rows.length);i++){
+      var m = /\.(\d+)/.exec(String(rows[i] && (rows[i].last_close!=null ? rows[i].last_close : "")));
+      if(m) d = Math.max(d, Math.min(4, m[1].length));
+    }
+    return d;
+  }
+  /* 3년 일별 봉(고가 최대값 = 3년내 최고점) */
+  function invFetch3y(pairId){
+    var now = new Date(), from = new Date(now.getFullYear()-3, now.getMonth(), now.getDate());
+    return invGet(INV_HOME + pairId + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
+      "&time-frame=Daily&add-missing-rows=false&_=" + Date.now(), 14000).then(function(d){
+        var rows = d && d.data;
+        if(!Array.isArray(rows) || rows.length < 20) throw new Error("과거 시세가 없습니다");
+        return rows;
+      });
+  }
+  function invApplyRows(a, rows){
+    var best = 0, bt = 0;
+    rows.forEach(function(r){
+      var h = invNum(r.last_maxRaw!=null ? r.last_maxRaw : r.last_max);
+      if(h!=null && h>best){ best = h; bt = invRowTs(r); }
+    });
+    if(best > 0){
+      a.ath = best;
+      a.athDate = bt ? ymd2(bt) + " 장중" : "";
+    }
+    if(!(a.dec > 0)) a.dec = invDecOf(rows);
+    var last = rows[0], ts = invRowTs(last);
+    if(ts) a.invDay = ts;
+    var px = invNum(last.last_closeRaw!=null ? last.last_closeRaw : last.last_close);
+    if(px > 0 && (!state[a.id] || !(state[a.id].px > 0))){
+      var chg = invNum(last.change_precentRaw!=null ? last.change_precentRaw : last.change_precent);
+      if(chg == null){
+        var pv = rows[1] ? invNum(rows[1].last_closeRaw!=null ? rows[1].last_closeRaw : rows[1].last_close) : null;
+        chg = (pv > 0) ? (px - pv) / pv * 100 : null;
+      }
+      state[a.id] = {px:px, chg:chg, t:Date.now()};
+    }
+    return a;
+  }
+  function invMsg(txt, bad){
+    var m = document.getElementById("msgIV");
+    if(!m) return;
+    m.className = "msg" + (bad ? " bad" : "");
+    m.textContent = txt;
+  }
+  /* 카탈로그/URL/ID로 종목 추가: 3년 최고점을 먼저 받아 두고 목록에 붙인다 */
+  function addInvesting(pairId, optName){
+    pairId = Number(pairId);
+    if(!(pairId > 0)){ invMsg("URL이나 pair ID를 확인해 주세요.", true); return; }
+    for(var i=0;i<ASSETS.length;i++){
+      if(ASSETS[i].inv === pairId){ invMsg("이미 목록에 있는 종목입니다.", true); return; }
+    }
+    var c = invCat(pairId);
+    var name = (optName && String(optName).trim()) || (c ? c.k : "") || ("Investing #" + pairId);
+    invMsg(name + " · 3년 최고점을 조회하는 중…");
+    invFetch3y(pairId).then(function(rows){
+      var def = {id:"i:"+pairId, custom:true, name:name, inv:pairId,
+                 mkt:"inv", yahoo:null, ath:0, athDate:"",
+                 dec:(c ? c.d : 2), cur:(c ? c.c : ""), chgLabel:"전일"};
+      invApplyRows(def, rows);
+      custom.push(def); ORDER.push(def.id);
+      savePrefs(); rebuild();
+      invMsg(def.name + " 추가됨" + (def.ath>0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
+      renderInvList(); renderInvQuick();
+      loadInvHist(def, TF);
+    }).catch(function(e){
+      invMsg("추가하지 못했습니다: " + ((e && e.message) || e) + " — URL·ID를 확인해 주세요.", true);
+    });
+  }
+  /* 저장된 investing 종목의 3년 최고점이 비었을 때(첫 조회 실패 등) 다시 채운다 */
+  function invRefetchAth(a){
+    invFetch3y(a.inv).then(function(rows){
+      invApplyRows(a, rows);
+      savePrefs(); renderAll();
+    }).catch(function(){ if(DBG) dg("invath x"); });
+  }
+  /* 현재가·전일 대비: 일별 응답의 오늘 봉(없으면 마지막 봉) */
+  function invQuoteOne(a){
+    var now = new Date(), from = new Date(now.getTime() - 14*86400000);
+    return invGet(invBase(a) + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
+      "&time-frame=Daily&add-missing-rows=false&_=" + Date.now(), 9000).then(function(d){
+        var rows = d && d.data;
+        if(!Array.isArray(rows) || !rows.length) throw new Error("no rows");
+        var last = rows[0];
+        var px = invNum(last.last_closeRaw!=null ? last.last_closeRaw : last.last_close);
+        if(!(px > 0)) throw new Error("bad px");
+        var chg = invNum(last.change_precentRaw!=null ? last.change_precentRaw : last.change_precent);
+        if(chg == null){
+          var pv = rows[1] ? invNum(rows[1].last_closeRaw!=null ? rows[1].last_closeRaw : rows[1].last_close) : null;
+          chg = (pv > 0) ? (px - pv) / pv * 100 : null;
+        }
+        state[a.id] = {px:px, chg:chg, t:Date.now()};
+        var ts = invRowTs(last);
+        if(ts) a.invDay = ts;
+        return 1;
+      });
+  }
+  var invBusy = 0;
+  function getInvQuotes(){
+    var list = ASSETS.filter(function(a){
+      return a.inv && (!state[a.id] || (Date.now() - (state[a.id].t||0)) > INV_TTL);
+    });
+    if(!list.length) return Promise.resolve(0);
+    if(invBusy && Date.now() - invBusy < 20000) return Promise.resolve(0);
+    list = list.slice(0, 4);                    // 한 주기에 최대 4종(호출 제한·CF 차단 회피)
+    invBusy = Date.now();
+    var n = 0, i = 0;
+    function step(){
+      if(i >= list.length) return n;
+      var a = list[i++];
+      return invQuoteOne(a).then(function(){ n++; }, function(e){ if(DBG) dg("invq" + a.inv + " x"); }).then(step);
+    }
+    return Promise.resolve().then(step).then(function(v){ invBusy = 0; return v; },
+                                             function(){ invBusy = 0; return 0; });
+  }
+  /* investing 종목의 봉 단위 히스토리(미니 그래프) */
+  function loadInvHist(a, tf){
+    tf = tf || TF;
+    if(!a || !a.inv) return;
+    var key = "iv" + a.id + tf;
+    if(histBusy[key]) return;
+    histBusy[key] = 1;
+    invHistRows(invBase(a), tf, 13000).then(function(r){
+      var v = histSeries(a, r.c);
+      if(!v) throw new Error("no series");
+      barsPut(tf, a.id, r);
+      histStored(tf, a.id, v);
+      if(DBG) dg("ivhist" + a.inv + " " + v.length);
+    }).catch(function(e){ if(DBG) dg("ivhist" + a.inv + " x"); })
+      .then(function(){ histBusy[key] = 0; });
+  }
+  /* investing 종목의 캔들(확대 차트) — 그 종목의 pairId로 바로 받는다 */
+  function cvInvIdBars(a, tf){
+    return invHistRows(invBase(a), tf, 13000).then(function(b){ return cvAgg(b, tf, a, false); });
+  }
+  /* investing 행의 장중 표시: 오늘 자 일봉이 있으면 그 시장이 오늘 거래한 것으로 본다 */
+  function invTradedToday(a){
+    if(!a.invDay) return false;
+    var n = new Date();
+    return a.invDay >= Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate())/1000;
+  }
+
+  /* 모달: 인베스팅닷컴 탭 */
+  var IV_ROWS = [];
+  var IV_QUICK = [1224074, 23705, 44336, 40820, 179, 172, 175, 8862, 8831, 1057391, 8830, 37427];
+  function renderInvQuick(){
+    var box = document.getElementById("ivQuick");
+    if(!box) return;
+    var html = "";
+    IV_QUICK.forEach(function(p){
+      var c = invCat(p);
+      if(!c) return;
+      html += '<button type="button" data-ivq="' + p + '">' + escHtml(c.k) + '</button>';
+    });
+    box.innerHTML = html;
+  }
+  function renderInvList(){
+    var box = document.getElementById("lstIV");
+    if(!box) return;
+    var q = ((document.getElementById("ivq") || {}).value || "").trim();
+    var ql = q.toLowerCase();
+    IV_ROWS = [];
+    var html = "";
+    var direct = invParsePair(q);
+    if(direct){
+      var c0 = invCat(direct);
+      html += '<div class="it"><div class="nm2">' + escHtml(c0 ? c0.k : "Investing.com #" + direct) +
+        '<span class="sub2">URL·ID로 바로 추가 · #' + direct + '</span></div>' +
+        '<button class="go" type="button" data-ivi="' + IV_ROWS.length + '">추가</button></div>';
+      IV_ROWS.push({p:direct, name: c0 ? c0.k : invSlugName(q)});
+    }
+    var list = INV_CAT.filter(function(c){
+      if(!ql) return true;
+      var hay = (c.k + " " + c.n + " " + c.s + " " + c.x).toLowerCase();
+      return hay.indexOf(ql) >= 0 || String(c.p).indexOf(ql) === 0;
+    });
+    var shown = 0;
+    list.forEach(function(c){
+      if(shown >= 40) return;
+      shown++;
+      var have = false;
+      for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].inv === c.p){ have = true; break; } }
+      IV_ROWS.push({p:c.p, name:c.k});
+      html += '<div class="it"><div class="nm2">' + escHtml(c.k) +
+        '<span class="sub2">' + escHtml(c.s + " · " + c.n) + '</span></div>' +
+        '<button class="go' + (have ? " off" : "") + '" type="button" data-ivi="' + (IV_ROWS.length-1) + '"' +
+        (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
+    });
+    box.innerHTML = html || '<div class="empty">검색 결과가 없습니다 · Investing.com URL이나 pair ID를 붙여넣어 보세요</div>';
+    invMsg(q ? ("카탈로그 " + list.length + "건 중 " + shown + "건 표시") : "검색하거나 위 추천에서 고르세요 · Investing.com URL·pair ID 붙여넣기 가능");
+  }
+  function pickInvRow(i){
+    var r = IV_ROWS[i];
+    if(!r) return;
+    addInvesting(r.p, r.name);
+  }
+  function invEnter(){
+    var el = document.getElementById("ivq");
+    var q = el ? el.value.trim() : "";
+    var p = invParsePair(q);
+    if(p){ addInvesting(p, (invCat(p) || {}).k || invSlugName(q)); return; }
+    var c = invFindBySymbol(q);
+    if(c){ addInvesting(c.p, c.k); return; }
+    var ql = q.toLowerCase();
+    for(var i=0;i<INV_CAT.length;i++){
+      var x = INV_CAT[i];
+      if((x.k + " " + x.n + " " + x.x).toLowerCase().indexOf(ql) >= 0){ addInvesting(x.p, x.k); return; }
+    }
+    invMsg("그 이름의 종목을 찾지 못했습니다. Investing.com URL·pair ID를 붙여넣어 주세요.", true);
+  }
+
+  /* ───────── 네이버 증권 종목 추가 ─────────
+     검색은 네이버 증권 자동완성(ac.stock.naver.com/ac)을 프록시 체인으로 읽는다(CORS 미허용).
+     시세는 이미 쓰고 있는 polling.finance.naver.com(국내 주식·ETF·지수),
+     3년 최고점·봉은 api.finance.naver.com/siseJson(일/주/월봉을 그대로 준다)에서 받는다.
+     6자리 코드(숫자·영문 혼용)나 finance.naver.com / m.stock.naver.com URL을 붙여넣어도 추가된다. */
+  var NV_AC = "https://ac.stock.naver.com/ac?target=stock,index,etf,marketindex&q=";
+  var nvAcCache = {};
+  function nvGetJson(url){
+    var gi = 0;
+    function attempt(){
+      if(gi >= NV_GROUPS.length) return Promise.reject(new Error("네이버 응답 없음"));
+      var g = NV_GROUPS[gi++];
+      return nvFirst(g, url).catch(function(){ return attempt(); });
+    }
+    return attempt();
+  }
+  function nvSearch(q){
+    q = String(q||"").trim();
+    if(!q) return Promise.resolve([]);
+    if(nvAcCache[q]) return Promise.resolve(nvAcCache[q]);
+    return nvGetJson(NV_AC + encodeURIComponent(q) + "&_=" + Date.now()).then(function(d){
+      var items = (d && d.items) || [], out = [];
+      items.forEach(function(x){
+        if(!x || !x.code || !x.name) return;
+        var cat = String(x.category || "");
+        if(cat !== "stock" && cat !== "index") return;
+        out.push({code:String(x.code), name:String(x.name),
+                  isIdx:(cat === "index"), type:String(x.typeName || x.typeCode || "")});
+      });
+      nvAcCache[q] = out.slice(0, 30);
+      return nvAcCache[q];
+    });
+  }
+  function nvParseCode(txt){
+    var s = String(txt||"").trim();
+    if(!s) return null;
+    var m = /(?:code=)([0-9A-Za-z]{6})/i.exec(s);
+    if(m) return {code:m[1].toUpperCase(), isIdx:false};
+    m = /\/(?:domestic\/)?(stock|index)\/([0-9A-Za-z]{5,6})/i.exec(s);
+    if(m) return {code:m[2].toUpperCase(), isIdx:(m[1].toLowerCase() === "index")};
+    if(/^[0-9A-Za-z]{6}$/.test(s)) return {code:s.toUpperCase(), isIdx:false};
+    return null;
+  }
+  function nvMsg(txt, bad){
+    var m = document.getElementById("msgNV");
+    if(!m) return;
+    m.className = "msg" + (bad ? " bad" : "");
+    m.textContent = txt;
+  }
+  /* 3년 일별 시세 → 3년내 최고점(+ 처음 붙일 때 현재가) */
+  function loadNvMeta(a){
+    var now = new Date(), from = new Date(now.getFullYear()-3, now.getMonth(), now.getDate());
+    var url = "https://api.finance.naver.com/siseJson.naver?symbol=" + encodeURIComponent(a.nvCode) +
+      "&requestType=1&startTime=" + nvYmd(from) + "&endTime=" + nvYmd(now) + "&timeframe=day&_=" + Date.now();
+    return nvKlineGet(url, 18000).then(function(b){
+      var best = 0, bt = 0, i;
+      for(i=0;i<b.h.length;i++){
+        var h = b.h[i];
+        if(isFinite(h) && h > best){ best = h; bt = b.t[i]; }
+      }
+      if(!(best > 0)) throw new Error("시세가 없습니다");
+      a.ath = best;
+      a.athDate = bt ? ymd2(bt) + " 장중" : "";
+      var n = b.c.length;
+      var px = n ? b.c[n-1] : null, pv = n > 1 ? b.c[n-2] : null;
+      if(px > 0 && (!state[a.id] || !(state[a.id].px > 0))){
+        state[a.id] = {px:px, chg:(pv > 0 ? (px - pv)/pv*100 : null), t:Date.now()};
+      }
+      savePrefs(); renderAll();
+      loadNvHist(a, TF);
+      return a;
+    });
+  }
+  /* 종목 추가: 이름·코드가 확실치 않으면 자동완성으로 이름을 먼저 확인한다 */
+  function addNaver(code, name, isIdx){
+    code = String(code||"").toUpperCase();
+    if(!code){ nvMsg("종목 코드를 확인해 주세요.", true); return; }
+    var id = "n:" + code;
+    if(BY[id]){ nvMsg("이미 목록에 있는 종목입니다.", true); return; }
+    var known = (name && String(name).trim()) || "";
+    function put(nm, idx){
+      var def = {id:id, custom:true, name:(nm || code), nvCode:code, nvIdx:!!idx,
+                 mkt:"kr", src:"nst", nxt:!idx, yahoo:null, ath:0, athDate:"",
+                 dec:(idx ? 2 : 0), cur:"", chgLabel:"전일"};
+      custom.push(def); ORDER.push(def.id);
+      savePrefs(); rebuild();
+      nvMsg(def.name + " · 3년 최고점을 조회하는 중…");
+      loadNvMeta(def).then(function(){
+        nvMsg(def.name + " 추가됨" + (def.ath > 0 ? " · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" : ""));
+        renderNvList(); renderNvQuick();
+      }).catch(function(e){
+        nvMsg(def.name + " 추가됨 · 3년 최고점은 잠시 뒤 다시 시도합니다.");
+        if(DBG) dg("nvm x");
+      });
+    }
+    if(known){ put(known, isIdx); return; }
+    nvMsg("종목 이름을 확인하는 중…");
+    nvSearch(code).then(function(list){
+      var hit = null;
+      for(var k=0;k<list.length;k++){ if(list[k].code === code){ hit = list[k]; break; } }
+      put(hit ? hit.name : code, hit ? hit.isIdx : isIdx);
+    }).catch(function(){ put(code, isIdx); });
+  }
+  /* 네이버 종목의 봉 단위 히스토리(미니 그래프) */
+  function loadNvHist(a, tf){
+    tf = tf || TF;
+    if(!a || !a.nvCode) return;
+    var key = "nv" + a.id + tf;
+    if(histBusy[key]) return;
+    histBusy[key] = 1;
+    cvNvBars(a, tf).then(function(b){
+      var v = histSeries(a, b.c);
+      if(!v) throw new Error("no series");
+      barsPut(tf, a.id, b);
+      histStored(tf, a.id, v);
+      if(DBG) dg("nvhist" + a.nvCode + " " + v.length);
+    }).catch(function(e){ if(DBG) dg("nvhist" + a.nvCode + " x"); })
+      .then(function(){ histBusy[key] = 0; });
+  }
+
+  /* 모달: 네이버 증권 탭 */
+  var NV_ROWS = [];
+  var NV_QUICK = [["005930","삼성전자"],["000660","SK하이닉스"],["005380","현대차"],["000270","기아"],
+                  ["373220","LG에너지솔루션"],["207940","삼성바이오로직스"],["035420","NAVER"],["035720","카카오"],
+                  ["105560","KB금융"],["012450","한화에어로스페이스"],["069500","KODEX 200"],["360750","TIGER 미국S&P500"]];
+  function renderNvQuick(){
+    var box = document.getElementById("nvQuick");
+    if(!box) return;
+    var html = "";
+    NV_QUICK.forEach(function(p){
+      var have = !!BY["n:" + p[0]];
+      html += '<button type="button" data-nvq="' + p[0] + '"' + (have ? ' class="off"' : '') + '>' +
+              escHtml(p[1]) + '</button>';
+    });
+    box.innerHTML = html;
+  }
+  function renderNvList(items){
+    var box = document.getElementById("lstNV");
+    if(!box) return;
+    NV_ROWS = (items || []).slice();
+    if(!NV_ROWS.length){
+      box.innerHTML = '<div class="empty">종목명을 입력하면 네이버 증권에서 찾아 드립니다 · 6자리 코드·URL도 됩니다</div>';
+      return;
+    }
+    var html = "";
+    NV_ROWS.forEach(function(x, i){
+      var have = !!BY["n:" + x.code];
+      html += '<div class="it"><div class="nm2">' + escHtml(x.name) +
+        '<span class="sub2">' + escHtml((x.type || (x.isIdx ? "지수" : "종목")) + " · " + x.code) + '</span></div>' +
+        '<button class="go' + (have ? " off" : "") + '" type="button" data-nvi="' + i + '"' +
+        (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
+    });
+    box.innerHTML = html;
+    nvMsg(NV_ROWS.length + "건 · 탭해서 바로 추가");
+  }
+  function nvRunSearch(q, enter){
+    q = String(q||"").trim();
+    if(!q){ renderNvList([]); return; }
+    var parsed = nvParseCode(q);
+    if(parsed && (enter || /^\d{6}$/.test(q))){
+      addNaver(parsed.code, "", parsed.isIdx);
+      return;
+    }
+    var box = document.getElementById("lstNV");
+    if(box) box.innerHTML = '<div class="empty">네이버 증권에서 찾는 중…</div>';
+    nvSearch(q).then(function(list){
+      renderNvList(list);
+      if(!list.length) nvMsg("검색 결과가 없습니다. 6자리 종목 코드로 넣어 보세요.", true);
+    }).catch(function(){
+      renderNvList([]);
+      nvMsg("네이버 증권 검색이 지금 응답하지 않습니다. 잠시 뒤 다시 시도하거나 6자리 코드로 추가해 주세요.", true);
+    });
+  }
+  function pickNvRow(i){
+    var r = NV_ROWS[i];
+    if(!r) return;
+    addNaver(r.code, r.name, r.isIdx);
   }
 
   function dragPick(e){
@@ -2867,7 +3438,9 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0};
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0, inv:0};
+    var hasInv = false;
+    for(var q=0;q<ASSETS.length;q++){ if(ASSETS[q].inv){ hasInv = true; break; } }
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
@@ -2876,6 +3449,9 @@
       race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
       race(getXyz(), 9000).then(function(n){ res.xyz = n; }).catch(function(){ res.xyz = 0; })
     ];
+    if(hasInv){
+      tasks.push(race(getInvQuotes(), 20000).then(function(n){ res.inv = n; }).catch(function(){ res.inv = 0; }));
+    }
     if(krNow){
       tasks.push(race(getStocks(), 13000).then(function(n){ res.stk = n; }).catch(function(){ res.stk = 0; }));
     }else{
@@ -2903,6 +3479,7 @@
       if(res.stk > 0 && krPhaseNow() === "after") bits.push("NXT 애프터");
       if(res.sa > 0) bits.push(srcTag.sa || "investing.com");
       if(res.k200 > 0) bits.push(srcTag.k200 || "PreKOSPI");
+      if(res.inv > 0) bits.push("investing.com");
       if(okX) bits.push(srcTag.xyz || "Hyperliquid");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
@@ -3172,7 +3749,7 @@
   /* 한국 지수·주식: 네이버 일별 시세(siseJson.naver) → 봉 단위별 봉.
      네이버는 장중 당일 봉의 시·고·저·종가를 그대로 주고 라벨도 정확하다(CORS 미허용 → 프록시 경유). */
   var NV_KLINE = {kospi:"KOSPI", kosdaq:"KOSDAQ", sec:"005930", hynix:"000660"};
-  function nvKlineSym(a){ return (a && NV_KLINE[a.id]) || null; }
+  function nvKlineSym(a){ return (a && (a.nvCode || NV_KLINE[a.id])) || null; }
   function nvYmd(d){
     var m = d.getMonth() + 1, dd = d.getDate();
     return String(d.getFullYear()) + (m < 10 ? "0" : "") + m + (dd < 10 ? "0" : "") + dd;
@@ -3263,9 +3840,12 @@
     if(CV.req[key]) return CV.req[key];
     var p;
     if(a.hl) p = cvHlBars(a, tf);
+    else if(a.inv) p = cvInvIdBars(a, tf);                       // investing.com에서 추가한 종목
     else if(a.id === "csi300") p = cvEmBars(a, tf);
     else if(a.id === "tasi" || a.id === "k200") p = cvInvBars(a, tf);
-    else if(nvKlineSym(a)) p = cvNvBars(a, tf).catch(function(){ return cvYhBars(a, tf); });   // 네이버가 막히면 Yahoo 봉으로
+    else if(nvKlineSym(a)) p = cvNvBars(a, tf).then(function(b){ return b; }, function(e){ 
+      if(a.nvCode) throw e;                                     // 네이버에서 추가한 종목은 Yahoo 대신 없음
+      return cvYhBars(a, tf); });                               // 네이버가 막히면 Yahoo 봉으로
     else p = cvYhBars(a, tf);
     CV.req[key] = p.then(function(b){
       delete CV.req[key];
@@ -3805,6 +4385,8 @@
   // 사용자가 추가한 하이퍼리퀴드 xyz 종목: 히스토리·최고점을 다시 채운다(캐시가 없거나 상장후 고점이 비었을 때)
   custom.forEach(function(c, k){
     if(c.hl && (!(c.ath > 0) || !HISTS[TF][c.id])) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
+    if(c.inv && !(c.ath > 0)) setTimeout(function(){ invRefetchAth(c); }, 2400 + k*300);
+    if(c.nvCode && !(c.ath > 0)) setTimeout(function(){ loadNvMeta(c); }, 2400 + k*300);
   });
 
   /* ───────── 종목 추가 모달 배선 ───────── */
@@ -3821,6 +4403,12 @@
         if(b.getAttribute("data-tab")){ setTab(b.getAttribute("data-tab")); return; }
         if(b.getAttribute("data-back")){ restoreDefault(b.getAttribute("data-back")); renderBackList(); return; }
         if(b.getAttribute("data-hl")){ addHL(b.getAttribute("data-hl")+""); return; }
+        if(b.getAttribute("data-ivi") !== null){ pickInvRow(Number(b.getAttribute("data-ivi"))); return; }
+        if(b.getAttribute("data-nvi") !== null){ pickNvRow(Number(b.getAttribute("data-nvi"))); return; }
+        if(b.getAttribute("data-ivq") !== null){ addInvesting(Number(b.getAttribute("data-ivq"))); return; }
+        if(b.getAttribute("data-nvq")){ var qc = b.getAttribute("data-nvq"), qn = "";
+          for(var qi=0; qi<NV_QUICK.length; qi++){ if(NV_QUICK[qi][0] === qc){ qn = NV_QUICK[qi][1]; break; } }
+          addNaver(qc, qn, false); return; }
         if(b.id === "yadd"){ addYahooTicker(); return; }
       }
     });
@@ -3828,6 +4416,27 @@
     if(hq) hq.addEventListener("input", renderHLList);
     var yy = document.getElementById("yq");
     if(yy) yy.addEventListener("keydown", function(e){ if(e.key === "Enter") addYahooTicker(); });
+    var ivq = document.getElementById("ivq");
+    if(ivq){
+      ivq.addEventListener("input", renderInvList);
+      ivq.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); invEnter(); } });
+    }
+    var nq = document.getElementById("nq");
+    if(nq){
+      var nqT = 0;
+      nq.addEventListener("input", function(){
+        clearTimeout(nqT);
+        var v = nq.value.trim();
+        if(!v){ renderNvList([]); nvMsg("종목명을 입력하면 네이버 증권에서 찾아 드립니다 · 6자리 코드·URL도 됩니다"); return; }
+        nqT = setTimeout(function(){ nvRunSearch(v, false); }, 420);
+      });
+      nq.addEventListener("keydown", function(e){
+        if(e.key !== "Enter") return;
+        e.preventDefault();
+        clearTimeout(nqT);
+        nvRunSearch(nq.value.trim(), true);
+      });
+    }
   })();
   setInterval(function(){ if(!busy) renderAll(); }, 30000);
 
