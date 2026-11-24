@@ -1183,12 +1183,6 @@
     ASSETS.forEach(function(a){ if(a.nvIdx && a.nvCode && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode); });
     return NV_URL + codes.join(",");
   }
-  function nvIdxId(code){
-    for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].nvIdx && ASSETS[i].nvCode === code) return ASSETS[i].id; }
-    if(code === "KOSPI") return "kospi";
-    if(code === "KOSDAQ") return "kosdaq";
-    return null;
-  }
   var NV_ROUTES = [
     {n:"allorigins", f:function(u){ return "https://api.allorigins.win/raw?url=" + encodeURIComponent(u); }, ms:6500},
     {n:"jina",       f:function(u){ return "https://r.jina.ai/" + u; },                                    ms:6500},
@@ -1229,13 +1223,13 @@
         arr.forEach(function(row){
           if(!row) return;
           var code = String(row.itemCode || "").toUpperCase();
-          var id = nvIdxId(code);
-          if(!id) return;
+          var ids = nvRowIds(code, true);
+          if(!ids.length) return;
           var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
           if(px==null || px<=0) return;
           var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
-          state[id] = {px:px, chg:chg, t:now};
-          if(id==="kospi"){
+          ids.forEach(function(id){ state[id] = {px:px, chg:chg, t:now}; });
+          if(code === "KOSPI"){
             KR_NV = {status:String(row.marketStatus||""), at:now, tradedAt:row.localTradedAt||null};
           }
           n++;
@@ -1341,11 +1335,17 @@
     ASSETS.forEach(function(a){ if(a.nvCode && !a.nvIdx && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode); });
     return STK_URL + codes.join(",");
   }
-  function nvRowId(code){
-    for(var i=0;i<ASSETS.length;i++){ if(!ASSETS[i].nvIdx && ASSETS[i].nvCode === code) return ASSETS[i].id; }
-    if(code === "005930") return "sec";
-    if(code === "000660") return "hynix";
-    return null;
+  /* 한 code가 여러 행에 쓰일 수 있다(기본 삼성전자 행 + 사용자가 네이버에서 추가한 삼성전자 행) → 모두 갱신 */
+  function nvRowIds(code, idx){
+    var out = [];
+    ASSETS.forEach(function(a){
+      if((!!a.nvIdx) === !!idx && a.nvCode === code) out.push(a.id);
+    });
+    if(!idx && code === "005930" && out.indexOf("sec") < 0) out.push("sec");
+    if(!idx && code === "000660" && out.indexOf("hynix") < 0) out.push("hynix");
+    if(idx && code === "KOSPI" && out.indexOf("kospi") < 0) out.push("kospi");
+    if(idx && code === "KOSDAQ" && out.indexOf("kosdaq") < 0) out.push("kosdaq");
+    return out;
   }
   function getStocks(){
     var t0 = Date.now();
@@ -1362,22 +1362,25 @@
         arr.forEach(function(row){
           if(!row) return;
           var code = String(row.itemCode || "");
-          var id = nvRowId(code);
-          if(!id) return;
+          var ids = nvRowIds(code, false);
+          if(!ids.length) return;
           var px = nvNum(row.closePriceRaw!=null ? row.closePriceRaw : row.closePrice);
           if(px==null || px<=0) return;
           var chg = nvNum(row.fluctuationsRatioRaw!=null ? row.fluctuationsRatioRaw : row.fluctuationsRatio);
-          STK[id] = {px:px, chg:chg, t:now};
-          /* 넥스트레이드(NXT) 프리/애프터마켓: overMarketPriceInfo.overPrice + fluctuationsRatio */
-          var om = row.overMarketPriceInfo;
+          var om = row.overMarketPriceInfo, opx = null;
           if(om && om.overPrice!=null){
-            var opx = nvNum(om.overPrice);
-            if(opx!=null && opx>0){
+            opx = nvNum(om.overPrice);
+            if(!(opx > 0)) opx = null;
+          }
+          ids.forEach(function(id){
+            STK[id] = {px:px, chg:chg, t:now};
+            /* 넥스트레이드(NXT) 프리/애프터마켓: overMarketPriceInfo.overPrice + fluctuationsRatio */
+            if(opx != null){
               STK_OVER[id] = {type:String(om.tradingSessionType||""), px:opx,
                               chg:nvNum(om.fluctuationsRatio), t:now,
                               status:String(om.overMarketStatus||""), at:om.localTradedAt||null};
             }
-          }
+          });
           if(row.marketStatus) STK_STATUS = String(row.marketStatus);
           n++;
         });
