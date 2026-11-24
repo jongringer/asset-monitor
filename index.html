@@ -2624,7 +2624,7 @@
     return invGet(INV_HOME + pairId + "?start-date=" + invDate(from) + "&end-date=" + invDate(now) +
       "&time-frame=Daily&add-missing-rows=false&_=" + Date.now(), 14000).then(function(d){
         var rows = d && d.data;
-        if(!Array.isArray(rows) || rows.length < 20) throw new Error("과거 시세가 없습니다");
+        if(!Array.isArray(rows) || rows.length < 2) throw new Error("과거 시세가 없습니다");
         return rows;
       });
   }
