@@ -3056,8 +3056,11 @@
     return t0 / 1000;
   }
   /* 일봉 계열 → 보고 있는 봉 단위. 1d는 그대로 쓰고 1wk·1mo는 같은 기간 일봉을 하나로 묶는다.
-     a를 넘기면 '이번 기간 봉'이 아직 없을 때 직전 종가를 시가로 삼아 붙인다(일봉은 장중일 때만). */
-  function cvAgg(b, tf, a){
+     a를 넘기면 '이번 기간 봉'이 아직 없을 때 직전 종가를 시가로 삼아 붙인다.
+     단 그 붙이기는 **일봉에서 기간 봉을 만들 때(fromDaily)** 와 장중 일봉일 때만 —
+     동방재부·investing.com·하이퍼리퀴드는 진행 중 주·월 봉을 직접 주므로 그대로 둔다
+     (하이퍼리퀴드 주봉은 목요일 시작이라 월요일 기준으로 보면 없는 봉을 만들게 된다). */
+  function cvAgg(b, tf, a, fromDaily){
     var rows = [], i, c, o, hi, lo, vv, p, last, r;
     var out = {t:[], o:[], h:[], l:[], c:[], v:[]};
     if(!b || !b.c) return out;
@@ -3081,10 +3084,11 @@
         last.v = (last.v == null && vv == null) ? null : (last.v || 0) + (vv || 0);
       }
     }
-    if(rows.length && a){                            // 진행 중인 기간의 봉이 없으면 안전한 값으로 붙인다
+    if(rows.length && a){
       var nowP = cvPeriod(Date.now() / 1000, tf);
       last = rows[rows.length - 1];
-      if(((tf !== "1d") || !!MK[a.mkt]) && last.p !== nowP){
+      var want = (tf === "1d") ? !!MK[a.mkt] : (fromDaily !== false);
+      if(want && last.p !== nowP){                   // 이번 기간 봉이 없으면 직전 종가를 시가로 붙인다
         var base = last.c;
         rows.push({p:nowP, t:cvNowStart(tf), o:base, h:base, l:base, c:base, v:null});
       }
@@ -3224,13 +3228,13 @@
         l.push(parseFloat(p[4]));
         v.push(parseFloat(p[5]));
       });
-      return cvAgg({t:t, o:o, h:h, l:l, c:c, v:v}, tf, a);
+      return cvAgg({t:t, o:o, h:h, l:l, c:c, v:v}, tf, a, false);
     });
   }
   function cvInvBars(a, tf){
     var base = (a.id === "tasi") ? INV_TASI : INV_K200;
     return invHistRows(base, tf, 9000).then(function(b){   // {c,t,o,h,l,v} — invHistRows가 OHLCV를 모두 돌려준다
-      return cvAgg(b, tf, a);
+      return cvAgg(b, tf, a, false);
     });
   }
   function cvHlBars(a, tf){
@@ -3247,7 +3251,7 @@
         l: d.map(function(x){ return Number(x.l); }),
         c: d.map(function(x){ return Number(x.c); }),
         v: d.map(function(x){ return Number(x.v); })
-      }, tf, a);
+      }, tf, a, false);
     });
   }
   function cvFetch(a, tf){
