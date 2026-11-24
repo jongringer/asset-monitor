@@ -2809,6 +2809,7 @@
   function invEnter(){
     var el = document.getElementById("ivq");
     var q = el ? el.value.trim() : "";
+    if(!q) return;
     var p = invParsePair(q);
     if(p){ addInvesting(p, (invCat(p) || {}).k || invSlugName(q)); return; }
     var c = invFindBySymbol(q);
@@ -2921,6 +2922,7 @@
     nvSearch(code).then(function(list){
       var hit = null;
       for(var k=0;k<list.length;k++){ if(list[k].code === code){ hit = list[k]; break; } }
+      if(!hit && !known){ nvMsg("네이버 증권에서 " + code + " 종목을 찾지 못했습니다. 이름으로 검색해 보세요.", true); return; }
       put(hit ? hit.name : code, hit ? hit.isIdx : isIdx);
     }).catch(function(){ put(code, isIdx); });
   }
