@@ -133,17 +133,20 @@
     background:rgba(120,170,230,.14);border:1px solid rgba(120,170,230,.3)}
   .px{flex:0 0 auto;min-width:4.35em;text-align:right;font-size:1.16em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.035em;line-height:1.08}
-  .pct{flex:0 0 auto;min-width:3.3em;margin-left:.1em;text-align:right;font-size:1.3em;font-weight:800;
-    font-variant-numeric:tabular-nums;letter-spacing:-.045em;line-height:1.05;color:var(--down)}
+  /* 3년내 최고점 대비 %: 보조 지표라 작고 어두운 남색 계열로 */
+  .pct{flex:0 0 auto;min-width:3.6em;margin-left:.2em;text-align:right;font-size:.68em;font-weight:800;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.05;color:#3F5F9E}
   .pct.up{color:var(--up)}
   .pct.flat{color:#A7AFB9}
 
   .bot{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0;margin-top:.16em}
-  .ath{font-size:.7em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
+  .ath{font-size:.8em;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.002em}
   .ath b{color:#B6BFC8;font-weight:700}
-  .dc{flex:0 0 auto;font-size:.7em;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* 전일/24h 등락: 가장 중요한 지표라 크게 */
+  .dc{flex:0 0 auto;font-size:1.12em;font-weight:800;letter-spacing:-.02em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
   .dc.up{color:var(--up)}
+  .dc small{font-size:.58em;font-weight:700;color:var(--dim);margin-right:.35em;letter-spacing:0}
   .dc.down{color:var(--down)}
   .row.newhigh .ath b{color:#FFC663}
 
@@ -2137,7 +2140,7 @@
       dcEl.textContent = a.chgLabel; dcEl.className = "dc";
     }else{
       var ch = Number(s.chg);
-      dcEl.textContent = a.chgLabel + " " + (ch>0?"+":"") + ch.toFixed(2) + "%";
+      dcEl.innerHTML = '<small>' + a.chgLabel + '</small>' + (ch>0?"+":"") + ch.toFixed(2) + "%";
       dcEl.className = "dc " + (ch>0.001 ? "up" : (ch<-0.001 ? "down" : ""));
     }
 
