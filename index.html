@@ -2856,7 +2856,7 @@
   var TE_TTL   = 60000;                      // TE 행은 60초 간격으로 갱신
   var TE_CAT = [
     {s:"JN1:COM",    k:"고무 (Rubber)",     n:"Rubber",           u:"commodity/rubber",           un:"US¢/kg", d:2, x:"고무 러버 rubber 천연고무 tradingeconomics te"},
-    {s:"SBR:COM",    k:"스티렌부타디엔고무", n:"Synthetic Rubber", u:"commodity/synthetic-rubber", un:"CNY/t",  d:2, ss:388, x:"sbr 합성고무 스티렌부타디엔 sunsirs 388 100ppi"},
+    {s:"SBR:COM",    k:"스티렌부타디엔고무", sh:"SBR 고무", n:"Synthetic Rubber", u:"commodity/synthetic-rubber", un:"CNY/t",  d:2, ss:388, x:"sbr 합성고무 스티렌부타디엔 sunsirs 388 100ppi"},
     {s:"CL1:COM",    k:"WTI 원유",          n:"Crude Oil",        u:"commodity/crude-oil",        un:"$",      d:3, x:"원유 기름 wti crudecil"},
     {s:"CO1:COM",    k:"브렌트유",          n:"Brent",            u:"commodity/brent-crude-oil",  un:"$",      d:3, x:"브렌트 원유 brent"},
     {s:"XAUUSD:CUR", k:"금 현물",           n:"Gold",             u:"commodity/gold",             un:"$",      d:2, x:"금 골드 gold spot"},
@@ -3002,7 +3002,7 @@
       }
     }
     var c = teCatBySym(sym);
-    var name = (optName && String(optName).trim()) || (c ? c.k : sym);
+    var name = (optName && String(optName).trim()) || (c ? (c.sh || c.k) : sym);
     var id = "t:" + sym.replace(/[^A-Z0-9]/g, "");
     teMsg(name + " · 3년 시세를 조회하는 중…");
     teSeries(sym, true).then(function(ser){
@@ -3018,8 +3018,8 @@
       custom.push(def); ORDER.push(def.id);
       savePrefs(); rebuild();
       renderTeList(); renderTeQuick();
-      teMsg(def.name + " 추가됨 · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" +
-            (ser.meta.unit ? " · " + ser.meta.unit : ""));
+      teMsg(def.name + (c && c.k && c.k !== def.name ? " (" + c.k + ")" : "") + " 추가됨 · 3년 최고 " +
+            nf(def.ath, def.dec) + " (" + def.athDate + ")" + (ser.meta.unit ? " · " + ser.meta.unit : ""));
       teHist(def, TF);
     }).catch(function(e){
       teMsg("추가하지 못했습니다: " + ((e && e.message) || e) + " — URL·이름을 확인해 주세요.", true);
@@ -3068,7 +3068,9 @@
   }
   /* 현재가·전일 대비: 최근 1주 일별 응답의 마지막 행 */
   function teQuoteOne(a){
-    return teGet(a.te, "1w", "1d").then(function(d){
+    var sym = String(a.te||"").toUpperCase();
+    var ready = TE_SER[sym] ? Promise.resolve(0) : teSeries(sym).then(function(){ return 1; }, function(){ return 0; });
+    return ready.then(function(){ return teGet(a.te, "1w", "1d"); }).then(function(d){
       var s = d && d.series && d.series[0], rows = s && s.data;
       if(!rows || !rows.length) throw new Error("no rows");
       var last = rows[rows.length - 1];
@@ -3158,7 +3160,7 @@
       shown++;
       var have = false;
       for(var i=0;i<ASSETS.length;i++){ if(String(ASSETS[i].te||"").toUpperCase() === c.s){ have = true; break; } }
-      TE_ROWS.push({kind:"te", sym:c.s, ss:c.ss || null, name:c.k});
+      TE_ROWS.push({kind:"te", sym:c.s, ss:c.ss || null, name:(c.sh || c.k)});
       html += '<div class="it"><div class="nm2">' + escHtml(c.k) +
         '<span class="sub2">' + escHtml(c.n + (c.un ? " · " + c.un : "") + (c.ss ? " · SunSirs #" + c.ss : "")) + '</span></div>' +
         '<button class="go' + (have ? " off" : "") + '" type="button" data-tei="' + (TE_ROWS.length - 1) + '"' +
@@ -3192,11 +3194,11 @@
       return;
     }
     var c = teCatBySym(q);
-    if(c){ addTe(c.s, c.k, c.ss); return; }
+    if(c){ addTe(c.s, c.sh || c.k, c.ss); return; }
     var ql = q.toLowerCase();
     for(var i=0;i<TE_CAT.length;i++){
       var x = TE_CAT[i];
-      if((x.k + " " + x.n + " " + x.x).toLowerCase().indexOf(ql) >= 0){ addTe(x.s, x.k, x.ss); return; }
+      if((x.k + " " + x.n + " " + x.x).toLowerCase().indexOf(ql) >= 0){ addTe(x.s, x.sh || x.k, x.ss); return; }
     }
     teMsg(q + " 를 TradingEconomics에서 찾는 중…");
     teSearch(q).then(function(hits){
@@ -4799,7 +4801,7 @@
         if(b.getAttribute("data-back")){ restoreDefault(b.getAttribute("data-back")); renderBackList(); return; }
         if(b.getAttribute("data-hl")){ addHL(b.getAttribute("data-hl")+""); return; }
         if(b.getAttribute("data-tei") !== null){ pickTeRow(Number(b.getAttribute("data-tei"))); return; }
-        if(b.getAttribute("data-teq")){ var tc = teCatBySym(b.getAttribute("data-teq")); if(tc) addTe(tc.s, tc.k, tc.ss); return; }
+        if(b.getAttribute("data-teq")){ var tc = teCatBySym(b.getAttribute("data-teq")); if(tc) addTe(tc.s, tc.sh || tc.k, tc.ss); return; }
         if(b.getAttribute("data-ivi") !== null){ pickInvRow(Number(b.getAttribute("data-ivi"))); return; }
         if(b.getAttribute("data-nvi") !== null){ pickNvRow(Number(b.getAttribute("data-nvi"))); return; }
         if(b.getAttribute("data-ivq") !== null){ addInvesting(Number(b.getAttribute("data-ivq"))); return; }
