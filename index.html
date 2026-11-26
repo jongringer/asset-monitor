@@ -2077,6 +2077,7 @@
 
   /* ───────── 렌더 ───────── */
   function buildList(){
+    SPKC = {};                       // 목록 DOM을 새로 만들면 스파크 캐시가 가리키던 옛 SVG도 버린다
     $("#list").innerHTML = ORDER.map(function(id){
       var a = BY[id];
       return '<div class="row stale'+(a.mkt==="xyz"?' xyz':'')+'" id="row-'+a.id+'" data-id="'+a.id+'">'+
@@ -3070,7 +3071,11 @@
     return teGet(a.te, "1w", "1d").then(function(d){
       var s = d && d.series && d.series[0], rows = s && s.data;
       if(!rows || !rows.length) throw new Error("no rows");
-      var last = rows[rows.length - 1], px = Number(last[1]);
+      var last = rows[rows.length - 1];
+      var cache = TE_SER[String(a.te||"").toUpperCase()];
+      var tail = cache && cache.rows.length ? cache.rows[cache.rows.length - 1] : null;
+      if(tail && tail[0] > last[0]) last = tail;      // 1주 응답이 하루 늦게 캐시될 때가 있다
+      var px = Number(last[1]);
       if(!(px > 0)) throw new Error("bad px");
       state[a.id] = {px:px,
                      chg:(last[2] != null && isFinite(Number(last[2]))) ? Number(last[2]) : null,
