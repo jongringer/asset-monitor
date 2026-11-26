@@ -571,6 +571,7 @@
       <div class="shh"><b>종목 추가</b><button class="x" id="ovx" type="button">닫기</button></div>
       <div class="tabs" id="tabs">
         <button type="button" data-tab="inv" class="on">인베스팅닷컴</button>
+        <button type="button" data-tab="te">원자재 (TE·SunSirs)</button>
         <button type="button" data-tab="nv">네이버 증권</button>
         <button type="button" data-tab="back">삭제한 종목</button>
         <button type="button" data-tab="xyz">하이퍼리퀴드</button>
@@ -581,6 +582,12 @@
         <div class="chips" id="ivQuick"></div>
         <div class="lst" id="lstIV"></div>
         <div class="msg" id="msgIV"></div>
+      </div>
+      <div class="pane" id="pane-te">
+        <input class="fld" id="teq" type="search" placeholder="TradingEconomics·SunSirs URL 또는 이름 (예: 고무, rubber, 388)" autocomplete="off">
+        <div class="chips" id="teQuick"></div>
+        <div class="lst" id="lstTE"></div>
+        <div class="msg" id="msgTE"></div>
       </div>
       <div class="pane" id="pane-nv">
         <input class="fld" id="nq" type="search" placeholder="종목명·6자리 코드·네이버 URL (예: 현대차, 005380, 069500)" autocomplete="off">
@@ -1030,6 +1037,7 @@
     return krPhaseNow() !== "closed";
   }
   function isLive(a){
+    if(a.te) return teTradedToday(a);              // TradingEconomics·SunSirs: 오늘 자 일봉이 있으면 오늘 거래
     if(a.inv) return invTradedToday(a);            // investing: 오늘 자 일봉이 있으면 그 시장이 오늘 거래했다
     if(a.nxt) return krLiveNow();                  // 네이버 증권 종목: 프리·정규·애프터 모두 장중(초록)
     if(a.dual){
@@ -1930,6 +1938,7 @@
     custom.forEach(function(c, k){
       if(c.hl && !HISTS[tf][c.id]) setTimeout(function(){ loadHLHist(c, tf); }, k*250);
       if(c.inv && !HISTS[tf][c.id]) setTimeout(function(){ loadInvHist(c, tf); }, 300 + k*250);
+      if(c.te && !HISTS[tf][c.id]) setTimeout(function(){ teHist(c, tf); }, 300 + k*250);
       if(c.nvCode && !HISTS[tf][c.id]) setTimeout(function(){ loadNvHist(c, tf); }, 600 + k*250);
     });
   }
@@ -1941,7 +1950,7 @@
       if(tf === TF) return;
       var map = HISTS[tf] || {};
       var need = !HISTS_T[tf] || (Date.now() - HISTS_T[tf]) > HIST_TTL ||
-        ASSETS.some(function(a){ return (histSym(a) || a.hl || a.inv || a.nvCode) && !map[a.id]; });
+        ASSETS.some(function(a){ return (histSym(a) || a.hl || a.inv || a.nvCode || a.te) && !map[a.id]; });
       if(need) loadHistFor(tf);
     });
   }
@@ -2337,12 +2346,13 @@
   function setTab(t){
     var tabs = document.querySelectorAll("#tabs button");
     for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].getAttribute("data-tab") === t);
-    ["back","inv","nv","xyz","yahoo"].forEach(function(k){
+    ["back","inv","te","nv","xyz","yahoo"].forEach(function(k){
       var p = document.getElementById("pane-"+k); if(p) p.classList.toggle("on", k === t);
     });
     LAST_TAB = t;
     if(t === "back") renderBackList();
     if(t === "inv"){ renderInvQuick(); renderInvList(); }
+    if(t === "te"){ renderTeQuick(); renderTeList(); }
     if(t === "nv"){ renderNvQuick(); renderNvList(NV_ROWS); }
     if(t === "xyz"){ renderHLList(); if(!HL_ALL) fetchHLList(); }
   }
@@ -2805,6 +2815,10 @@
         (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
     });
     box.innerHTML = html || '<div class="empty">검색 결과가 없습니다 · Investing.com URL이나 pair ID를 붙여넣어 보세요</div>';
+    if(teParse(q)){
+      invMsg("TradingEconomics·SunSirs URL입니다 · Enter를 누르면 '원자재' 탭에서 추가합니다.");
+      return;
+    }
     invMsg(q ? (direct && !list.length ? "URL·ID로 추가할 수 있습니다 · 위 '추가'를 탭하거나 Enter" : ("카탈로그 " + list.length + "건 중 " + shown + "건 표시")) : "검색하거나 위 추천에서 고르세요 · Investing.com URL·pair ID 붙여넣기 가능");
   }
   function pickInvRow(i){
@@ -2825,7 +2839,369 @@
       var x = INV_CAT[i];
       if((x.k + " " + x.n + " " + x.x).toLowerCase().indexOf(ql) >= 0){ addInvesting(x.p, x.k); return; }
     }
+    var tp = teParse(q);
+    if(tp){ setTab("te"); var te0 = document.getElementById("teq"); if(te0) te0.value = q; renderTeList(); pickTeRow(0); return; }
     invMsg("그 이름의 종목을 찾지 못했습니다. Investing.com URL·pair ID를 붙여넣어 주세요.", true);
+  }
+
+  /* ───────── TradingEconomics · SunSirs 종목 추가 ─────────
+     TradingEconomics는 자기 차트 API(charts-api.tradingeconomics.com)를 CORS * 로 열어 둔다.
+     응답은 base64 → XOR(TEObfuscationkey) → gzip 이라 브라우저 DecompressionStream("gzip")으로 푼다.
+     행 형식은 [시각(초), 종가, 전일대비%, 대비폭] — 시·고·저를 따로 주지 않으므로
+     캔들은 직전 종가를 시가로 삼아 종가 계열에서 만들고, 3년 최고점도 그 종가 계열의 최대값이다.
+     SunSirs(100ppi) 상품은 같은 값을 TradingEconomics가 옮겨 둔 심볼(예: 388 SBR → SBR:COM)로 받는다. */
+  var TE_API   = "https://charts-api.tradingeconomics.com/markets/";
+  var TE_OBF   = "tradingeconomics-charts-core-api-key";
+  var TE_TTL   = 60000;                      // TE 행은 60초 간격으로 갱신
+  var TE_CAT = [
+    {s:"JN1:COM",    k:"고무 (Rubber)",     n:"Rubber",           u:"commodity/rubber",           un:"US¢/kg", d:2, x:"고무 러버 rubber 천연고무 tradingeconomics te"},
+    {s:"SBR:COM",    k:"스티렌부타디엔고무", n:"Synthetic Rubber", u:"commodity/synthetic-rubber", un:"CNY/t",  d:2, ss:388, x:"sbr 합성고무 스티렌부타디엔 sunsirs 388 100ppi"},
+    {s:"CL1:COM",    k:"WTI 원유",          n:"Crude Oil",        u:"commodity/crude-oil",        un:"$",      d:3, x:"원유 기름 wti crudecil"},
+    {s:"CO1:COM",    k:"브렌트유",          n:"Brent",            u:"commodity/brent-crude-oil",  un:"$",      d:3, x:"브렌트 원유 brent"},
+    {s:"XAUUSD:CUR", k:"금 현물",           n:"Gold",             u:"commodity/gold",             un:"$",      d:2, x:"금 골드 gold spot"},
+    {s:"XAGUSD:CUR", k:"은 현물",           n:"Silver",           u:"commodity/silver",           un:"$",      d:3, x:"은 실버 silver"},
+    {s:"HG1:COM",    k:"구리",              n:"Copper",           u:"commodity/copper",           un:"$",      d:4, x:"구리 동 copper"},
+    {s:"NG1:COM",    k:"천연가스",          n:"Natural gas",      u:"commodity/natural-gas",      un:"$",      d:4, x:"천연가스 가스 gas"},
+    {s:"W 1:COM",    k:"밀",                n:"Wheat",            u:"commodity/wheat",            un:"¢",      d:2, x:"밀 소맥 wheat"},
+    {s:"C 1:COM",    k:"옥수수",            n:"Corn",             u:"commodity/corn",             un:"¢",      d:4, x:"옥수수 콘 corn"},
+    {s:"S 1:COM",    k:"대두",              n:"Soybeans",         u:"commodity/soybeans",         un:"¢",      d:2, x:"대두 콩 soybean"},
+    {s:"KC1:COM",    k:"커피",              n:"Coffee",           u:"commodity/coffee",           un:"¢",      d:2, x:"커피 coffee"},
+    {s:"SB1:COM",    k:"설탕",              n:"Sugar",            u:"commodity/sugar",            un:"¢",      d:2, x:"설탕 sugar"},
+    {s:"CT1:COM",    k:"면화",              n:"Cotton",           u:"commodity/cotton",           un:"¢",      d:3, x:"면화 목화 cotton"},
+    {s:"CC1:COM",    k:"코코아",            n:"Cocoa",            u:"commodity/cocoa",            un:"$",      d:2, x:"코코아 cocoa"},
+    {s:"PLO:COM",    k:"팜유",              n:"Palm Oil",         u:"commodity/palm-oil",         un:"MYR",    d:2, x:"팜유 팜오일 palm oil"},
+    {s:"SCO:COM",    k:"철광석",            n:"Iron Ore",         u:"commodity/iron-ore",         un:"$",      d:2, x:"철광석 아이언오어 iron ore"},
+    {s:"DJM:COM",    k:"원료탄",            n:"Coking Coal",      u:"commodity/coking-coal",      un:"$",      d:2, x:"원료탄 점결탄 coking coal"},
+    {s:"SPX:IND",    k:"S&P 500 (TE)",      n:"US 500 Index",     u:"united-states/stock-market", un:"",       d:2, x:"에스앤피 미국지수 sp500"},
+    {s:"KOSPI:IND",  k:"코스피 (TE)",       n:"KOSPI",            u:"south-korea/stock-market",   un:"",       d:2, x:"코스피 한국지수 kospi"}
+  ];
+  /* SunSirs 상품번호 → TradingEconomics 심볼 (같은 값을 옮겨 둔 것). 카탈로그에 없는 번호는 페이지를 읽어 이름을 확인한다. */
+  var SS_KNOWN = { 388:{sym:"SBR:COM", name:"스티렌부타디엔고무", un:"CNY/t"} };
+  var TE_SER = {};                            // sym → {at, rows, meta} · 10분 캐시
+
+  function teCatBySym(sym){
+    var s = String(sym||"").toUpperCase();
+    for(var i=0;i<TE_CAT.length;i++) if(String(TE_CAT[i].s).toUpperCase() === s) return TE_CAT[i];
+    return null;
+  }
+  function teCatByPath(path){
+    var p = String(path||"").replace(/^\/+/, "").toLowerCase();
+    for(var i=0;i<TE_CAT.length;i++) if(String(TE_CAT[i].u).toLowerCase() === p) return TE_CAT[i];
+    return null;
+  }
+  function teMsg(txt, bad){
+    var m = document.getElementById("msgTE");
+    if(!m) return;
+    m.className = "msg" + (bad ? " bad" : "");
+    m.textContent = txt;
+  }
+  /* base64 → XOR → gzip 풀기. 브라우저 내장 DecompressionStream이면 추가 라이브러리가 필요 없다. */
+  function teUnzip(b64){
+    var bin = atob(b64), n = bin.length, u = new Uint8Array(n);
+    for(var i=0;i<n;i++) u[i] = bin.charCodeAt(i);
+    for(var j=0;j<n;j++) u[j] ^= TE_OBF.charCodeAt(j % TE_OBF.length);
+    if(typeof DecompressionStream !== "function") return Promise.reject(new Error("이 브라우저는 압축 해제를 지원하지 않습니다"));
+    return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+  }
+  function teGet(sym, span, iv){
+    var url = TE_API + encodeURIComponent(sym) + "?span=" + (span || "3y") + "&interval=" + (iv || "1d") + "&_=" + Date.now();
+    var ctl = new AbortController();
+    var timer = setTimeout(function(){ ctl.abort(); }, 12000);
+    return fetch(url, {signal:ctl.signal, cache:"no-store", mode:"cors", credentials:"omit"})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(function(txt){
+        clearTimeout(timer);
+        var payload;
+        try{ payload = JSON.parse(txt); }catch(e){ throw new Error("응답을 읽지 못했습니다"); }
+        return teUnzip(payload).then(JSON.parse);
+      }, function(e){ clearTimeout(timer); throw e; });
+  }
+  /* TE 3년 일별 시세 — 봉 단위(일·주·월) 모두 이 계열에서 만든다 */
+  function teSeries(sym, force){
+    sym = String(sym||"").trim().toUpperCase();
+    var c = TE_SER[sym];
+    if(!force && c && (Date.now() - c.at) < 600000) return Promise.resolve(c);
+    return teGet(sym, "3y", "1d").then(function(d){
+      var s = d && d.series && d.series[0];
+      var rows = (s && s.data) || [];
+      rows = rows.filter(function(r){ var v = Number(r && r[1]); return r && r[0] && v > 0 && isFinite(v); })
+                 .map(function(r){ return [Number(r[0]), Number(r[1]), r[2], r[3]]; });
+      if(rows.length < 2) throw new Error("과거 시세가 없습니다");
+      var o = {at:Date.now(), rows:rows,
+               meta:{sym:String(s.symbol||sym), name:String(s.name||sym), unit:String(s.unit||""),
+                     dec:(Number(s.decimals) >= 0 && isFinite(Number(s.decimals))) ? Number(s.decimals) : 2}};
+      TE_SER[sym] = o;
+      return o;
+    });
+  }
+  /* 종가 계열 → 캔들. 시가는 직전 종가, 고·저는 시가·종가 중 큰/작은 값(장중 범위는 원천이 주지 않는다). */
+  function teBars(ser){
+    var t = [], o = [], h = [], l = [], c = [], prev = null;
+    ser.rows.forEach(function(r){
+      var px = r[1];
+      var op = (prev == null) ? px : prev;
+      t.push(r[0]); o.push(op); h.push(Math.max(op, px)); l.push(Math.min(op, px)); c.push(px);
+      prev = px;
+    });
+    return {t:t, o:o, h:h, l:l, c:c, v:t.map(function(){ return null; })};
+  }
+  function teApplyAth(a, ser){
+    var best = 0, bt = 0;
+    ser.rows.forEach(function(r){ if(r[1] > best){ best = r[1]; bt = r[0]; } });
+    if(best > 0){
+      a.ath = best;
+      a.athDate = bt ? ymd2(bt) + " 종가" : "";
+    }
+    if(!(a.dec > 0)) a.dec = ser.meta.dec || 2;
+    return a;
+  }
+  /* TradingEconomics·SunSirs URL/슬러그 알아보기 */
+  function teParse(txt){
+    var s = String(txt||"").trim();
+    if(!s) return null;
+    var m = /sunsirs\.com\/(?:[a-z]{2}\/)?prodetail-(\d+)\.html/i.exec(s) ||
+            /prodetail-(\d+)\.html/i.exec(s) ||
+            /100ppi\.com\/(?:[a-z]+\/)*vane\/detail-(\d+)/i.exec(s);
+    if(m) return {kind:"ss", id:Number(m[1])};
+    m = /tradingeconomics\.com\/(?:[a-z]{2}\/)?([a-z0-9%._\-\/]+)/i.exec(s);
+    if(m) return {kind:"te", path:m[1].replace(/[?#].*$/, "").replace(/\/+$/, "")};
+    if(/^(?:commodity|united-states|south-korea|china|japan)\//i.test(s)) return {kind:"te", path:s.replace(/[?#].*$/, "").replace(/\/+$/, "")};
+    return null;
+  }
+  function teSearch(q){
+    var url = "https://brains.tradingeconomics.com/v2/search/forex,bond,idx,commodity,mkt?q=" + encodeURIComponent(q) + "&_=" + Date.now();
+    return getText(url, 9000).then(jsonLoose).then(function(d){ return (d && d.hits) || []; });
+  }
+  /* TE URL(슬러그) → 심볼. 카탈로그에 있으면 그대로, 없으면 TE 검색에서 같은 URL을 우선 고른다. */
+  function teResolvePath(path){
+    var c = teCatByPath(path);
+    if(c) return Promise.resolve({sym:c.s, name:c.k, ss:c.ss || null, unit:c.un});
+    var slug = String(path).replace(/^.*\//, "").replace(/[-_]/g, " ");
+    return teSearch(slug).then(function(hits){
+      var want = "/" + String(path).replace(/^\/+/, "").toLowerCase();
+      var exact = null, first = null;
+      hits.forEach(function(h){
+        if(!h || !h.s) return;
+        var u = String(h.url || "").toLowerCase();
+        if(!exact && u === want) exact = h;
+        if(!first && (h.type === "commodity" || h.group === "Markets")) first = h;
+      });
+      var hit = exact || first || hits[0];
+      if(!hit || !hit.s) throw new Error("TradingEconomics에서 그 종목을 찾지 못했습니다");
+      return {sym:String(hit.s).toUpperCase(), name:(hit.name || slug), ss:null, unit:(hit.unit || "")};
+    });
+  }
+  /* 추가: 3년 시세를 먼저 받아 3년 최고점을 정하고 목록에 붙인다 */
+  function addTe(sym, optName, optSs){
+    sym = String(sym||"").trim().toUpperCase();
+    if(!sym){ teMsg("종목 심볼을 확인해 주세요.", true); return; }
+    for(var i=0;i<ASSETS.length;i++){
+      if(String(ASSETS[i].te||"").toUpperCase() === sym || (optSs && ASSETS[i].ss === optSs)){
+        teMsg("이미 목록에 있는 종목입니다.", true); return;
+      }
+    }
+    var c = teCatBySym(sym);
+    var name = (optName && String(optName).trim()) || (c ? c.k : sym);
+    var id = "t:" + sym.replace(/[^A-Z0-9]/g, "");
+    teMsg(name + " · 3년 시세를 조회하는 중…");
+    teSeries(sym, true).then(function(ser){
+      if(BY[id]){ teMsg("이미 목록에 있는 종목입니다.", true); return; }
+      var def = {id:id, custom:true, name:name, te:sym, ss:(optSs || null), mkt:"te",
+                 yahoo:null, ath:0, athDate:"", dec:(c ? c.d : ser.meta.dec || 2), cur:"", chgLabel:"전일",
+                 tag:(optSs ? "SunSirs" : "TE")};
+      teApplyAth(def, ser);
+      if(!(def.dec > 0)) def.dec = ser.meta.dec;
+      var last = ser.rows[ser.rows.length - 1];
+      state[def.id] = {px:last[1], chg:(last[2] != null && isFinite(Number(last[2]))) ? Number(last[2]) : null, t:Date.now()};
+      def.teDay = last[0];
+      custom.push(def); ORDER.push(def.id);
+      savePrefs(); rebuild();
+      renderTeList(); renderTeQuick();
+      teMsg(def.name + " 추가됨 · 3년 최고 " + nf(def.ath, def.dec) + " (" + def.athDate + ")" +
+            (ser.meta.unit ? " · " + ser.meta.unit : ""));
+      teHist(def, TF);
+    }).catch(function(e){
+      teMsg("추가하지 못했습니다: " + ((e && e.message) || e) + " — URL·이름을 확인해 주세요.", true);
+    });
+  }
+  /* SunSirs 상품 추가: 번호를 알면 바로, 모르면 페이지에서 이름을 읽어 TradingEconomics 심볼을 찾는다 */
+  function addSunSirs(id){
+    id = Number(id);
+    if(!(id > 0)){ teMsg("SunSirs 상품 번호를 확인해 주세요.", true); return; }
+    if(SS_KNOWN[id]){ addTe(SS_KNOWN[id].sym, SS_KNOWN[id].name, id); return; }
+    var url = "https://r.jina.ai/https://www.sunsirs.com/kr/prodetail-" + id + ".html";
+    teMsg("SunSirs #" + id + " 상품 정보를 읽는 중…");
+    getText(url, 20000).then(function(txt){
+      var name = "";
+      var mt = /^Title:\s*(.+)$/m.exec(txt || "");
+      if(mt) name = String(mt[1]).split(/\s+-\s+/)[0].replace(/가격$/, "").trim();
+      if(!name) throw new Error("상품 이름을 읽지 못했습니다");
+      return teSearch(name).then(function(hits){
+        var hit = null;
+        for(var i=0;i<hits.length;i++){
+          if(hits[i] && hits[i].s && (hits[i].type === "commodity" || hits[i].group === "Markets")){ hit = hits[i]; break; }
+        }
+        if(!hit) throw new Error("TradingEconomics에 이 상품의 시세가 없습니다");
+        addTe(String(hit.s).toUpperCase(), name, id);
+      });
+    }).catch(function(e){
+      teMsg("SunSirs #" + id + " 를 추가하지 못했습니다: " + ((e && e.message) || e), true);
+    });
+  }
+  /* TE 종목의 봉 단위 미니 그래프 */
+  function teHist(a, tf){
+    tf = tf || TF;
+    if(!a || !a.te) return;
+    var key = "te" + a.id + tf;
+    if(histBusy[key]) return;
+    histBusy[key] = 1;
+    teSeries(a.te).then(function(ser){
+      var b = cvAgg(teBars(ser), tf, null, true);      // 3년 일별 → 그 봉 단위(월 37·주 53·일 64봉)
+      var v = histSeries(a, b.c);
+      if(!v) throw new Error("no series");
+      barsPut(tf, a.id, b);
+      histStored(tf, a.id, v);
+      if(DBG) dg("tehist " + a.te + " " + v.length);
+    }).catch(function(e){ if(DBG) dg("tehist " + a.te + " x"); })
+      .then(function(){ histBusy[key] = 0; });
+  }
+  /* 현재가·전일 대비: 최근 1주 일별 응답의 마지막 행 */
+  function teQuoteOne(a){
+    return teGet(a.te, "1w", "1d").then(function(d){
+      var s = d && d.series && d.series[0], rows = s && s.data;
+      if(!rows || !rows.length) throw new Error("no rows");
+      var last = rows[rows.length - 1], px = Number(last[1]);
+      if(!(px > 0)) throw new Error("bad px");
+      state[a.id] = {px:px,
+                     chg:(last[2] != null && isFinite(Number(last[2]))) ? Number(last[2]) : null,
+                     t:Date.now()};
+      if(last[0]) a.teDay = Number(last[0]);
+      return 1;
+    });
+  }
+  var teBusy = 0;
+  function getTeQuotes(){
+    var list = ASSETS.filter(function(a){
+      return a.te && (!state[a.id] || (Date.now() - (state[a.id].t || 0)) > TE_TTL);
+    });
+    if(!list.length) return Promise.resolve(0);
+    if(teBusy && Date.now() - teBusy < 20000) return Promise.resolve(0);
+    list = list.slice(0, 4);                  // 한 주기에 최대 4종
+    teBusy = Date.now();
+    var n = 0, i = 0;
+    function step(){
+      if(i >= list.length) return n;
+      var a = list[i++];
+      return teQuoteOne(a).then(function(){ n++; }, function(e){ if(DBG) dg("teq" + a.te + " x"); }).then(step);
+    }
+    return Promise.resolve().then(step).then(function(v){ teBusy = 0; return v; },
+                                             function(){ teBusy = 0; return 0; });
+  }
+  function teRefetchAth(a){
+    teSeries(a.te, true).then(function(ser){
+      teApplyAth(a, ser);
+      savePrefs(); renderAll(); teHist(a, TF);
+    }).catch(function(){ if(DBG) dg("teath x"); });
+  }
+  /* TE 행의 장중 표시: 오늘 자 일봉이 있으면 그 상품이 오늘 거래됐다고 본다(SunSirs는 평일만) */
+  function teTradedToday(a){
+    if(!a.teDay) return false;
+    var n = new Date();
+    return a.teDay >= Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()) / 1000;
+  }
+  function cvTeBars(a, tf){
+    return teSeries(a.te).then(function(ser){ return cvAgg(teBars(ser), tf, a, true); });
+  }
+
+  /* 모달: 원자재 (TE·SunSirs) 탭 */
+  var TE_ROWS = [];
+  function renderTeQuick(){
+    var box = document.getElementById("teQuick");
+    if(!box) return;
+    var html = "";
+    TE_CAT.forEach(function(c){
+      html += '<button type="button" data-teq="' + escHtml(c.s) + '">' + escHtml(c.k) + '</button>';
+    });
+    box.innerHTML = html;
+  }
+  function renderTeList(){
+    var box = document.getElementById("lstTE");
+    if(!box) return;
+    var q = ((document.getElementById("teq") || {}).value || "").trim();
+    var ql = q.toLowerCase();
+    TE_ROWS = [];
+    var html = "";
+    var p = teParse(q);
+    if(!p && /^\d{1,5}$/.test(q)) p = {kind:"ss", id:Number(q)};
+    if(p){
+      var c0 = (p.kind === "te") ? teCatByPath(p.path) : (SS_KNOWN[p.id] || null);
+      var nm = (p.kind === "te")
+        ? (c0 ? c0.k : "TradingEconomics · " + p.path)
+        : ("SunSirs #" + p.id + (c0 ? " · " + c0.name : ""));
+      TE_ROWS.push({kind:p.kind, path:p.path, id:p.id, name:nm});
+      html += '<div class="it"><div class="nm2">' + escHtml(nm) +
+        '<span class="sub2">붙여넣은 URL로 바로 추가 · ' +
+        escHtml(p.kind === "te" ? p.path : ("prodetail-" + p.id + ".html")) + '</span></div>' +
+        '<button class="go" type="button" data-tei="0">추가</button></div>';
+    }
+    var shown = 0;
+    TE_CAT.forEach(function(c){
+      if(ql){
+        var hay = (c.k + " " + c.n + " " + c.s + " " + c.x).toLowerCase();
+        if(hay.indexOf(ql) < 0) return;
+      } else if(shown >= 8) return;             // 검색어가 없으면 자주 쓰는 것만
+      shown++;
+      var have = false;
+      for(var i=0;i<ASSETS.length;i++){ if(String(ASSETS[i].te||"").toUpperCase() === c.s){ have = true; break; } }
+      TE_ROWS.push({kind:"te", sym:c.s, ss:c.ss || null, name:c.k});
+      html += '<div class="it"><div class="nm2">' + escHtml(c.k) +
+        '<span class="sub2">' + escHtml(c.n + (c.un ? " · " + c.un : "") + (c.ss ? " · SunSirs #" + c.ss : "")) + '</span></div>' +
+        '<button class="go' + (have ? " off" : "") + '" type="button" data-tei="' + (TE_ROWS.length - 1) + '"' +
+        (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
+    });
+    box.innerHTML = html || '<div class="empty">검색 결과가 없습니다 · TradingEconomics·SunSirs URL을 붙여넣어 보세요</div>';
+    var n = TE_CAT.filter(function(c){
+      return !ql || (c.k + " " + c.n + " " + c.s + " " + c.x).toLowerCase().indexOf(ql) >= 0;
+    }).length;
+    teMsg(q ? ((p ? "URL·상품 번호로 추가할 수 있습니다 · " : "") + "카탈로그 " + n + "건")
+            : "검색하거나 위 추천에서 고르세요 · TradingEconomics URL(ko.tradingeconomics.com/commodity/rubber)·SunSirs URL(prodetail-388) 붙여넣기 가능");
+  }
+  function pickTeRow(i){
+    var r = TE_ROWS[i];
+    if(!r) return;
+    if(r.kind === "ss"){ addSunSirs(r.id); return; }
+    if(r.sym){ addTe(r.sym, r.name, r.ss); return; }
+    teResolvePath(r.path).then(function(x){ addTe(x.sym, x.name, x.ss); })
+      .catch(function(e){ teMsg("추가하지 못했습니다: " + ((e && e.message) || e), true); });
+  }
+  function teEnter(){
+    var el = document.getElementById("teq");
+    var q = el ? el.value.trim() : "";
+    if(!q) return;
+    var p = teParse(q);
+    if(!p && /^\d{1,5}$/.test(q)) p = {kind:"ss", id:Number(q)};
+    if(p){
+      if(p.kind === "ss"){ addSunSirs(p.id); return; }
+      teResolvePath(p.path).then(function(x){ addTe(x.sym, x.name, x.ss); })
+        .catch(function(e){ teMsg("추가하지 못했습니다: " + ((e && e.message) || e), true); });
+      return;
+    }
+    var c = teCatBySym(q);
+    if(c){ addTe(c.s, c.k, c.ss); return; }
+    var ql = q.toLowerCase();
+    for(var i=0;i<TE_CAT.length;i++){
+      var x = TE_CAT[i];
+      if((x.k + " " + x.n + " " + x.x).toLowerCase().indexOf(ql) >= 0){ addTe(x.s, x.k, x.ss); return; }
+    }
+    teMsg(q + " 를 TradingEconomics에서 찾는 중…");
+    teSearch(q).then(function(hits){
+      var hit = null;
+      for(var k=0;k<hits.length;k++){
+        if(hits[k] && hits[k].s && (hits[k].type === "commodity" || hits[k].group === "Markets")){ hit = hits[k]; break; }
+      }
+      if(!hit){ teMsg("그 이름의 종목을 찾지 못했습니다. TradingEconomics·SunSirs URL을 붙여넣어 주세요.", true); return; }
+      addTe(String(hit.s).toUpperCase(), hit.name || q, null);
+    }).catch(function(e){ teMsg("검색하지 못했습니다: " + ((e && e.message) || e), true); });
   }
 
   /* ───────── 네이버 증권 종목 추가 ─────────
@@ -3446,9 +3822,9 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0, inv:0};
-    var hasInv = false;
-    for(var q=0;q<ASSETS.length;q++){ if(ASSETS[q].inv){ hasInv = true; break; } }
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0, inv:0, te:0};
+    var hasInv = false, hasTe = false;
+    for(var q=0;q<ASSETS.length;q++){ if(ASSETS[q].inv) hasInv = true; if(ASSETS[q].te) hasTe = true; }
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
@@ -3459,6 +3835,9 @@
     ];
     if(hasInv){
       tasks.push(race(getInvQuotes(), 20000).then(function(n){ res.inv = n; }).catch(function(){ res.inv = 0; }));
+    }
+    if(hasTe){
+      tasks.push(race(getTeQuotes(), 16000).then(function(n){ res.te = n; }).catch(function(){ res.te = 0; }));
     }
     if(krNow){
       tasks.push(race(getStocks(), 13000).then(function(n){ res.stk = n; }).catch(function(){ res.stk = 0; }));
@@ -3488,6 +3867,7 @@
       if(res.sa > 0) bits.push(srcTag.sa || "investing.com");
       if(res.k200 > 0) bits.push(srcTag.k200 || "PreKOSPI");
       if(res.inv > 0) bits.push("investing.com");
+      if(res.te > 0) bits.push("TradingEconomics");
       if(okX) bits.push(srcTag.xyz || "Hyperliquid");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
@@ -3848,6 +4228,7 @@
     if(CV.req[key]) return CV.req[key];
     var p;
     if(a.hl) p = cvHlBars(a, tf);
+    else if(a.te) p = cvTeBars(a, tf);                           // TradingEconomics·SunSirs에서 추가한 종목
     else if(a.inv) p = cvInvIdBars(a, tf);                       // investing.com에서 추가한 종목
     else if(a.id === "csi300") p = cvEmBars(a, tf);
     else if(a.id === "tasi" || a.id === "k200") p = cvInvBars(a, tf);
@@ -4395,6 +4776,7 @@
     if(c.hl && (!(c.ath > 0) || !HISTS[TF][c.id])) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
     if(c.inv && !(c.ath > 0)) setTimeout(function(){ invRefetchAth(c); }, 2400 + k*300);
     if(c.nvCode && !(c.ath > 0)) setTimeout(function(){ loadNvMeta(c); }, 2400 + k*300);
+    if(c.te && !(c.ath > 0)) setTimeout(function(){ teRefetchAth(c); }, 2400 + k*300);
   });
 
   /* ───────── 종목 추가 모달 배선 ───────── */
@@ -4411,6 +4793,8 @@
         if(b.getAttribute("data-tab")){ setTab(b.getAttribute("data-tab")); return; }
         if(b.getAttribute("data-back")){ restoreDefault(b.getAttribute("data-back")); renderBackList(); return; }
         if(b.getAttribute("data-hl")){ addHL(b.getAttribute("data-hl")+""); return; }
+        if(b.getAttribute("data-tei") !== null){ pickTeRow(Number(b.getAttribute("data-tei"))); return; }
+        if(b.getAttribute("data-teq")){ var tc = teCatBySym(b.getAttribute("data-teq")); if(tc) addTe(tc.s, tc.k, tc.ss); return; }
         if(b.getAttribute("data-ivi") !== null){ pickInvRow(Number(b.getAttribute("data-ivi"))); return; }
         if(b.getAttribute("data-nvi") !== null){ pickNvRow(Number(b.getAttribute("data-nvi"))); return; }
         if(b.getAttribute("data-ivq") !== null){ addInvesting(Number(b.getAttribute("data-ivq"))); return; }
@@ -4428,6 +4812,11 @@
     if(ivq){
       ivq.addEventListener("input", renderInvList);
       ivq.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); invEnter(); } });
+    }
+    var teq = document.getElementById("teq");
+    if(teq){
+      teq.addEventListener("input", renderTeList);
+      teq.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); teEnter(); } });
     }
     var nq = document.getElementById("nq");
     if(nq){
