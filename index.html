@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="자산 변동률">
 <meta name="format-detection" content="telephone=no">
-<meta name="build" content="2026-11-24-kakao-bridge">
+<meta name="build" content="2026-11-28-large-type">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
 <meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·NAVER·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 40개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스·NAVER는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
@@ -66,19 +66,21 @@
     box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.65)}
   .tfs button:active{background:rgba(255,255,255,.12)}
   .tfs button.on:active{background:linear-gradient(180deg,#D8E2EE 0%,#AEBECF 100%)}
-  .tfh{flex:1 1 auto;min-width:0;text-align:right;font-size:.58em;font-weight:700;letter-spacing:.02em;
+  .tfr{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;justify-content:flex-end;gap:.7em}
+  .tfh{flex:0 1 auto;min-width:0;text-align:right;font-size:.66em;font-weight:700;letter-spacing:.02em;
     color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
   .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
   /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
   .ordreset{all:unset;display:none;cursor:pointer;flex:0 0 auto;white-space:nowrap;
-    font-size:.6em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
-    padding:.18em .52em;border-radius:99px;border:1px dashed rgba(255,255,255,.16);line-height:1.4}
+    font-size:.68em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
+    padding:.24em .58em;border-radius:99px;border:1px dashed rgba(255,255,255,.16);line-height:1.4}
   .ordreset.on{display:inline-flex;align-items:center;gap:.26em}
   .ordreset svg{width:.95em;height:.95em;display:block;stroke:currentColor;fill:none;
     stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
   .ordreset:active{color:#C3CBD4;border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.06)}
-  .ttl{font-size:.64em;font-weight:700;letter-spacing:.19em;color:var(--dim2);text-transform:uppercase}
+  .ttl{min-width:0;font-size:.72em;font-weight:700;letter-spacing:.16em;color:var(--dim2);text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .clock{font-size:.88em;font-weight:700;font-variant-numeric:tabular-nums;color:#D3DAE2;letter-spacing:.01em}
   .clock .tz{font-size:.6em;color:var(--dim2);font-weight:700;margin-left:.34em;letter-spacing:.12em}
   .sub{margin-top:.26em;display:flex;align-items:center;gap:.42em;min-width:0}
@@ -214,10 +216,14 @@
   /* ── 헤더 우측 묶음 + 추가 버튼 ── */
   .hrow{display:flex;align-items:center;justify-content:space-between;gap:.4em}
   .hright{display:flex;align-items:center;gap:.34em;flex:0 0 auto}
-  .addbtn{all:unset;cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-    font-size:.58em;font-weight:800;letter-spacing:.01em;color:#CFE0F2;white-space:nowrap;
-    padding:.5em .72em;border-radius:99px;border:1px solid rgba(124,160,220,.38);background:rgba(124,160,220,.14);line-height:1.25}
-  .addbtn:active{background:rgba(124,160,220,.26)}
+  .addbtn{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:.2em;
+    font-size:.94em;font-weight:900;letter-spacing:-.01em;color:#FFFFFF;white-space:nowrap;
+    min-height:2.9em;padding:.5em 1.05em;border-radius:99px;
+    border:1px solid rgba(160,196,246,.62);
+    background:linear-gradient(180deg,#4C86DA 0%,#2C5FAE 100%);
+    box-shadow:0 2px 10px rgba(38,88,170,.45),inset 0 1px 0 rgba(255,255,255,.3);line-height:1.2}
+  .addbtn:active{background:linear-gradient(180deg,#3E74C4 0%,#24509A 100%);
+    box-shadow:0 1px 4px rgba(38,88,170,.5),inset 0 1px 0 rgba(255,255,255,.18)}
 
   /* ── 옆으로 밀어 삭제: 행 내용이 왼쪽으로 열리면 빨간 바탕+휴지통이 드러나다 ── */
   .row .rc{position:relative;z-index:1;transform:translateX(0);transition:transform .22s cubic-bezier(.2,.7,.25,1)}
@@ -231,41 +237,54 @@
   /* ── 종목 추가 모달 ── */
   .ov{position:absolute;inset:0;z-index:40;display:none;align-items:flex-end;justify-content:center;background:rgba(4,6,9,.7)}
   .ov.on{display:flex}
-  .sheet{width:100%;max-height:86%;display:flex;flex-direction:column;min-height:0;
-    background:#141A22;border:1px solid var(--edge);border-bottom:0;border-radius:1.1em 1.1em 0 0;
-    padding:.9em .85em calc(.8em + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 44px rgba(0,0,0,.66)}
-  .shh{display:flex;align-items:center;justify-content:space-between;gap:.6em;margin-bottom:.55em}
-  .shh b{font-size:.9em;font-weight:800;color:#fff;letter-spacing:-.015em}
-  .shh .x{all:unset;cursor:pointer;font-size:.62em;font-weight:700;color:var(--dim);padding:.45em .8em;border-radius:99px;border:1px solid var(--edge)}
-  .tabs{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.5em}
-  .tabs button{all:unset;cursor:pointer;flex:1 1 28%;text-align:center;font-size:.66em;font-weight:800;color:var(--dim);
-    padding:.62em .2em;border-radius:.5em;border:1px solid var(--edge);background:#171D24;white-space:nowrap}
+  .sheet{width:100%;max-width:100%;max-height:92%;display:flex;flex-direction:column;min-height:0;overflow:hidden;
+    background:#141A22;border:1px solid var(--edge);border-bottom:0;border-radius:1.2em 1.2em 0 0;
+    padding:1em .92em calc(.9em + env(safe-area-inset-bottom,0px));box-shadow:0 -18px 44px rgba(0,0,0,.66)}
+  .shh{display:flex;align-items:center;justify-content:space-between;gap:.6em;margin-bottom:.7em}
+  .shh b{font-size:1.3em;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.2}
+  .shh .x{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    font-size:.95em;font-weight:800;color:#C7D1DC;line-height:1.2;min-height:2.7em;padding:.5em .9em;
+    border-radius:99px;border:1px solid rgba(255,255,255,.16);background:#1B222B}
+  .shh .x:active{background:#27303B}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:.34em;margin-bottom:.6em}
+  .tabs button{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+    min-height:3.2em;text-align:center;font-size:.92em;font-weight:800;color:#9BA4AE;line-height:1.22;
+    padding:.5em .3em;border-radius:.62em;border:1px solid var(--edge);background:#171D24;
+    white-space:normal;word-break:keep-all;letter-spacing:-.01em}
   .tabs button.on{color:#fff;background:rgba(124,160,220,.2);border-color:rgba(124,160,220,.46)}
-  .pane{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:.42em}
+  .tabs button:active{background:#232B34}
+  .tabs button.on:active{background:rgba(124,160,220,.3)}
+  .pane{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:.5em}
   .pane.on{display:flex}
-  .chips{display:flex;flex-wrap:wrap;gap:.28em;flex:0 0 auto;max-height:5.4em;overflow-y:auto;overscroll-behavior:contain}
-  .chips button{all:unset;cursor:pointer;flex:0 0 auto;font-size:.63em;font-weight:800;color:#CFDCEA;
-    padding:.5em .72em;border-radius:99px;border:1px solid var(--edge);background:#1A2027}
+  .chips{display:flex;flex-wrap:wrap;gap:.34em;flex:0 0 auto;max-height:8.1em;overflow-y:auto;overscroll-behavior:contain}
+  .chips button{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;font-size:.88em;font-weight:800;color:#D3DFEC;
+    min-height:2.7em;display:inline-flex;align-items:center;
+    padding:.5em .82em;border-radius:99px;border:1px solid var(--edge);background:#1A2027}
   .chips button.off{color:#5E6773;background:transparent;border-color:rgba(255,255,255,.1);cursor:default}
   .chips button.adding{color:#F2C14E;border-color:rgba(242,193,78,.5)}
-  .fld{width:100%;font-size:.68em;font-weight:700;color:#E8EDF3;background:#0F141A;
-    border:1px solid var(--edge);border-radius:.5em;padding:.72em .8em;outline:none}
-  .fld::placeholder{color:#5E6773;font-weight:600}
+  .fld{width:100%;min-height:3em;font-size:1em;font-weight:700;color:#E8EDF3;background:#0F141A;
+    border:1px solid var(--edge);border-radius:.6em;padding:.7em .8em;outline:none;line-height:1.3}
+  .fld:focus{border-color:rgba(124,160,220,.55);background:#111923}
+  .fld::placeholder{color:#67707B;font-weight:600}
   .lst{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-    border:1px solid var(--line);border-radius:.5em;background:#11161D}
-  .it{display:flex;align-items:center;gap:.5em;padding:.6em .7em;border-bottom:1px solid var(--line)}
+    border:1px solid var(--line);border-radius:.6em;background:#11161D}
+  .it{display:flex;align-items:center;gap:.6em;padding:.62em .72em;border-bottom:1px solid var(--line)}
   .it:last-child{border-bottom:0}
-  .it .nm2{flex:1 1 auto;min-width:0;font-size:.72em;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .it .sub2{display:block;font-size:.8em;font-weight:700;color:#7C8591;margin-top:.16em}
-  .it .px2{flex:0 0 auto;font-size:.68em;font-weight:700;color:#B9C1CA;font-variant-numeric:tabular-nums;text-align:right}
-  .it .go{all:unset;cursor:pointer;flex:0 0 auto;font-size:.6em;font-weight:800;color:#A8CBEC;
-    padding:.5em .8em;border-radius:99px;border:1px solid rgba(124,160,220,.4);background:rgba(124,160,220,.16)}
+  .it .nm2{flex:1 1 auto;min-width:0;font-size:.98em;font-weight:700;color:#fff;line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .it .sub2{display:block;font-size:.92em;font-weight:700;color:#8A939E;margin-top:.18em;line-height:1.35;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .it .px2{flex:0 0 auto;font-size:.88em;font-weight:700;color:#B9C1CA;font-variant-numeric:tabular-nums;text-align:right}
+  .it .go{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+    font-size:.9em;font-weight:800;color:#BAD8F4;min-height:2.8em;
+    padding:.5em .95em;border-radius:99px;border:1px solid rgba(124,160,220,.4);background:rgba(124,160,220,.16)}
+  .it .go:active{background:rgba(124,160,220,.3)}
   .it .go.off{color:#5E6773;border-color:rgba(255,255,255,.14);background:transparent;cursor:default}
-  .empty{font-size:.64em;font-weight:700;color:#6A727C;padding:.9em .2em;text-align:center}
-  .yadd{all:unset;cursor:pointer;text-align:center;font-size:.68em;font-weight:800;color:#DCE9F7;
-    padding:.78em;border-radius:.55em;border:1px solid rgba(124,160,220,.42);background:rgba(124,160,220,.2)}
+  .empty{font-size:.88em;font-weight:700;color:#7A828C;padding:1.1em .2em;text-align:center}
+  .yadd{all:unset;cursor:pointer;display:block;box-sizing:border-box;text-align:center;font-size:1em;font-weight:800;color:#DCE9F7;
+    min-height:3em;padding:.8em;border-radius:.6em;border:1px solid rgba(124,160,220,.42);background:rgba(124,160,220,.2)}
   .yadd:active{background:rgba(124,160,220,.32)}
-  .msg{font-size:.62em;font-weight:700;color:#8B939D;min-height:1.3em;line-height:1.45}
+  .msg{flex:0 0 auto;font-size:.88em;font-weight:700;color:#939BA5;min-height:4.4em;line-height:1.45}
   .msg.bad{color:#EF8A8C}
 
   /* ── 확장 차트 모달 (스파크라인 톡 → 일봉·주봉·월봉 크게 보기) ── */
@@ -413,7 +432,10 @@
         <button type="button" data-tf="1wk" aria-pressed="false">주봉</button>
         <button type="button" data-tf="1mo" class="on" aria-pressed="true">월봉</button>
       </div>
-      <span class="tfh" id="tfh">최근 3년</span>
+      <div class="tfr">
+        <span class="tfh" id="tfh">최근 3년</span>
+        <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
+      </div>
     </div>
     <div class="hrow">
       <div class="hleft">
@@ -425,7 +447,6 @@
       </div>
       <div class="hright">
         <button class="addbtn" id="addbtn" type="button" aria-label="종목 추가">+ 추가</button>
-        <div class="clock"><span id="clock">--:--:--</span><span class="tz">KST</span></div>
       </div>
     </div>
     <div class="sub">
@@ -578,19 +599,19 @@
         <button type="button" data-tab="yahoo">Yahoo</button>
       </div>
       <div class="pane on" id="pane-inv">
-        <input class="fld" id="ivq" type="search" placeholder="종목 검색 또는 URL·pair ID (예: 달러인덱스, US10Y, 상해종합)" autocomplete="off">
+        <input class="fld" id="ivq" type="search" placeholder="종목 검색 · URL · pair ID" autocomplete="off">
         <div class="chips" id="ivQuick"></div>
         <div class="lst" id="lstIV"></div>
         <div class="msg" id="msgIV"></div>
       </div>
       <div class="pane" id="pane-te">
-        <input class="fld" id="teq" type="search" placeholder="TradingEconomics·SunSirs URL 또는 이름 (예: 고무, rubber, 388)" autocomplete="off">
+        <input class="fld" id="teq" type="search" placeholder="TE·SunSirs URL 또는 이름 (예: 고무, 388)" autocomplete="off">
         <div class="chips" id="teQuick"></div>
         <div class="lst" id="lstTE"></div>
         <div class="msg" id="msgTE"></div>
       </div>
       <div class="pane" id="pane-nv">
-        <input class="fld" id="nq" type="search" placeholder="종목명·6자리 코드·네이버 URL (예: 현대차, 005380, 069500)" autocomplete="off">
+        <input class="fld" id="nq" type="search" placeholder="종목명 · 6자리 코드 · 네이버 URL (예: 현대차)" autocomplete="off">
         <div class="chips" id="nvQuick"></div>
         <div class="lst" id="lstNV"></div>
         <div class="msg" id="msgNV"></div>
@@ -605,7 +626,7 @@
         <div class="msg" id="msgHL"></div>
       </div>
       <div class="pane" id="pane-yahoo">
-        <input class="fld" id="yq" type="text" placeholder="Yahoo 티커 (예: TSLA, SI=F, 005930.KS)" autocomplete="off" autocapitalize="characters">
+        <input class="fld" id="yq" type="text" placeholder="Yahoo 티커 (예: TSLA, 005930.KS)" autocomplete="off" autocapitalize="characters">
         <input class="fld" id="yname" type="text" placeholder="표시 이름 (비우면 티커 그대로)" autocomplete="off">
         <button class="yadd" id="yadd" type="button">3년 최고점·차트까지 받아서 추가</button>
         <div class="msg" id="msgY">추가하면 3년내 최고점·36개월 미니차트·실시간 시세를 자동으로 채웁니다.</div>
