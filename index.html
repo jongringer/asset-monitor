@@ -11,9 +11,9 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="build" content="2026-11-24-kakao-bridge">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥·다우·러셀2000·필라델피아 반도체·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 28개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 39개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="28개 주요 자산(미국·한국·일본·중국·사우디 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="39개 주요 자산(미국·한국·일본·중국·사우디 + 미국 빅테크 8종 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -100,7 +100,7 @@
     font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (28개 · 스크롤) ── */
+  /* ── 자산 리스트 (39개 · 스크롤) ── */
   main{flex:1 1 auto;display:block;min-height:0;margin-top:.5em;padding-bottom:.85em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -769,9 +769,21 @@
     {id:"sp500", name:"S&P 500",         yahoo:"^GSPC", mkt:"us",   ath:7844.52,  athDate:"26.10 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"es",    name:"US500 선물",      yahoo:"ES=F",  mkt:"cme",  ath:7897.50,  athDate:"26.10.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"ndx",   name:"나스닥 100",       yahoo:"^NDX",  mkt:"us",   ath:31361.37, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
+    /* 나스닥 종합(^IXIC): 3년내(2023-11-28~2026-11-27) Yahoo 일별 고가 최대 27,722.75 (2026-10-06 장중) */
+    {id:"ixic",  name:"나스닥 종합",       yahoo:"^IXIC", mkt:"us",   ath:27722.75, athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"dji",   name:"다우존스",         yahoo:"^DJI",  mkt:"us",   ath:54744.33, athDate:"26.08.05 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"rut",   name:"러셀 2000",        yahoo:"^RUT",  mkt:"us",   ath:3069.71,  athDate:"26.08.14 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"sox",   name:"필라델피아 반도체", yahoo:"^SOX",  mkt:"us",   ath:14655.29, athDate:"26.06.22 장중", dec:2, cur:"",  chgLabel:"전일"},
+    /* ── 미국 빅테크 8종 (정규장 본주 · Yahoo 일별 종가/전일 대비) ──
+       3년내 최고점은 모두 같은 기간(2023-11-28~2026-11-27) Yahoo 일별 High 최대값으로 산출했다. */
+    {id:"tsla",  name:"테슬라",           yahoo:"TSLA",  mkt:"us",   ath:498.83,   athDate:"25.12.22 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"amzn",  name:"아마존",           yahoo:"AMZN",  mkt:"us",   ath:287.20,   athDate:"26.08.03 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"avgo",  name:"브로드컴",         yahoo:"AVGO",  mkt:"us",   ath:495.00,   athDate:"26.06.03 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"meta",  name:"메타",             yahoo:"META",  mkt:"us",   ath:796.25,   athDate:"25.08.15 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"aapl",  name:"애플",             yahoo:"AAPL",  mkt:"us",   ath:360.83,   athDate:"26.11.13 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"nvda",  name:"엔비디아",         yahoo:"NVDA",  mkt:"us",   ath:243.37,   athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"googl", name:"알파벳",           yahoo:"GOOGL", mkt:"us",   ath:408.61,   athDate:"26.05.18 장중", dec:2, cur:"$", chgLabel:"전일"},
+    {id:"msft",  name:"마이크로소프트",   yahoo:"MSFT",  mkt:"us",   ath:559.15,   athDate:"26.11.04 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"n225",  name:"닛케이 225",       yahoo:"^N225", mkt:"jp", src:"nvw", nvw:".N225",   ath:72831.73, athDate:"26.06.22 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"csi300",name:"CSI 300",          yahoo:"000300.SS", mkt:"cn", src:"nvw", nvw:".CSI300", ath:5064.27, athDate:"26.06.23 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"kospi", name:"코스피",           yahoo:"^KS11", mkt:"kr",   src:"naver", nv:"KOSPI",  ath:9385.59,  athDate:"26.06.19 장중", dec:2, cur:"", chgLabel:"전일"},
@@ -783,6 +795,11 @@
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  mkt:"cme",  ath:5626.80,  athDate:"26.01.29 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  mkt:"cme",  ath:113.41,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
+    /* 브렌트유(BZ=F): 3년내 Yahoo 일별 High 최대 126.10 (2026-04-29 장중) */
+    {id:"brent", name:"브렌트유",         yahoo:"BZ=F",  mkt:"cme",  ath:126.10,   athDate:"26.04.29 장중", dec:2, cur:"$", chgLabel:"전일"},
+    /* 미국채 10년물 금리(^TNX): Yahoo가 금리를 % 숫자 그대로 준다(4.936 = 4.936%). 접미사 %는 suf로 붙인다.
+       3년내 최고 5.364 (2026-10-07 장중, 표시 5.36%) */
+    {id:"tnx",   name:"미국채 10년물",     yahoo:"^TNX",  mkt:"us",   ath:5.364,    athDate:"26.10.07 장중", dec:2, cur:"", suf:"%", chgLabel:"전일"},
     /* 사우디 타다울(TASI): 일~목 개장이라 주말 시장 변동을 미리 보는 창구. 3년내 최고점은 2024-03-24 장중 12,883.29
        (사우디거래소 통계·아르감과 일치, 종가 기준 최고는 2024-03-21 12,835.65) */
     {id:"tasi",  name:"사우디 TASI",     yahoo:"^TASI.SR", mkt:"sa", ath:12883.29, athDate:"24.03.24 장중", dec:2, cur:"", chgLabel:"전일"},
@@ -807,7 +824,7 @@
   /* 2026-11-23 추가분 — 저장된 사용자 순서가 있어도 항상 맨 아래에 붙는다 */
   var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy"];
 
-  /* 화면에 실제로 올라가는 목록: 기본 28종 − 삭제한 종목 + 사용자가 추가한 종목 */
+  /* 화면에 실제로 올라가는 목록: 기본 39종 − 삭제한 종목 + 사용자가 추가한 종목 */
   var ASSETS = [], BY = {}, ORDER = [], BASE_ORDER = [], YSYMS = [];
   var DEL_KEY = "assetMonitor.deleted.v1", CUS_KEY = "assetMonitor.custom.v1";
   var deleted = {}, custom = [];
@@ -860,6 +877,8 @@
   /* ───────── 유틸 ───────── */
   function $(s){ return document.querySelector(s); }
   function nf(v,d){ return (v==null||!isFinite(v)) ? "—" : Number(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+  /* 가격 표기: 통화 접두(예: $) + 숫자 + 단위 접미(예: %). 미국채 10년물처럼 '%'가 붙는 값은 suf로 넘긴다 */
+  function pxs(a,v,d){ return (a.cur||"") + nf(v, d==null ? a.dec : d) + (a.suf||""); }
   function kstTime(d){
     return new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Seoul",hour12:false,
       hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(d||new Date());
@@ -2093,7 +2112,7 @@
           '<div class="pct flat">—</div>'+
         '</div>'+
         '<div class="bot">'+
-          '<div class="ath">'+(a.ath>0 ? '최고 '+nf(a.ath,a.dec)+' · '+a.athDate : '최고점 조회 중…')+'</div>'+
+          '<div class="ath">'+(a.ath>0 ? '최고 '+nf(a.ath,a.dec)+(a.suf||"")+' · '+a.athDate : '최고점 조회 중…')+'</div>'+
           '<div class="dc"></div>'+
         '</div>'+
         '</div>'+
@@ -2133,7 +2152,7 @@
     el.classList.toggle("stale", (Date.now() - (s.t||0)) > STALE_MS);
     el.classList.toggle("newhigh", isNew);
 
-    pxEl.textContent = (a.cur||"") + nf(px, a.dec);
+    pxEl.textContent = pxs(a, px);
 
     if(pct == null){
       pEl.textContent = "—"; pEl.className = "pct flat";
@@ -2142,8 +2161,8 @@
       pEl.textContent = (pct>0?"+":"") + pct.toFixed(2) + "%";
       pEl.className = "pct " + (up ? "up" : (pct < -0.0001 ? "down" : "flat"));
       athEl.innerHTML = isNew
-        ? '3년내 최고가 갱신 · <b>'+nf(px,a.dec)+'</b>'
-        : '최고 <b>'+nf(a.ath,a.dec)+'</b> · '+a.athDate;
+        ? '3년내 최고가 갱신 · <b>'+nf(px,a.dec)+(a.suf||"")+'</b>'
+        : '최고 <b>'+nf(a.ath,a.dec)+(a.suf||"")+'</b> · '+a.athDate;
     }
 
     if(s.chg==null || !isFinite(s.chg)){
@@ -4279,7 +4298,7 @@
       cvSet("cvPx", "—");
       cvSet("cvPct", "—", "cvchg flat");
     }else{
-      cvSet("cvPx", (a.cur || "") + nf(px, a.dec));
+      cvSet("cvPx", pxs(a, px));
       var pct = a.ath > 0 ? (px - a.ath) / a.ath * 100 : null;
       if(pct == null) cvSet("cvPct", "—", "cvchg flat");
       else cvSet("cvPct", (pct > 0 ? "+" : "") + pct.toFixed(2) + "%",
@@ -4287,7 +4306,7 @@
     }
     var ah = document.getElementById("cvAth");
     if(ah) ah.innerHTML = a.ath > 0
-      ? ("3년내 최고 <b>" + nf(a.ath, a.dec) + "</b> · " + escHtml(a.athDate))
+      ? ("3년내 최고 <b>" + nf(a.ath, a.dec) + (a.suf || "") + "</b> · " + escHtml(a.athDate))
       : "3년내 최고점 조회 중…";
     var ce = document.getElementById("cvChg");
     if(ce){
@@ -4330,7 +4349,7 @@
     cvSet("cvO", nf(b.o[i], dec));
     cvSet("cvH", nf(b.h[i], dec));
     cvSet("cvL", nf(b.l[i], dec));
-    cvSet("cvC", (a.cur || "") + nf(b.c[i], dec), cls);
+    cvSet("cvC", (a.cur || "") + nf(b.c[i], dec) + (a.suf || ""), cls);
     cvSet("cvV", cvVol(b.v ? b.v[i] : null));
   }
 
@@ -4468,7 +4487,7 @@
     out += '<text x="' + labX + '" y="' + (yOf(mx) + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" font-weight="700" fill="#C3CEDB">' + nf(mx, dec) + '</text>';
     out += '<text x="' + labX + '" y="' + (yOf(mn) + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" font-weight="700" fill="#C3CEDB">' + nf(mn, dec) + '</text>';
     if(i1 >= n - 1 && live != null){
-      var ly = yOf(live), lstr = nf(live, dec);
+      var ly = yOf(live), lstr = nf(live, dec) + (a.suf || "");
       if(Math.abs(ly - yOf(mx)) < 16) ly = yOf(mx) + 17;
       else if(Math.abs(ly - yOf(mn)) < 16) ly = yOf(mn) - 17;
       var lw2 = lstr.length * 6.9 + 13;
