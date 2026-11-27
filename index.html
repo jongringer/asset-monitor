@@ -11,9 +11,9 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="build" content="2026-11-24-kakao-bridge">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 39개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·NAVER·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 40개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스·NAVER는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="39개 주요 자산(미국·한국·일본·중국·사우디 + 미국 빅테크 8종 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="40개 주요 자산(미국·한국·일본·중국·사우디 + 미국 빅테크 8종 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -100,7 +100,7 @@
     font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (39개 · 스크롤) ── */
+  /* ── 자산 리스트 (40개 · 스크롤) ── */
   main{flex:1 1 auto;display:block;min-height:0;margin-top:.5em;padding-bottom:.85em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -792,6 +792,9 @@
     {id:"k200",  name:"코스피200 야간선물", mkt:"night", ath:1535.00, athDate:"26.06.18 장중", dec:2, cur:"", chgLabel:"전일"},
     {id:"sec",   name:"삼성전자 예상가",  liveName:"삼성전자",    preName:"삼성전자 프리",   aftName:"삼성전자 애프터",  dual:true, yahoo:"005930.KS", mkt:"kr", src:"kp", kp:"005930", ath:374500,   athDate:"26.06.19 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"hynix", name:"SK하이닉스 예상가", liveName:"SK하이닉스",  preName:"SK하이닉스 프리", aftName:"SK하이닉스 애프터", dual:true, yahoo:"000660.KS", mkt:"kr", src:"kp", kp:"000660", ath:2987000,  athDate:"26.06.25 장중", dec:0, cur:"", chgLabel:"전일"},
+    /* NAVER(035420): 3년내(2023-11-28~2026-11-27) Yahoo 일별 고가 최대 304,000 (2026-06-01 장중, 네이버 일별 시세·KOSPILAB high52w와 일치)
+       삼성전자·SK하이닉스와 같은 NXT 4단계 자동 전환(프리 → 정규장 → 애프터 → 코스피랩 예상가)을 쓴다. */
+    {id:"naver", name:"NAVER예상가",    liveName:"NAVER",      preName:"NAVER 프리",    aftName:"NAVER 애프터",    dual:true, yahoo:"035420.KS", mkt:"kr", src:"kp", kp:"035420", ath:304000,   athDate:"26.06.01 장중", dec:0, cur:"", chgLabel:"전일"},
     {id:"skhy",  name:"SK하이닉스 ADR",   yahoo:"SKHY",  mkt:"us",   ath:199.87,   athDate:"26.09.09 장중", dec:2, cur:"$", chgLabel:"전일"},
     {id:"gold",  name:"금 (COMEX)",       yahoo:"GC=F",  mkt:"cme",  ath:5626.80,  athDate:"26.01.29 장중",    dec:2, cur:"$", chgLabel:"전일"},
     {id:"wti",   name:"WTI 유",           yahoo:"CL=F",  mkt:"cme",  ath:113.41,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"전일"},
@@ -824,7 +827,7 @@
   /* 2026-11-23 추가분 — 저장된 사용자 순서가 있어도 항상 맨 아래에 붙는다 */
   var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy"];
 
-  /* 화면에 실제로 올라가는 목록: 기본 39종 − 삭제한 종목 + 사용자가 추가한 종목 */
+  /* 화면에 실제로 올라가는 목록: 기본 40종 − 삭제한 종목 + 사용자가 추가한 종목 */
   var ASSETS = [], BY = {}, ORDER = [], BASE_ORDER = [], YSYMS = [];
   var DEL_KEY = "assetMonitor.deleted.v1", CUS_KEY = "assetMonitor.custom.v1";
   var deleted = {}, custom = [];
@@ -1362,7 +1365,11 @@
   /* 사용자가 네이버 증권에서 추가한 종목까지 같은 요청에 묶어 받는다 */
   function stkTarget(){
     var codes = ["005930","000660"];
-    ASSETS.forEach(function(a){ if(a.nvCode && !a.nvIdx && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode); });
+    /* KOSPILAB 예상가를 쓰는 행(삼성전자·SK하이닉스·NAVER)과 사용자가 네이버 증권에서 추가한 종목을 한 요청에 묶는다 */
+    ASSETS.forEach(function(a){
+      if(a.kp && codes.indexOf(a.kp) < 0) codes.push(a.kp);
+      if(a.nvCode && !a.nvIdx && codes.indexOf(a.nvCode) < 0) codes.push(a.nvCode);
+    });
     return STK_URL + codes.join(",");
   }
   /* 한 code가 여러 행에 쓰일 수 있다(기본 삼성전자 행 + 사용자가 네이버에서 추가한 삼성전자 행) → 모두 갱신 */
@@ -1373,6 +1380,8 @@
     });
     if(!idx && code === "005930" && out.indexOf("sec") < 0) out.push("sec");
     if(!idx && code === "000660" && out.indexOf("hynix") < 0) out.push("hynix");
+    /* KOSPILAB 예상가 행(sec·hynix·naver)은 nvCode가 없으므로 kp 코드로 같은 행을 찾아 준다 */
+    if(!idx) ASSETS.forEach(function(a){ if(a.src === "kp" && a.kp === code && out.indexOf(a.id) < 0) out.push(a.id); });
     if(idx && code === "KOSPI" && out.indexOf("kospi") < 0) out.push("kospi");
     if(idx && code === "KOSDAQ" && out.indexOf("kosdaq") < 0) out.push("kosdaq");
     return out;
@@ -4162,8 +4171,8 @@
   }
   /* 한국 지수·주식: 네이버 일별 시세(siseJson.naver) → 봉 단위별 봉.
      네이버는 장중 당일 봉의 시·고·저·종가를 그대로 주고 라벨도 정확하다(CORS 미허용 → 프록시 경유). */
-  var NV_KLINE = {kospi:"KOSPI", kosdaq:"KOSDAQ", sec:"005930", hynix:"000660"};
-  function nvKlineSym(a){ return (a && (a.nvCode || NV_KLINE[a.id])) || null; }
+  var NV_KLINE = {kospi:"KOSPI", kosdaq:"KOSDAQ", sec:"005930", hynix:"000660", naver:"035420"};
+  function nvKlineSym(a){ return (a && (a.nvCode || NV_KLINE[a.id] || (a.src === "kp" && a.kp ? a.kp : null))) || null; }
   function nvYmd(d){
     var m = d.getMonth() + 1, dd = d.getDate();
     return String(d.getFullYear()) + (m < 10 ? "0" : "") + m + (dd < 10 ? "0" : "") + dd;
