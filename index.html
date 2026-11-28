@@ -2710,7 +2710,7 @@
     OKX_QUICK.forEach(function(q){
       var have = false;
       for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].okx === q.i){ have = true; break; } }
-      html += '<button type="button" data-okxq="' + q.i + '"' + (have ? ' class="off"' : '') + '>' + escHtml(q.k) + '</button>';
+      html += '<button type="button" data-okxq="' + q.i + '"' + (have ? ' class="off"' : '') + '>' + escHtml(q.k) + (have ? " ✓" : "") + '</button>';
     });
     box.innerHTML = html;
   }
@@ -2740,17 +2740,16 @@
       shown++;
       var have = false;
       for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].okx === r.id){ have = true; break; } }
-      var m = OKX_META[r.id];
       html += '<div class="it"><div class="nm2">' + escHtml(okxLabel(r.id)) +
-        '<span class="sub2">' + escHtml(r.id + " · " + (OKX_CAT[r.cat] || "선물") +
-          (m && m.histSym ? " · 3년 최고점 연동" : "")) + '</span></div>' +
+        '<span class="sub2">' + escHtml(r.id + " · " + (OKX_CAT[r.cat] || "선물")) + '</span></div>' +
         '<div class="px2">$' + nf(r.px, r.px < 10 ? 4 : 2) + '</div>' +
         '<button class="go' + (have ? " off" : "") + '" type="button" data-okx="' + escHtml(r.id) + '"' +
           (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
     });
     box.innerHTML = html || '<div class="empty">검색 결과가 없습니다</div>';
     if(OKX_ALL){
-      okxMsg("OKX 무기한 선물(SWAP) " + OKX_ALL.length + "종 중 " + shown + "종 표시" +
+      var tot = OKX_SWAPS ? OKX_SWAPS.length : OKX_ALL.length;
+      okxMsg("OKX 무기한 선물(SWAP) " + tot + "종 중 " + shown + "종 표시" +
         (q ? " · 검색어 \"" + q + "\"" : " · 원자재·주식 먼저") + " · 365일 24시간 거래");
     }else{
       okxMsg("OKX 선물 목록을 불러오는 중…");
