@@ -11,9 +11,9 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="build" content="2026-11-28-large-type">
 <title>주요 자산 현황 · 3년내 최고점 대비 변동률</title>
-<meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·NAVER·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY)까지 40개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스·NAVER는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
+<meta name="description" content="S&amp;P500·US500 선물·나스닥 100·나스닥 종합·다우·러셀2000·필라델피아 반도체·미국 빅테크 8종(테슬라·아마존·브로드컴·메타·애플·엔비디아·알파벳·마이크로소프트)·닛케이 225·CSI 300·코스피·코스닥·코스피200 야간선물·삼성전자·SK하이닉스·NAVER·SK하이닉스 ADR·금·WTI·브렌트유·미국채 10년물·사우디 타다울(TASI)·비트코인·이더리움·원달러 환율과 하이퍼리퀴드 Hyperliquid xyz 8종(S&amp;P500·엔비디아·SOXL·SK하이닉스·WTI유·마이크론·브렌트유·EWY), OKX 무기한 선물 8종(같은 기초자산)까지 48개 자산의 3년내 최고점 대비 변동률과 월봉·주봉·일봉 추이 그래프를 10초마다 실시간으로 보여줍니다. 삼성전자·SK하이닉스·NAVER는 한국장 장중에 현재가, 마감 후엔 예상가로 자동 전환됩니다.">
 <meta property="og:title" content="주요 자산 현황 · 3년내 최고점 대비 변동률">
-<meta property="og:description" content="40개 주요 자산(미국·한국·일본·중국·사우디 + 미국 빅테크 8종 + 하이퍼리퀴드 xyz 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
+<meta property="og:description" content="48개 주요 자산(미국·한국·일본·중국·사우디 + 미국 빅테크 8종 + 하이퍼리퀴드 xyz 8종 + OKX 선물 8종)의 3년내 최고점 대비 변동률 실시간 모니터">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -71,14 +71,6 @@
     color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .hrow{display:flex;align-items:baseline;justify-content:space-between;gap:.5em}
   .hleft{display:flex;align-items:center;gap:.46em;min-width:0}
-  /* 순서 초기화: 저장된 사용자 순서가 있을 때만 조용히 나타난다(기본 레이아웃 불변) */
-  .ordreset{all:unset;display:none;cursor:pointer;flex:0 0 auto;white-space:nowrap;
-    font-size:.68em;font-weight:700;letter-spacing:.02em;color:var(--dim2);
-    padding:.24em .58em;border-radius:99px;border:1px dashed rgba(255,255,255,.16);line-height:1.4}
-  .ordreset.on{display:inline-flex;align-items:center;gap:.26em}
-  .ordreset svg{width:.95em;height:.95em;display:block;stroke:currentColor;fill:none;
-    stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-  .ordreset:active{color:#C3CBD4;border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.06)}
   .ttl{min-width:0;font-size:.72em;font-weight:700;letter-spacing:.16em;color:var(--dim2);text-transform:uppercase;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .clock{font-size:.88em;font-weight:700;font-variant-numeric:tabular-nums;color:#D3DAE2;letter-spacing:.01em}
@@ -102,7 +94,7 @@
     font-size:.6em;color:var(--dim2);font-weight:700;letter-spacing:.03em}
   .barmeta .src{font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%}
 
-  /* ── 자산 리스트 (40개 · 스크롤) ── */
+  /* ── 자산 리스트 (48개 · 스크롤) ── */
   main{flex:1 1 auto;display:block;min-height:0;margin-top:.5em;padding-bottom:.85em;
     background:var(--panel);border:1px solid var(--edge);border-radius:.68em;
     overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -119,6 +111,9 @@
   /* 하이퍼리퀴드 xyz 8종: 딥 슬레이트 네이비 바탕으로 기존 행과 은은하게 구분 */
   .row.xyz{background:#171E31}
   .row + .row.xyz{border-top-color:rgba(124,160,220,.18)}
+  /* OKX 무기한 선물(기본 8종 · OKX 탭에서 추가한 종목): 짙은 에메랄드 바탕으로 xyz와 한눈에 구분 */
+  .row.okx{background:#12211D}
+  .row + .row.okx{border-top-color:rgba(25,208,138,.18)}
   .row.stale{opacity:.45}
 
   /* 좌측 상태 인디케이터: 장중=초록 · 장마감=빨강 */
@@ -129,10 +124,14 @@
   .top{display:flex;align-items:center;gap:.08em;min-width:0}
   .nm{flex:1 1 auto;min-width:0;font-size:.96em;font-weight:700;color:#FFFFFF;letter-spacing:-.025em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  /* 출처 배지: 하이퍼리퀴드 xyz 마켓 표시 */
-  .nm .tag{display:inline-block;margin-left:.32em;padding:.04em .26em .08em;border-radius:.24em;
-    font-size:.6em;font-weight:800;letter-spacing:.05em;color:#8FB3D6;vertical-align:.16em;
-    background:rgba(120,170,230,.14);border:1px solid rgba(120,170,230,.3)}
+  /* 출처 배지(xyz·OKX): 노안에서도 읽히게 글씨·패딩을 키우고 색으로 출처를 구분한다.
+     xyz = 보라 계열(어두운 바탕 + 보라 테두리), OKX = 채운 에메랄드 + 짙은 글씨(가장 또렷) */
+  .nm .tag{display:inline-block;margin-left:.4em;padding:.16em .46em .2em;border-radius:.34em;
+    font-size:.8em;font-weight:900;letter-spacing:.02em;vertical-align:.1em;line-height:1.15;
+    color:#D8CBFF;background:rgba(139,110,255,.24);border:1px solid rgba(167,139,250,.62)}
+  .row.xyz .nm .tag{color:#D8CBFF;background:rgba(139,110,255,.24);border-color:rgba(167,139,250,.62)}
+  .row.okx .nm .tag{color:#04241A;background:#19D08A;border-color:#5BE7B4;
+    box-shadow:0 0 9px rgba(25,208,138,.38)}
   .px{flex:0 0 auto;min-width:4.35em;text-align:right;font-size:1.16em;font-weight:800;color:#fff;
     font-variant-numeric:tabular-nums;letter-spacing:-.035em;line-height:1.08}
   /* 3년내 최고점 대비 %: 보조 지표라 작고 어두운 남색 계열로 */
@@ -251,6 +250,8 @@
     min-height:3.2em;text-align:center;font-size:.92em;font-weight:800;color:#9BA4AE;line-height:1.22;
     padding:.5em .3em;border-radius:.62em;border:1px solid var(--edge);background:#171D24;
     white-space:normal;word-break:keep-all;letter-spacing:-.01em}
+  /* 7번째 탭(Yahoo)만 남는 마지막 줄은 가로를 다 쓰게 해 줄을 고르게 채운다 */
+  .tabs button[data-tab="yahoo"]{grid-column:1 / -1}
   .tabs button.on{color:#fff;background:rgba(124,160,220,.2);border-color:rgba(124,160,220,.46)}
   .tabs button:active{background:#232B34}
   .tabs button.on:active{background:rgba(124,160,220,.3)}
@@ -440,10 +441,6 @@
     <div class="hrow">
       <div class="hleft">
         <div class="ttl">주요 자산 현황 · <span id="cnt">28</span></div>
-        <button class="ordreset" id="ordreset" type="button" aria-label="자산 순서를 기본 순서로 되돌리기">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
-          순서 초기화
-        </button>
       </div>
       <div class="hright">
         <button class="addbtn" id="addbtn" type="button" aria-label="종목 추가">+ 추가</button>
@@ -596,6 +593,7 @@
         <button type="button" data-tab="nv">네이버 증권</button>
         <button type="button" data-tab="back">삭제한 종목</button>
         <button type="button" data-tab="xyz">하이퍼리퀴드</button>
+        <button type="button" data-tab="okx">OKX 선물</button>
         <button type="button" data-tab="yahoo">Yahoo</button>
       </div>
       <div class="pane on" id="pane-inv">
@@ -624,6 +622,12 @@
         <input class="fld" id="hlq" type="search" placeholder="xyz 종목 검색 (예: TSLA, GOLD, EWY)" autocomplete="off">
         <div class="lst" id="lstHL"></div>
         <div class="msg" id="msgHL"></div>
+      </div>
+      <div class="pane" id="pane-okx">
+        <input class="fld" id="oxq" type="search" placeholder="OKX 선물 검색 (예: NVDA, 금, SPX, SK하이닉스)" autocomplete="off">
+        <div class="chips" id="oxQuick"></div>
+        <div class="lst" id="lstOKX"></div>
+        <div class="msg" id="msgOKX"></div>
       </div>
       <div class="pane" id="pane-yahoo">
         <input class="fld" id="yq" type="text" placeholder="Yahoo 티커 (예: TSLA, 005930.KS)" autocomplete="off" autocapitalize="characters">
@@ -843,12 +847,31 @@
     {id:"xwti",   name:"WTI유",       tag:"xyz", mkt:"xyz", hl:"xyz:CL",       histSym:"CL=F",   ath:113.41,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"24h"},
     {id:"xmu",    name:"마이크론",     tag:"xyz", mkt:"xyz", hl:"xyz:MU",       histSym:"MU",     ath:1255.00,  athDate:"26.06.25 장중", dec:2, cur:"$", chgLabel:"24h"},
     {id:"xbrn",   name:"브렌트유",     tag:"xyz", mkt:"xyz", hl:"xyz:BRENTOIL", histSym:"BZ=F",   ath:126.10,   athDate:"26.04.30 장중", dec:2, cur:"$", chgLabel:"24h"},
-    {id:"xewy",   name:"EWY 한국ETF", tag:"xyz", mkt:"xyz", hl:"xyz:EWY",      histSym:"EWY",    ath:220.89,   athDate:"26.06.18 장중", dec:2, cur:"$", chgLabel:"24h"}
+    {id:"xewy",   name:"EWY 한국ETF", tag:"xyz", mkt:"xyz", hl:"xyz:EWY",      histSym:"EWY",    ath:220.89,   athDate:"26.06.18 장중", dec:2, cur:"$", chgLabel:"24h"},
+
+    /* ── OKX 무기한 선물(SWAP) TradFi 8종 (2026-11-28 사용자 요청) ──
+       바로 위 하이퍼리퀴드 xyz 8종과 "같은 기초자산"을 OKX의 24시간 무기한 선물로 한 번 더 본다.
+       시세는 OKX `market/tickers?instType=SWAP`(last·open24h)에서 10초마다, 봉·스파크라인·캔들은
+       기초자산의 Yahoo 심볼(histSym)로 그린다. 최고점도 xyz 행과 같은 값(기초자산의 3년내 장중 고가).
+       실심볼은 `public/instruments?instType=SWAP` 실제 목록에서 확인했다:
+         S&P500 → `US500-USDT-SWAP` (`SPX-USDT-SWAP`는 밈코인 SPX6900이라 S&P500이 아니다),
+         SK하이닉스 → `SKHYNIX-USDT-SWAP` (달러 표시 → 000660.KS를 그 봉의 환율로 나눈 계열, xyz와 같다),
+         WTI유 → `CL-USDT-SWAP`, 브렌트유 → `BZ-USDT-SWAP`. */
+    {id:"okxsp500", name:"S&P500",      tag:"OKX", mkt:"okx", okx:"US500-USDT-SWAP",   histSym:"^GSPC",  ath:7844.52,  athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxnvda",  name:"엔비디아",     tag:"OKX", mkt:"okx", okx:"NVDA-USDT-SWAP",    histSym:"NVDA",   ath:243.37,   athDate:"26.10.06 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxsoxl",  name:"SOXL",       tag:"OKX", mkt:"okx", okx:"SOXL-USDT-SWAP",    histSym:"SOXL",   ath:302.00,   athDate:"26.06.22 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxskhx",  name:"SK하이닉스",   tag:"OKX", mkt:"okx", okx:"SKHYNIX-USDT-SWAP", histSym:"000660.KS", fxSym:"KRW=X", ath:1931.48, athDate:"26.06.25 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxwti",   name:"WTI유",       tag:"OKX", mkt:"okx", okx:"CL-USDT-SWAP",      histSym:"CL=F",   ath:113.41,   athDate:"26.03.09 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxmu",    name:"마이크론",     tag:"OKX", mkt:"okx", okx:"MU-USDT-SWAP",      histSym:"MU",     ath:1255.00,  athDate:"26.06.25 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxbrn",   name:"브렌트유",     tag:"OKX", mkt:"okx", okx:"BZ-USDT-SWAP",      histSym:"BZ=F",   ath:126.10,   athDate:"26.04.30 장중", dec:2, cur:"$", chgLabel:"24h"},
+    {id:"okxewy",   name:"EWY 한국ETF", tag:"OKX", mkt:"okx", okx:"EWY-USDT-SWAP",     histSym:"EWY",    ath:220.89,   athDate:"26.06.18 장중", dec:2, cur:"$", chgLabel:"24h"}
   ];
   /* 2026-11-23 추가분 — 저장된 사용자 순서가 있어도 항상 맨 아래에 붙는다 */
-  var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy"];
+  var APPEND_IDS = ["xsp500","xnvda","xsoxl","xskhx","xwti","xmu","xbrn","xewy",
+                    /* 2026-11-28 OKX 기본 8종: xyz 8종 바로 밑에 붙인다 */
+                    "okxsp500","okxnvda","okxsoxl","okxskhx","okxwti","okxmu","okxbrn","okxewy"];
 
-  /* 화면에 실제로 올라가는 목록: 기본 40종 − 삭제한 종목 + 사용자가 추가한 종목 */
+  /* 화면에 실제로 올라가는 목록: 기본 48종 − 삭제한 종목 + 사용자가 추가한 종목 */
   var ASSETS = [], BY = {}, ORDER = [], BASE_ORDER = [], YSYMS = [];
   var DEL_KEY = "assetMonitor.deleted.v1", CUS_KEY = "assetMonitor.custom.v1";
   var deleted = {}, custom = [];
@@ -884,7 +907,7 @@
 
   var state = {}, busy = false;
   var nextAt = Date.now() + CYCLE;
-  var srcTag = {coin:null};
+  var srcTag = {coin:null, okx:null};
 
   /* 주소 뒤에 ?debug=1 을 붙이면 각 데이터 경로의 시도 결과·소요시간을 하단에 표시 */
   var DBG = /[?&]debug/.test(location.search);
@@ -1052,6 +1075,7 @@
     }catch(e){}
     MK.coin = true;
     MK.xyz = true;
+    MK.okx = true;
   }
   var KP_OK_AT = 0, KP_FRESH = 60000;    // KOSPILAB 응답이 60초 안에 왔으면 '추정가 갱신 중' (연속 실패할 때만 빨강)
 
@@ -1986,6 +2010,7 @@
     loadHistK200(tf);
     custom.forEach(function(c, k){
       if(c.hl && !HISTS[tf][c.id]) setTimeout(function(){ loadHLHist(c, tf); }, k*250);
+      if(c.okx && !c.histSym && c.ath > 0 && !HISTS[tf][c.id]) setTimeout(function(){ loadOkxHist(c, tf); }, 200 + k*250);
       if(c.inv && !HISTS[tf][c.id]) setTimeout(function(){ loadInvHist(c, tf); }, 300 + k*250);
       if(c.te && !HISTS[tf][c.id]) setTimeout(function(){ teHist(c, tf); }, 300 + k*250);
       if(c.nvCode && !HISTS[tf][c.id]) setTimeout(function(){ loadNvHist(c, tf); }, 600 + k*250);
@@ -2129,7 +2154,7 @@
     SPKC = {};                       // 목록 DOM을 새로 만들면 스파크 캐시가 가리키던 옛 SVG도 버린다
     $("#list").innerHTML = ORDER.map(function(id){
       var a = BY[id];
-      return '<div class="row stale'+(a.mkt==="xyz"?' xyz':'')+'" id="row-'+a.id+'" data-id="'+a.id+'">'+
+      return '<div class="row stale'+(a.mkt==="xyz"?' xyz':(a.mkt==="okx"?' okx':''))+'" id="row-'+a.id+'" data-id="'+a.id+'">'+
         '<div class="del" aria-label="삭제">'+
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/>'+
           '<path d="M6 7l1 13h10l1-13"/><path d="M10 11v5M14 11v5"/></svg>'+
@@ -2327,12 +2352,6 @@
     });
     ORDER = out;
   }
-  function ordSetUI(){
-    var b = document.getElementById("ordreset");
-    if(!b) return;
-    var changed = ORDER.join(",") !== BASE_ORDER.join(",") || custom.length > 0 || Object.keys(deleted).length > 0;
-    b.classList.toggle("on", changed);
-  }
 
   /* ───────── 목록 재구축 · 삭제 · 종목 추가 ───────── */
   function rebuild(){
@@ -2343,7 +2362,7 @@
     ORDER = keep;
     var cnt = document.getElementById("cnt");
     if(cnt) cnt.textContent = ASSETS.length;
-    buildList(); renderAll(); ordSave(); ordSetUI();
+    buildList(); renderAll(); ordSave();
     setTimeout(function(){ loadHistFor(TF); }, 400);   // 새로 추가된 종목의 봉 단위 히스토리
     try{ cache(); }catch(e){}
   }
@@ -2396,7 +2415,7 @@
   function setTab(t){
     var tabs = document.querySelectorAll("#tabs button");
     for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].getAttribute("data-tab") === t);
-    ["back","inv","te","nv","xyz","yahoo"].forEach(function(k){
+    ["back","inv","te","nv","xyz","okx","yahoo"].forEach(function(k){
       var p = document.getElementById("pane-"+k); if(p) p.classList.toggle("on", k === t);
     });
     LAST_TAB = t;
@@ -2405,12 +2424,14 @@
     if(t === "te"){ renderTeQuick(); renderTeList(); }
     if(t === "nv"){ renderNvQuick(); renderNvList(NV_ROWS); }
     if(t === "xyz"){ renderHLList(); if(!HL_ALL) fetchHLList(); }
+    if(t === "okx") renderOkxTab();
   }
   function openModal(){
     if(!ovEl) return;
     closeSwipeOpen();
     ovEl.classList.add("on");
     var q = document.getElementById("hlq"); if(q) q.value = "";
+    var oq = document.getElementById("oxq"); if(oq) oq.value = "";
     setTab(LAST_TAB || "inv");
   }
   function closeModal(){ if(ovEl) ovEl.classList.remove("on"); }
@@ -2426,7 +2447,7 @@
     });
     box.innerHTML = html || '<div class="empty">삭제한 기본 종목이 없습니다</div>';
     document.getElementById("msgBack").textContent =
-      html ? "되돌리면 원래 있던 자리(앞 종목 바로 뒤)로 다시 들어갑니다." : "기본 28종이 모두 들어 있습니다.";
+      html ? "되돌리면 원래 있던 자리(앞 종목 바로 뒤)로 다시 들어갑니다." : "기본 " + DEFAULTS.length + "종이 모두 들어 있습니다.";
   }
 
   function fetchHLList(){
@@ -2513,6 +2534,274 @@
         histStored(tf, a.id, v);
       }
     }).catch(function(e){ if(DBG) dg("hlhist:"+((e&&e.message)||e)); });
+  }
+
+  /* ───────── OKX 무기한 선물(SWAP) — '+ 추가' OKX 탭 · 10초 시세 · 봉/최고점 ─────────
+     OKX 공개 API는 요청 Origin을 그대로 되돌려 주는 CORS(access-control-allow-origin)를 내려 주므로
+     하이퍼리퀴드처럼 프록시 없이 브라우저에서 직접 부른다.
+       · 목록  GET /api/v5/public/instruments?instType=SWAP  (554종 · instCategory 3=주식 4=원자재 1=코인·지수)
+       · 시세  GET /api/v5/market/tickers?instType=SWAP      (last·open24h → 24시간 변동률)
+       · 봉    GET /api/v5/market/candles?instId=..&bar=1D|1W|1M&limit=100  (최신 봉이 배열 앞 → 뒤집어 쓴다) */
+  var OKX_API = "https://www.okx.com/api/v5";
+  var OKX_CAT = {1:"코인·지수", 3:"주식", 4:"원자재"};
+  var OKX_BAR = {"1mo":"1M", "1wk":"1W", "1d":"1D"};
+  var OKX_SWAPS = null, OKX_ALL = null, OKX_ALL_T = 0, OKX_ROWS = [];
+  /* 상단 추천 칩 — OKX `SWAP` 목록에 실제로 상장된 TradFi 선물만 */
+  var OKX_QUICK = [
+    {i:"US500-USDT-SWAP",   k:"S&P500"},
+    {i:"NVDA-USDT-SWAP",    k:"엔비디아"},
+    {i:"TSLA-USDT-SWAP",    k:"테슬라"},
+    {i:"SKHYNIX-USDT-SWAP", k:"SK하이닉스"},
+    {i:"EWY-USDT-SWAP",     k:"EWY 한국ETF"},
+    {i:"MU-USDT-SWAP",      k:"마이크론"},
+    {i:"XAU-USDT-SWAP",     k:"금"},
+    {i:"AAPL-USDT-SWAP",    k:"애플"},
+    {i:"US100-USDT-SWAP",   k:"나스닥 100"},
+    {i:"CL-USDT-SWAP",      k:"WTI유"}
+  ];
+  /* 기초자산 3년내 최고점 매핑 — DEFAULTS와 같은 값·같은 기준(장중 고가).
+     여기 있으면 봉·스파크라인·캔들도 그 기초자산의 Yahoo 심볼로 그린다(SK하이닉스는 환율로 나눈 달러 계열). */
+  var OKX_META = {
+    "US500-USDT-SWAP":   {name:"S&P 500",     histSym:"^GSPC", ath:7844.52,  athDate:"26.10.06 장중"},
+    "US100-USDT-SWAP":   {name:"나스닥 100",  histSym:"^NDX",  ath:31361.37, athDate:"26.10.06 장중"},
+    "JP225-USDT-SWAP":   {name:"닛케이 225",  histSym:"^N225", ath:72831.73, athDate:"26.06.22 장중"},
+    "NVDA-USDT-SWAP":    {name:"엔비디아",    histSym:"NVDA",  ath:243.37,   athDate:"26.10.06 장중"},
+    "TSLA-USDT-SWAP":    {name:"테슬라",      histSym:"TSLA",  ath:498.83,   athDate:"25.12.22 장중"},
+    "AAPL-USDT-SWAP":    {name:"애플",        histSym:"AAPL",  ath:360.83,   athDate:"26.11.13 장중"},
+    "MU-USDT-SWAP":      {name:"마이크론",    histSym:"MU",    ath:1255.00,  athDate:"26.06.25 장중"},
+    "SOXL-USDT-SWAP":    {name:"SOXL",        histSym:"SOXL",  ath:302.00,   athDate:"26.06.22 장중"},
+    "EWY-USDT-SWAP":     {name:"EWY 한국ETF", histSym:"EWY",   ath:220.89,   athDate:"26.06.18 장중"},
+    "XAU-USDT-SWAP":     {name:"금",          histSym:"GC=F",  ath:5626.80,  athDate:"26.01.29 장중"},
+    "CL-USDT-SWAP":      {name:"WTI유",       histSym:"CL=F",  ath:113.41,   athDate:"26.03.09 장중"},
+    "BZ-USDT-SWAP":      {name:"브렌트유",    histSym:"BZ=F",  ath:126.10,   athDate:"26.04.30 장중"},
+    "SKHYNIX-USDT-SWAP": {name:"SK하이닉스",  histSym:"000660.KS", fxSym:"KRW=X", ath:1931.48, athDate:"26.06.25 장중"}
+  };
+  function okxNum(s){ var v = Number(s); return (s !== "" && s != null && isFinite(v)) ? v : null; }
+  function okxBase(instId){ return String(instId || "").split("-")[0]; }
+  function okxLabel(instId){ var m = OKX_META[instId]; return (m && m.name) || okxBase(instId); }
+  function okxGet(url, ms){
+    return getText(url, ms).then(function(txt){
+      var d = JSON.parse(txt);
+      if(!d || d.code !== "0" || !Array.isArray(d.data)) throw new Error("okx " + ((d && d.code) || "bad"));
+      return d.data;
+    });
+  }
+  /* 전 종목 시세(약 165KB) 한 번에 — 추가한 OKX 종목이 있거나 모달을 열었을 때만 부른다 */
+  function okxTickers(ms){
+    return okxGet(OKX_API + "/market/tickers?instType=SWAP&_=" + Date.now(), ms || 9000).then(function(rows){
+      var all = [];
+      rows.forEach(function(r){
+        if(!r || !r.instId) return;
+        var px = okxNum(r.last), op = okxNum(r.open24h);
+        if(px == null || px <= 0) return;
+        all.push({id:r.instId, px:px, chg:(op ? (px - op) / op * 100 : null), vol:okxNum(r.volCcy24h) || 0});
+      });
+      if(!all.length) throw new Error("no okx tickers");
+      OKX_ALL = all; OKX_ALL_T = Date.now();
+      return all;
+    });
+  }
+  function fetchOkxInstruments(){
+    if(OKX_SWAPS) return Promise.resolve(OKX_SWAPS);
+    return okxGet(OKX_API + "/public/instruments?instType=SWAP&_=" + Date.now(), 10000).then(function(rows){
+      var list = [];
+      rows.forEach(function(r){
+        if(!r || !r.instId) return;
+        list.push({id:r.instId, cat:String(r.instCategory || "1"), t:okxNum(r.listTime)});
+      });
+      if(!list.length) throw new Error("no okx instruments");
+      OKX_SWAPS = list;
+      return list;
+    });
+  }
+  function getOkx(){
+    var t0 = Date.now(), want = [];
+    ASSETS.forEach(function(a){ if(a.okx) want.push(a); });
+    if(!want.length) return Promise.reject(new Error("no okx"));
+    /* OKX 종목이 몇 개뿐이면 전 종목(약 165KB) 대신 종목별 ticker(약 0.7KB)로 가볍게 받는다 */
+    if(want.length <= 12){
+      return Promise.all(want.map(function(a){
+        return getText(OKX_API + "/market/ticker?instId=" + encodeURIComponent(a.okx) + "&_=" + Date.now(), 8000)
+          .then(function(txt){
+            var d = JSON.parse(txt), r = (d && d.code === "0" && d.data && d.data[0]) || null;
+            if(!r) return 0;
+            var px = okxNum(r.last), op = okxNum(r.open24h);
+            if(px == null || px <= 0) return 0;
+            state[a.id] = {px:px, chg:(op ? (px - op) / op * 100 : null), t:Date.now()};
+            return 1;
+          }).catch(function(){ return 0; });
+      })).then(function(v){
+        var n = 0;
+        for(var i=0;i<v.length;i++) n += v[i];
+        if(!n) throw new Error("no okx ticker");
+        srcTag.okx = "OKX 선물";
+        if(DBG) dg("okx:" + (Date.now()-t0) + "ms n=" + n);
+        return n;
+      });
+    }
+    return okxTickers(9000).then(function(all){
+      var now = Date.now(), n = 0;
+      all.forEach(function(r){ var a = null;
+        for(var i=0;i<want.length;i++){ if(want[i].okx === r.id){ a = want[i]; break; } }
+        if(!a) return;
+        state[a.id] = {px:r.px, chg:r.chg, t:now}; n++;
+      });
+      if(!n) throw new Error("no okx symbols");
+      srcTag.okx = "OKX 선물";
+      if(DBG) dg("okx:" + (Date.now()-t0) + "ms n=" + n);
+      return n;
+    });
+  }
+  /* OKX 봉 → {t(초), o, h, l, c, v} — 오래된 봉 → 최신 봉 순서 */
+  function okxBars(instId, tf, limit){
+    var bar = OKX_BAR[tf] || "1D";
+    var url = OKX_API + "/market/candles?instId=" + encodeURIComponent(instId) + "&bar=" + bar +
+              "&limit=" + (limit || 100) + "&_=" + Date.now();
+    return okxGet(url, 9000).then(function(rows){
+      if(!Array.isArray(rows) || rows.length < 2) throw new Error("no candles");
+      var b = {t:[], o:[], h:[], l:[], c:[], v:[]};
+      rows.slice().reverse().forEach(function(r){
+        b.t.push(Math.floor(Number(r[0]) / 1000));
+        b.o.push(okxNum(r[1])); b.h.push(okxNum(r[2])); b.l.push(okxNum(r[3]));
+        b.c.push(okxNum(r[4])); b.v.push(okxNum(r[5]));
+      });
+      return b;
+    });
+  }
+  /* 매핑이 없는 OKX 종목: OKX 월봉의 상장 이후 최고가를 3년내 최고점으로 쓴다(상장 전 구간이 없다) */
+  function loadOkxMeta(a){
+    return okxBars(a.okx, "1mo", 100).then(function(b){
+      var best = 0, bt = 0;
+      for(var i=0;i<b.h.length;i++){
+        var h = b.h[i];
+        if(h != null && isFinite(h) && h > best){ best = h; bt = b.t[i]; }
+      }
+      if(!(best > 0)) throw new Error("no ath");
+      a.ath = best; a.athDate = ymd2(bt) + " 장중";
+      savePrefs(); renderAll();
+      loadOkxHist(a, TF);
+      return best;
+    }).catch(function(e){ if(DBG) dg("okxmeta:" + ((e && e.message) || e)); });
+  }
+  /* 사용자가 추가한 OKX 종목의 봉별 히스토리(1M=월봉 · 1W=주봉 · 1D=일봉) */
+  function loadOkxHist(a, tf){
+    tf = tf || TF;
+    okxBars(a.okx, tf, 100).then(function(b){
+      var v = histSeries(a, b.c);
+      if(!v) return;
+      barsPut(tf, a.id, b);
+      histStored(tf, a.id, v);
+    }).catch(function(e){ if(DBG) dg("okxhist:" + ((e && e.message) || e)); });
+  }
+  function cvOkxBars(a, tf){
+    return okxBars(a.okx, tf, 100);     // 진행 중 주·월 봉을 직접 주므로 cvAgg로 다시 묶지 않는다
+  }
+  function okxMsg(txt, bad){
+    var el = document.getElementById("msgOKX");
+    if(!el) return;
+    el.textContent = txt;
+    el.className = "msg" + (bad ? " bad" : "");
+  }
+  function okxRank(cat){ return cat === "4" ? 0 : (cat === "3" ? 1 : 2); }
+  function renderOkxQuick(){
+    var box = document.getElementById("oxQuick");
+    if(!box) return;
+    var html = "";
+    OKX_QUICK.forEach(function(q){
+      var have = false;
+      for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].okx === q.i){ have = true; break; } }
+      html += '<button type="button" data-okxq="' + q.i + '"' + (have ? ' class="off"' : '') + '>' + escHtml(q.k) + '</button>';
+    });
+    box.innerHTML = html;
+  }
+  function renderOkxList(){
+    var box = document.getElementById("lstOKX");
+    if(!box) return;
+    var q = ((document.getElementById("oxq") || {}).value || "").trim().toUpperCase();
+    var meta = {};
+    if(OKX_SWAPS) OKX_SWAPS.forEach(function(s){ meta[s.id] = s; });
+    var rows = [];
+    if(OKX_ALL){
+      OKX_ALL.forEach(function(r){
+        var s = meta[r.id], cat = s ? s.cat : "1";
+        var hay = (r.id + " " + okxLabel(r.id) + " " + (OKX_CAT[cat] || "")).toUpperCase();
+        if(q && hay.indexOf(q) < 0) return;
+        rows.push({id:r.id, px:r.px, cat:cat});
+      });
+    }
+    rows.sort(function(x, y){
+      var d = okxRank(x.cat) - okxRank(y.cat);
+      return d ? d : (x.id < y.id ? -1 : (x.id > y.id ? 1 : 0));
+    });
+    OKX_ROWS = rows;
+    var html = "", shown = 0;
+    rows.forEach(function(r){
+      if(shown >= 60) return;
+      shown++;
+      var have = false;
+      for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].okx === r.id){ have = true; break; } }
+      var m = OKX_META[r.id];
+      html += '<div class="it"><div class="nm2">' + escHtml(okxLabel(r.id)) +
+        '<span class="sub2">' + escHtml(r.id + " · " + (OKX_CAT[r.cat] || "선물") +
+          (m && m.histSym ? " · 3년 최고점 연동" : "")) + '</span></div>' +
+        '<div class="px2">$' + nf(r.px, r.px < 10 ? 4 : 2) + '</div>' +
+        '<button class="go' + (have ? " off" : "") + '" type="button" data-okx="' + escHtml(r.id) + '"' +
+          (have ? " disabled" : "") + '>' + (have ? "추가됨" : "추가") + '</button></div>';
+    });
+    box.innerHTML = html || '<div class="empty">검색 결과가 없습니다</div>';
+    if(OKX_ALL){
+      okxMsg("OKX 무기한 선물(SWAP) " + OKX_ALL.length + "종 중 " + shown + "종 표시" +
+        (q ? " · 검색어 \"" + q + "\"" : " · 원자재·주식 먼저") + " · 365일 24시간 거래");
+    }else{
+      okxMsg("OKX 선물 목록을 불러오는 중…");
+    }
+  }
+  function renderOkxTab(){
+    renderOkxQuick();
+    renderOkxList();
+    if(!OKX_SWAPS){
+      fetchOkxInstruments().then(function(){ renderOkxList(); }, function(){
+        okxMsg("OKX 종목 목록을 받지 못했습니다. 잠시 뒤 다시 열어 주세요.", true);
+      });
+    }
+    if(!OKX_ALL || (Date.now() - OKX_ALL_T) > 30000){
+      okxTickers(9000).then(function(){ renderOkxList(); }, function(e){
+        if(DBG) dg("okx list fail");
+        if(!OKX_ALL) okxMsg("OKX 시세를 받지 못했습니다. 잠시 뒤 다시 열어 주세요.", true);
+      });
+    }
+  }
+  function addOkx(instId){
+    if(!instId) return;
+    for(var i=0;i<ASSETS.length;i++){ if(ASSETS[i].okx === instId) return; }
+    var m = OKX_META[instId] || {};
+    var def = {id:"o:" + String(instId).replace(/[^A-Z0-9]/gi, ""), custom:true,
+               name:(m.name || okxBase(instId)), tag:"OKX", mkt:"okx", okx:instId,
+               ath:(m.ath || 0), athDate:(m.athDate || ""), dec:2, cur:"$", chgLabel:"24h"};
+    if(m.histSym) def.histSym = m.histSym;
+    if(m.fxSym) def.fxSym = m.fxSym;
+    if(OKX_ALL){
+      for(var k=0;k<OKX_ALL.length;k++){
+        if(OKX_ALL[k].id === instId){ state[def.id] = {px:OKX_ALL[k].px, chg:OKX_ALL[k].chg, t:Date.now()}; break; }
+      }
+    }
+    custom.push(def);
+    ORDER.push(def.id);
+    savePrefs();
+    rebuild();
+    if(!(def.ath > 0)) loadOkxMeta(def);        // 매핑이 없는 종목은 OKX 상장 이후 봉에서 최고점을 구한다
+    else if(!def.histSym) loadOkxHist(def, TF);
+    renderOkxQuick();
+    renderOkxList();
+  }
+  function okxEnter(){
+    var q = ((document.getElementById("oxq") || {}).value || "").trim().toUpperCase();
+    if(!q) return;
+    for(var i=0;i<OKX_ROWS.length;i++){
+      var r = OKX_ROWS[i];
+      if(r.id.toUpperCase() === q) return addOkx(r.id);
+    }
+    if(OKX_ROWS.length) addOkx(OKX_ROWS[0].id);
   }
 
   function chart3y(sym){
@@ -3531,7 +3820,7 @@
     list.insertBefore(el, rest[target] || null);
     clearDrag();
     ORDER = listRows().map(function(r){ return r.getAttribute("data-id"); }).filter(Boolean);
-    ordSave(); ordSetUI(); renderAll();
+    ordSave(); renderAll();
   }
   function flushSettle(){
     if(!settleT) return;
@@ -3806,15 +4095,6 @@
       if(swOpen) swClose();
     });
 
-    /* ── 초기화: 순서 + 삭제 + 추가 종목을 모두 기본 28종으로 ── */
-    var rb = document.getElementById("ordreset");
-    if(rb) rb.addEventListener("click", function(){
-      deleted = {}; custom = []; savePrefs();
-      try{ localStorage.removeItem(ORD_KEY); }catch(e){}
-      ORDER = [];
-      rebuild();
-    });
-
     /* ── 핀치 확대 상태 동기화: 확대 중이면 스와이프·롱프레스·드래그를 모두 취소하고
        #list·.row 의 touch-action 을 pan-x pan-y 로 풀어 상하좌우 자유 패닝을 보장한다.
        1.0x 로 돌아오면 원래 touch-action(pan-y pinch-zoom)으로 복귀.
@@ -3890,9 +4170,13 @@
     if(busy && Date.now() - busyAt < 45000) return;   // 45초 넘게 멈춘 갱신은 버리고 새로 시작
     busy = true; busyAt = Date.now();
     var krNow = krLiveNow();        // 장중이면 삼성전자·SK하이닉스는 네이버 현재가, 마감이면 KOSPILAB 예상가
-    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0, inv:0, te:0};
-    var hasInv = false, hasTe = false;
-    for(var q=0;q<ASSETS.length;q++){ if(ASSETS[q].inv) hasInv = true; if(ASSETS[q].te) hasTe = true; }
+    var res = {idx:0, coin:0, kp:0, kr:0, stk:0, asia:0, sa:0, k200:0, xyz:0, okx:0, inv:0, te:0};
+    var hasInv = false, hasTe = false, hasOkx = false;
+    for(var q=0;q<ASSETS.length;q++){
+      if(ASSETS[q].inv) hasInv = true;
+      if(ASSETS[q].te) hasTe = true;
+      if(ASSETS[q].okx) hasOkx = true;
+    }
 
     var tasks = [
       race(getIndices(), 14000).then(function(n){ res.idx = n; }).catch(function(){ res.idx = 0; }),
@@ -3901,6 +4185,9 @@
       race(getCrypto(), 14000).then(function(n){ res.coin = n; }).catch(function(){ res.coin = 0; }),
       race(getXyz(), 9000).then(function(n){ res.xyz = n; }).catch(function(){ res.xyz = 0; })
     ];
+    if(hasOkx){
+      tasks.push(race(getOkx(), 12000).then(function(n){ res.okx = n; }).catch(function(){ res.okx = 0; }));
+    }
     if(hasInv){
       tasks.push(race(getInvQuotes(), 20000).then(function(n){ res.inv = n; }).catch(function(){ res.inv = 0; }));
     }
@@ -3924,6 +4211,7 @@
     Promise.all(tasks).then(function(){
       renderAll();
       var okI = res.idx > 0, okC = res.coin > 0, okR = res.kr > 0, okA = res.asia > 0, okX = res.xyz > 0;
+      var okO = !hasOkx || res.okx > 0;
       var okStock = (krNow ? res.stk : res.kp) > 0;
       var bits = [];
       if(okI) bits.push("Yahoo Finance");
@@ -3937,15 +4225,16 @@
       if(res.inv > 0) bits.push("investing.com");
       if(res.te > 0) bits.push("TradingEconomics");
       if(okX) bits.push(srcTag.xyz || "Hyperliquid");
+      if(res.okx > 0) bits.push(srcTag.okx || "OKX 선물");
       if(okC) bits.push(srcTag.coin || "CoinGecko");
       $("#src").textContent = bits.length ? bits.join(" · ") : "—";
       $("#src2").textContent = bits.length ? bits.join(" · ") : "—";
 
       var live = $("#live");
-      if(okI && okC && okR && okA && okStock && okX){
+      if(okI && okC && okR && okA && okStock && okX && okO){
         live.className = "live"; live.textContent = "LIVE";
         setStatus("ok", "마지막 업데이트 " + kstTime());
-      }else if(okI || okC || okR || okA || okStock || okX){
+      }else if(okI || okC || okR || okA || okStock || okX || res.okx > 0){
         live.className = "live"; live.textContent = "LIVE";
         var miss = [];
         if(!okI) miss.push("지수");
@@ -3953,6 +4242,7 @@
         if(!okA) miss.push("닛케이·CSI");
         if(!okStock) miss.push(krNow ? "한국현재가" : "예상가");
         if(!okX) miss.push("하이퍼리퀴드");
+        if(!okO) miss.push("OKX 선물");
         if(!okC) miss.push("코인");
         setStatus("warn", kstTime() + " 일부 지연 · " + miss.join("·"));
       }else{
@@ -4296,6 +4586,7 @@
     if(CV.req[key]) return CV.req[key];
     var p;
     if(a.hl) p = cvHlBars(a, tf);
+    else if(a.okx && !a.histSym) p = cvOkxBars(a, tf);              // OKX에서 추가한 종목(기초자산 매핑이 없을 때)
     else if(a.te) p = cvTeBars(a, tf);                           // TradingEconomics·SunSirs에서 추가한 종목
     else if(a.inv) p = cvInvIdBars(a, tf);                       // investing.com에서 추가한 종목
     else if(a.id === "csi300") p = cvEmBars(a, tf);
@@ -4830,7 +5121,6 @@
   tfUI();
   ordRestore();                    // 저장된 사용자 순서가 있으면 먼저 되살리고 그 순서로 그린다
   buildList();
-  ordSetUI();
   $("#cnt").textContent = ASSETS.length;
   restore();
   $("#clock").textContent = kstTime();
@@ -4842,6 +5132,7 @@
   // 사용자가 추가한 하이퍼리퀴드 xyz 종목: 히스토리·최고점을 다시 채운다(캐시가 없거나 상장후 고점이 비었을 때)
   custom.forEach(function(c, k){
     if(c.hl && (!(c.ath > 0) || !HISTS[TF][c.id])) setTimeout(function(){ loadHLMeta(c); }, 2200 + k*300);
+    if(c.okx && !(c.ath > 0)) setTimeout(function(){ loadOkxMeta(c); }, 2400 + k*300);
     if(c.inv && !(c.ath > 0)) setTimeout(function(){ invRefetchAth(c); }, 2400 + k*300);
     if(c.nvCode && !(c.ath > 0)) setTimeout(function(){ loadNvMeta(c); }, 2400 + k*300);
     if(c.te && !(c.ath > 0)) setTimeout(function(){ teRefetchAth(c); }, 2400 + k*300);
@@ -4861,6 +5152,8 @@
         if(b.getAttribute("data-tab")){ setTab(b.getAttribute("data-tab")); return; }
         if(b.getAttribute("data-back")){ restoreDefault(b.getAttribute("data-back")); renderBackList(); return; }
         if(b.getAttribute("data-hl")){ addHL(b.getAttribute("data-hl")+""); return; }
+        if(b.getAttribute("data-okx")){ addOkx(b.getAttribute("data-okx")); return; }
+        if(b.getAttribute("data-okxq")){ addOkx(b.getAttribute("data-okxq")); return; }
         if(b.getAttribute("data-tei") !== null){ pickTeRow(Number(b.getAttribute("data-tei"))); return; }
         if(b.getAttribute("data-teq")){ var tc = teCatBySym(b.getAttribute("data-teq")); if(tc) addTe(tc.s, tc.sh || tc.k, tc.ss); return; }
         if(b.getAttribute("data-ivi") !== null){ pickInvRow(Number(b.getAttribute("data-ivi"))); return; }
@@ -4874,6 +5167,11 @@
     });
     var hq = document.getElementById("hlq");
     if(hq) hq.addEventListener("input", renderHLList);
+    var oxq = document.getElementById("oxq");
+    if(oxq){
+      oxq.addEventListener("input", renderOkxList);
+      oxq.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); okxEnter(); } });
+    }
     var yy = document.getElementById("yq");
     if(yy) yy.addEventListener("keydown", function(e){ if(e.key === "Enter") addYahooTicker(); });
     var ivq = document.getElementById("ivq");

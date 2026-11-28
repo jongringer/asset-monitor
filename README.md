@@ -54,6 +54,14 @@
 | **마이크론 (xyz)** | `xyz:MU` | $1,255.00 | 26.06.25 장중 |
 | **브렌트유 (xyz)** | `xyz:BRENTOIL` | $126.10 | 26.04.30 장중 |
 | **EWY 한국ETF (xyz)** | `xyz:EWY` | $220.89 | 26.06.18 장중 |
+| **S&P500 (OKX)** | `US500-USDT-SWAP` | 7,844.52 | 26.10.06 장중 |
+| **엔비디아 (OKX)** | `NVDA-USDT-SWAP` | $243.37 | 26.10.06 장중 |
+| **SOXL (OKX)** | `SOXL-USDT-SWAP` | $302.00 | 26.06.22 장중 |
+| **SK하이닉스 (OKX)** | `SKHYNIX-USDT-SWAP` | $1,931.48 | 26.06.25 장중 |
+| **WTI유 (OKX)** | `CL-USDT-SWAP` | $113.41 | 26.03.09 장중 |
+| **마이크론 (OKX)** | `MU-USDT-SWAP` | $1,255.00 | 26.06.25 장중 |
+| **브렌트유 (OKX)** | `BZ-USDT-SWAP` | $126.10 | 26.04.30 장중 |
+| **EWY 한국ETF (OKX)** | `EWY-USDT-SWAP` | $220.89 | 26.06.18 장중 |
 
 변동률 = `(현재가 − 3년내 최고점) / 3년내 최고점 × 100`. 현재가가 그 최고점을 넘으면 `+`로 표시되고 "3년내 최고가 갱신"으로 바뀝니다.
 
@@ -64,6 +72,15 @@
 - **항상 장중**: 365일 24시간 거래라 비트코인·이더리움과 같이 좌측 바가 항상 초록이고, 보조 변동 표기도 `24h`로 통일했습니다.
 - **최고점 기준**은 다른 행과 같은 **그 기초자산의 3년내 최고점**(Yahoo 일별 고가)입니다. 다만 `xyz` 마켓 자체의 상장 역사는 1년 남짓이라, 최고점은 기초자산 시세로 잡고 현재가는 하이퍼리퀴드 가격을 씁니다. SK하이닉스(xyz)만 고점일(26.06.25) 환율 1,546.48원으로 나눠 **달러 기준 1,931.48**로 환산했고, 미니 그래프도 월별 원화 종가를 그달 환율로 나눠 달러 계열로 그립니다.
 - 사용자가 `+ 추가`에서 다른 `xyz` 종목을 넣으면 그 종목의 최고점·미니 그래프는 **하이퍼리퀴드 자체 일봉/월봉**(`candleSnapshot`)에서 계산합니다(상장 이후 전체).
+
+## OKX 무기한 선물(SWAP) 8종 (xyz 8종 바로 밑) · `+ 추가`의 `OKX 선물` 탭
+
+- **기본 목록**: 하이퍼리퀴드 `xyz` 8종와 **같은 기초자산**을 OKX의 24시간 무기한 선물로 한 번 더 둡니다(2026-11-28 사용자 요청). 배지는 `OKX`(채운 에메랄드), 행 바탕은 짙은 에메랄드, 좌측 바는 24시간 거래라 항상 초록, 보조 변동 표기는 `24h`입니다.
+- **실심볼은 `public/instruments?instType=SWAP` 실제 목록에서 확인**했습니다: S&P500 → `US500-USDT-SWAP`(`SPX-USDT-SWAP`는 밈코인 SPX6900이라 S&P500이 아님), 엔비디아 `NVDA-USDT-SWAP`, SOXL `SOXL-USDT-SWAP`, SK하이닉스 `SKHYNIX-USDT-SWAP`, WTI유 `CL-USDT-SWAP`, 마이크론 `MU-USDT-SWAP`, 브렌트유 `BZ-USDT-SWAP`, EWY `EWY-USDT-SWAP`. 8종 모두 OKX에 상장돼 있습니다.
+- **시세**: `https://www.okx.com/api/v5/market/tickers?instType=SWAP`(전 종목 `last`·`open24h`, 약 165KB) 또는 종목이 12개 이하일 때는 `market/ticker?instId=..`. OKX 공개 API는 요청 `Origin`을 그대로 되돌려 주는 CORS라 **프록시 없이 직접** 부르고 10초마다 갱신합니다. 24시간 변동률 = `(last − open24h) / open24h`.
+- **최고점·봉**: 기초자산의 3년내 장중 고가를 `xyz` 행과 같은 값으로 쓰고, 봉·스파크라인·캔들은 Yahoo 심볼(`^GSPC`·`NVDA`·`SOXL`·`000660.KS`+`KRW=X`·`CL=F`·`MU`·`BZ=F`·`EWY`)로 그립니다. SK하이닉스는 `xyz`와 같이 봉별 원화 종가를 그 봉의 환율로 나눠 달러 계열로 만듭니다.
+- **`OKX 선물` 탭**: `+ 추가`의 7번째 탭. 추천 칩(S&P500·엔비디아·테슬라·SK하이닉스·EWY·마이크론·금·애플·나스닥 100·WTI유)과 `public/instruments`의 **554종 SWAP 전체 검색**(원자재·주식 먼저, 최대 60줄 표시)을 제공합니다. 목록에 없는 종목을 넣으면 최고점·봉은 OKX `market/candles`(1M·1W·1D)에서 계산합니다(`3년 최고점 연동` 표기가 없는 줄).
+- 추가한 종목도 `localStorage`(`assetMonitor.custom.v1`)에 저장돼 10초 갱신·드래그 순서·스와이프 삭제가 기본 종목과 똑같이 동작합니다.
 
 ## 장중 / 장마감 표시 (좌측 세로 바 · 맨 아래 동그라미)
 
@@ -140,6 +157,7 @@
   2. **하이퍼리퀴드 xyz** — `metaAndAssetCtxs`로 받은 **147종 전체**를 검색해 원클릭 추가(현재가 표시, 이미 넣은 종목은 `추가됨`). 넣은 종목의 최고점·미니차트는 하이퍼리퀴드 일봉/월봉으로 채웁니다.
   3. **Yahoo 티커** — `TSLA`·`SI=F`·`005930.KS` 같은 티커를 넣으면 3년 일별 고가와 그 날짜를 계산해 최고점으로 저장하고, 36개월 미니차트·실시간 시세까지 자동으로 붙습니다(표시 이름은 비우면 티커 그대로).
   4. **원자재 (TE·SunSirs)** — `https://ko.tradingeconomics.com/commodity/rubber` 같은 **TradingEconomics URL**이나 `https://www.sunsirs.com/kr/prodetail-388.html` 같은 **SunSirs(100ppi) 상품 URL·상품 번호**를 붙여넣거나, 카탈로그 칩(맨 앞이 **고무 (Rubber)** · **스티렌부타디엔고무(SBR)**)에서 골라 추가합니다. 인베스팅닷컴 탭 입력창에 붙여넣고 Enter를 눌러도 원자재 탭으로 넘어가 추가됩니다.
+  5. **OKX 선물** — OKX `SWAP` 554종을 추천 칩·검색으로 추가(위 “OKX 무기한 선물” 항목 참고).
 
 ### 원자재(TradingEconomics·SunSirs) 시세 경로
 
@@ -148,7 +166,7 @@
 - 고무는 TE 심볼 `JN1:COM`(USD Cents/kg), SBR은 `SBR:COM`(CNY/t)입니다. SunSirs 상품 번호는 `SS_KNOWN`(388→`SBR:COM`)에 매핑해 두고, 모르는 번호는 `r.jina.ai`로 상품 페이지를 읽어 이름을 확인한 뒤 TE 검색(`brains.tradingeconomics.com/v2/search/...`)으로 심볼을 찾습니다.
 - TE 계열은 60초 간격으로 갱신하고(10초 사이클에서 최대 4종), 하루 1회 공표되는 일별 시세라 **KST 오늘 자 봉이 있으면 장중(초록)·없으면 마감(빨강)** 으로 표시합니다(주말은 봉이 있어도 마감). 3년 일별 계열은 10분 캐시하며 일·주·월봉 미니 그래프와 확대 캔들 모두 이 한 계열에서 만듭니다.
 - 추가한 종목도 `localStorage`(`assetMonitor.custom.v1`)에 저장돼 10초 자동 갱신·드래그 순서 변경·스와이프 삭제가 기본 종목과 똑같이 동작합니다.
-- 상단 **`↺ 순서 초기화`** 는 순서·삭제·추가분을 모두 지워 **기본 40종**으로 되돌립니다(바뀐 게 있을 때만 보입니다).
+- 순서 변경·삭제·추가분은 모두 `localStorage`에 남습니다. **`↺ 순서 초기화` 버튼은 2026-11-28 사용자 요청으로 화면에서 없앴습니다**(잘못 누르면 맞춰 둔 순서가 한 번에 바뀌어서). 기본 순서로 되돌리는 길은 브라우저 저장값을 지우는 것뿐입니다.
 - **핀치 확대 · 확대 중 자유 패닝**: `viewport`에 `user-scalable=yes, maximum-scale=5`, 목록은 `touch-action: pan-y pinch-zoom`이라 두 손가락 확대가 됩니다(평소엔 세로 스크롤). **확대(핀치 줌인) 상태에서는 스와이프 삭제·드래그 순서 변경이 시작조차 되지 않고**, 상하좌우로 자유롭게 옮겨 보며 볼 수 있습니다(`body.zoomed`일 때 `#list`·`.row`의 `touch-action`이 `pan-x pan-y pinch-zoom`으로 풀림). 1.0x로 돌아오면 원래 동작으로 복귀합니다.
 - 글씨는 노안에 맞춰 키웠습니다(종목명 15.4px·현재가 18.6px·변동률 20.8px·보조 11.2px @390px 폭, 4열 폭은 이름이 잘리지 않게 재배분).
 
@@ -160,7 +178,7 @@
 - **확대 판별(여러 신호)**: ① `visualViewport.scale > 1.01` ② `documentElement.clientWidth / innerWidth > 1.01` ③ `visualViewport.offsetLeft/offsetTop > 1` ④ `visualViewport.width < clientWidth - 2` 중 하나라도 걸리면 확대. 여기에 이번 제스처에서 관측된 최대 배율과 핀치 여부를 함께 기억해(`visualViewport` 이벤트가 늦거나 빠지는 기기 방어) 250ms 감시 타이머가 `body.zoomed`를 갱신합니다. 두 손가락이 한 번이라도 닿으면 손가락을 다 뗄 때까지, 그리고 뗀 뒤 **400ms** 동안 롱프레스·스와이프 진입을 잠급니다(핀치 직후 남은 한 손가락이 화면을 옮길 때 오작동 방지).
 - 핸들 열을 두지 않고 **행 자체를 잡기** 때문에 이름·미니그래프·현재가·변동률 **4열 정렬과 행 높이는 그대로**입니다.
 - **저장**: 바뀐 순서는 `localStorage`의 `assetMonitor.order.v1`에 저장되어 새로고침·재방문·10초 자동 갱신에도 유지됩니다. 저장된 순서에 없는 자산(새로 추가한 종목·이번에 늘어난 8종)은 **항상 목록 맨 아래**로 합류합니다(기존 사용자 순서는 그대로).
-- 저장된 순서가 있을 때만 상단 왼쪽 제목 옆에 조용히 **`↺ 순서 초기화`** 칩이 나타나, 누르면 기본 순서로 돌아가고 저장값도 지워집니다(기본 순서일 때는 보이지 않음).
+- 상단의 **`↺ 순서 초기화` 칩은 2026-11-28 제거**했습니다(잘못 눌러 순서가 뒤집히는 것을 막기 위한 사용자 요청). 드래그 순서 변경과 저장 기능은 그대로입니다.
 
 ## 미니 그래프를 톡 누르면 확대 차트 (캔들 + 거래량 · 확대/이동)
 
@@ -221,6 +239,7 @@
 - **사우디 TASI 보조**: Yahoo가 90초 넘게 값을 못 주면 **investing.com 히스토리 API**의 일별 종가로 현재가·전일 대비를 대신합니다. investing.com API는 CORS를 열어 주지만 `domain-id: www` 헤더가 없으면 403/챌린지가 떠서, 히스토리와 함께 헤더를 붙여 **프록시 없이 직접** 호출합니다.
 - **코스피200 야간선물**: `https://www.prekospi.com/api/home`의 `futures`(price·prevClose·diffPct·session.isOpen, 한국투자증권 OpenAPI로 수집한 야간장 체결)를 씁니다. 네이버 증권에는 국내선물 API가 없고 Yahoo에도 코스피200 선물 심볼이 없습니다. 이 API는 CORS 헤더가 없어 `r.jina.ai` → allorigins → codetabs → cors.lol → 직접 호출 순서로 프록시를 거치고, `r.jina.ai` 분당 20회 제한을 아끼려고 **25초 간격**으로만 받습니다(그 사이에는 받은 값을 그대로 다시 그립니다). 프록시는 매회 `?_=` 캐시버스터를 붙입니다.
 - **가상자산**: CoinGecko → OKX → Upbit 순 폴백.
+- **OKX 무기한 선물(SWAP)**: `https://www.okx.com/api/v5/market/tickers?instType=SWAP`(전 종목) · `market/ticker?instId=..`(12종 이하일 때) · `public/instruments?instType=SWAP`(554종 카탈로그, `instCategory` 3=주식 4=원자재) · `market/candles?instId=..&bar=1D|1W|1M&limit=100`(매핑 없는 종목의 최고점·봉). OKX 공개 API는 요청 `Origin`을 그대로 돌려주는 CORS라 프록시 없이 직접 호출합니다.
 - **삼성전자·SK하이닉스·NAVER (장중 현재가)**: 한국 정규장(09:00~15:30 KST) 중에는 `https://polling.finance.naver.com/api/realtime/domestic/stock/005930,000660,035420`에서 `closePrice`(현재가)·`fluctuationsRatio`(전일 종가 대비 등락률)·`marketStatus`를 받아 `삼성전자`·`SK하이닉스`·`NAVER` 행으로 표시합니다. 코스피·코스닥과 같은 프록시 체인을 쓰되 분당 호출 제한이 있는 `r.jina.ai`는 뒤로 미루고(allorigins+codetabs → cors.lol+jina → 직접) 성공한 조합을 다음 회에 우선합니다. 장중에는 이 요청 대신 KOSPILAB을 부르므로 두 소스가 같은 행을 두고 경합하지 않습니다.
 - **삼성전자·SK하이닉스·NAVER (마감 후 예상가)**: `https://kospilab.com/api/prices` 한 번으로 세 종목(`meta.krxTicker` = `005930`·`000660`·`035420`)의 해외 실시간 추정가(`computed.priceKrw`)와 전일 종가 대비 변동률(`computed.vsClosePct`)을 받습니다. 이 API는 CORS 헤더가 없어 같은 프록시 체인(`r.jina.ai` → codetabs → allorigins → cors.lol → 직접)을 거칩니다. `r.jina.ai`는 분당 20회 제한이 있어 10초 주기 조회(분당 6회)로 맞춰 두었습니다. 15:30이 지나면 다음 갱신(최대 10초)에 자동으로 예상가 소스로 넘어갑니다.
 - **3년 히스토리(미니 그래프용)**: 같은 `v8/finance/spark`에 `range=3y&interval=1mo`(월봉) · `range=1y&interval=1wk`(주봉) · `range=3mo&interval=1d`(일봉) — 지수·선물·원자재·환율·비트코인·이더리움·삼성전자·SK하이닉스·NAVER·닛케이를 **한 요청**으로 받고, 프록시는 한 번에 하나씩만 시도합니다. 실패하면 심볼별 `v8/finance/chart`로 천천히 보충합니다. CSI 300은 동방재부 봉, 사우디 TASI·코스피200 야간선물은 investing.com 봉으로 따로 받습니다(봉 단위별로 6시간 캐시).
