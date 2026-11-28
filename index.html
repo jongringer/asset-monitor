@@ -782,15 +782,28 @@
   if("serviceWorker" in navigator){
     var swHadController = !!navigator.serviceWorker.controller;
     var swReloading = false;
+    var swReg = null, swCheckedAt = 0;
     navigator.serviceWorker.addEventListener("controllerchange", function(){
       if(!swHadController || swReloading) return;
       swReloading = true;
       location.reload();
     });
+    /* 홈 화면 아이콘으로 다시 열었을 때(포그라운드 복귀) 새 버전이 있는지 바로 확인한다.
+       설치된 PWA 는 계속 열어 두면 새로 이동(navigate)하지 않아 업데이트 확인이 안 되므로, 1분에 한 번만 확인한다. */
+    function swCheck(force){
+      if(!swReg) return;
+      var now = Date.now();
+      if(!force && now - swCheckedAt < 60000) return;
+      swCheckedAt = now;
+      try{ swReg.update().catch(function(){}); }catch(e){}
+    }
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("sw.js", { scope: "./", updateViaCache: "none" })
-        .then(function(reg){ return reg.update(); })
+        .then(function(reg){ swReg = reg; swCheck(true); })
         .catch(function(){});
+    });
+    document.addEventListener("visibilitychange", function(){
+      if(document.visibilityState === "visible") swCheck(false);
     });
   }
 })();
