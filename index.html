@@ -2811,11 +2811,21 @@
   function cvInvIdBars(a, tf){
     return invHistRows(invBase(a), tf, 13000).then(function(b){ return cvAgg(b, tf, a, false); });
   }
-  /* investing 행의 장중 표시: 오늘 자 일봉이 있으면 그 시장이 오늘 거래한 것으로 본다 */
-  function invTradedToday(a){
+  /* 봉 시각(초) → 그 봉의 날짜(UTC 기준 "YYYY-MM-DD") */
+  function barYmd(sec){
+    var d = new Date(sec * 1000);
+    return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth() + 1) + "-" + pad2(d.getUTCDate());
+  }
+  /* investing 행의 장중 표시: 그 시장의 정규장이 지금 열려 있을 때만 장중(초록).
+     일봉 날짜는 인베스팅닷컴이 그 거래일 00:00 UTC로 준다. 예전에는 'UTC 오늘'과 비교해서
+     KST 00:00~09:00(UTC로는 아직 전날)에 전날 봉이 오늘 봉으로 둔갑 — 토·일요일 아침에
+     정규장이 쉬는데도 초록(장중)이 떴다. 그래서 KST 날짜·요일로 판정한다:
+     KST 주말은 정규장 휴장(마감), 평일은 KST 오늘 자 일봉이 들어와 있을 때만 장중. */
+  function invTradedToday(a, when){
     if(!a.invDay) return false;
-    var n = new Date();
-    return a.invDay >= Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate())/1000;
+    var p = tzNow(KSTZ, when);
+    if(p.wd === "Sat" || p.wd === "Sun") return false;
+    return barYmd(a.invDay) === p.ymd;
   }
 
   /* 모달: 인베스팅닷컴 탭 */
@@ -3159,11 +3169,13 @@
       savePrefs(); renderAll(); teHist(a, TF);
     }).catch(function(){ if(DBG) dg("teath x"); });
   }
-  /* TE 행의 장중 표시: 오늘 자 일봉이 있으면 그 상품이 오늘 거래됐다고 본다(SunSirs는 평일만) */
-  function teTradedToday(a){
+  /* TE 행의 장중 표시: 오늘 자 일봉이 있으면 그 상품이 오늘 거래됐다고 본다(SunSirs는 평일만).
+     investing과 같은 이유로 KST 날짜·요일 기준 — KST 주말은 마감, 평일은 KST 오늘 자 일봉이 있을 때만 장중 */
+  function teTradedToday(a, when){
     if(!a.teDay) return false;
-    var n = new Date();
-    return a.teDay >= Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()) / 1000;
+    var p = tzNow(KSTZ, when);
+    if(p.wd === "Sat" || p.wd === "Sun") return false;
+    return barYmd(a.teDay) === p.ymd;
   }
   function cvTeBars(a, tf){
     return teSeries(a.te).then(function(ser){ return cvAgg(teBars(ser), tf, a, true); });
