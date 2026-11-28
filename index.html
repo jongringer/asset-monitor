@@ -774,10 +774,23 @@
     try{ localStorage.setItem("assetMonitor.installDismissed.v1", "1"); }catch(e){}
   });
 
-  /* ③ 서비스 워커: 크롬 PWA 설치 조건 (network-first) */
+  /* ③ 서비스 워커: 크롬 PWA 설치 조건 (network-first)
+     - updateViaCache: 'none' → sw.js 자체도 HTTP 캐시(max-age=600)를 쓰지 않고 매번 새로 본다.
+     - 등록 직후 reg.update()로 새 버전을 바로 확인한다.
+     - 새 서비스워커가 활성화(controllerchange)되면 한 번만 새로고침해 최신 화면을 바로 보여 준다.
+       (이미 이전 버전에 제어되고 있던 상태에서만 — 첫 설치 때는 새로고침하지 않는다) */
   if("serviceWorker" in navigator){
+    var swHadController = !!navigator.serviceWorker.controller;
+    var swReloading = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function(){
+      if(!swHadController || swReloading) return;
+      swReloading = true;
+      location.reload();
+    });
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function(){});
+      navigator.serviceWorker.register("sw.js", { scope: "./", updateViaCache: "none" })
+        .then(function(reg){ return reg.update(); })
+        .catch(function(){});
     });
   }
 })();
